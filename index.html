@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitSync AI — Intelligent Multi-Gym Fitness, Health & Personalized Coaching Platform</title>
+  <meta name="description" content="Commercial high-fidelity mobile prototype connecting Gym Members, Trainers, Gym Owners, Doctors, and Physiotherapists." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/jpeg" href="assets/logo.jpg" />
+</head>
+<body>
+
+  <!-- Top Prototype Shell Header & Role Switcher Bar (Section 75: 8 Pages) -->
+  <header class="prototype-shell-header">
+    <div class="brand-badge" id="brandHomeTrigger" onclick="window.location.reload()">
+      <img src="assets/logo.jpg" alt="FitSync AI Logo" class="brand-icon" />
+      <div class="brand-titles">
+        <div class="brand-name">
+          FitSync <span class="ai-tag">AI</span>
+          <span style="font-size: 10px; font-weight: 600; background: rgba(16, 185, 129, 0.2); color: var(--fitness-primary); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">v2.4 PROTOTYPE</span>
+        </div>
+        <div class="brand-tagline">Your Fitness. Your Health. Your Intelligence.</div>
+      </div>
+    </div>
+
+    <!-- 8 Main Pages Navigation (Prompt Section 75) -->
+    <nav class="pages-nav-bar" id="pagesNavBar">
+      <button class="page-tab-btn" data-page="design-system">🎨 Design System</button>
+      <button class="page-tab-btn active" data-page="member">📱 Member App</button>
+      <button class="page-tab-btn" data-page="trainer">🏋️ Trainer App</button>
+      <button class="page-tab-btn" data-page="doctor">🩺 Doctor App</button>
+      <button class="page-tab-btn" data-page="physio">🏃 Physio App</button>
+      <button class="page-tab-btn" data-page="gym-admin">🏢 Gym Admin</button>
+      <button class="page-tab-btn" data-page="platform-admin">🌐 Platform Admin</button>
+      <button class="page-tab-btn" data-page="prototype-flow">🗺️ Prototype Flow</button>
+    </nav>
+
+    <!-- Shell Controls & Device Frame Tools -->
+    <div class="shell-tools">
+      <!-- Quick State Selector Dropdown -->
+      <select id="quickStateJumpSelect" class="input-field" style="padding: 6px 10px; font-size: 11px; width: 170px; background: var(--surface-2); border-radius: var(--radius-sm);">
+        <option value="" disabled selected>⚡ Quick Jump Flow...</option>
+        <option value="member:welcome">1. Welcome Screen</option>
+        <option value="member:register">2. Member Registration</option>
+        <option value="member:gym-select">3. Gym Selection</option>
+        <option value="member:assessment">4. Senses Health Assessment</option>
+        <option value="member:assessment-result">5. Health Profile Results (BMR/TDEE)</option>
+        <option value="member:dashboard">6. Member Home Dashboard</option>
+        <option value="member:workout">7. Workout Detail & Sets</option>
+        <option value="member:nutrition">8. Nutrition & Food Log</option>
+        <option value="member:health">9. Health Hub & Doctors</option>
+        <option value="member:profile">10. Profile & Attendance</option>
+        <option value="video:call">11. Telehealth Video Call UI</option>
+        <option value="trainer:portal">12. Trainer Coach Portal</option>
+        <option value="doctor:portal">13. Doctor Consultation Portal</option>
+        <option value="physio:portal">14. Physiotherapy Portal</option>
+        <option value="gym-admin:portal">15. Gym Branch Admin</option>
+        <option value="platform-admin:portal">16. Multi-Gym Network Admin</option>
+        <option value="design-system:page">17. Full Design System</option>
+        <option value="prototype-flow:page">18. Prototype Flow Diagram</option>
+      </select>
+
+      <div class="viewport-switcher">
+        <button id="viewMobileBtn" class="view-btn active" title="390 x 844 Mobile Viewport">📱 390×844</button>
+        <button id="viewFluidBtn" class="view-btn" title="Responsive Fluid Mode">🖥️ Fluid</button>
+      </div>
+
+      <button id="soundToggleBtn" class="tool-pill-btn" title="Toggle Synthesized Haptic Audio">
+        🔊 Sound: ON
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport Workspace -->
+  <main class="prototype-main-viewport" id="mainViewport">
+
+    <!-- Mobile Device Container (iPhone 15 Pro Hardware Frame 390 x 844 px) -->
+    <div class="mobile-device-frame" id="mobileDeviceFrame">
+
+      <!-- Status Bar & Dynamic Island -->
+      <div class="phone-hardware-status-bar">
+        <div class="status-time" id="hardwareClock">09:41</div>
+        <div class="dynamic-island" id="dynamicIslandWidget" title="Interactive Dynamic Island">
+          <span style="font-weight: 700;">FitSync 5G</span>
+          <span class="island-pulse"></span>
+        </div>
+        <div class="status-icons">
+          <span>📶</span>
+          <span>⚡ 98%</span>
+        </div>
+      </div>
+
+      <!-- Scrollable Phone Screen Canvas -->
+      <div class="phone-screen-scroll-container" id="screenScrollContainer">
+        <!-- Injected Dynamically by app.js -->
+      </div>
+
+      <!-- Persistent Floating AI Assistant Button (Section 58) -->
+      <button class="floating-ai-fab" id="floatingAiBtn" title="Ask FitSync AI Assistant">
+        <span class="fab-sparkle">✨</span>
+        <span>Ask FitSync AI</span>
+      </button>
+
+      <!-- Member Docked Bottom Navigation Bar (Section 21) -->
+      <nav class="member-bottom-nav" id="memberBottomNav">
+        <button class="bottom-nav-item active" data-tab="home">
+          <svg viewBox="0 0 24 24" fill="none"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="workout">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 16.5 17.5 5"/><path d="m3 21 3-3"/><path d="m18 6 3-3"/><path d="m4 15 5 5"/><path d="m15 4 5 5"/></svg>
+          <span>Workout</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="nutrition">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          <span>Nutrition</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="health">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5v14"/></svg>
+          <span>Health</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="profile">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile</span>
+        </button>
+      </nav>
+
+      <!-- Hardware Home Indicator Bar -->
+      <div class="phone-home-indicator"></div>
+
+    </div>
+
+  </main>
+
+  <!-- ==========================================================================
+       MODALS, OVERLAYS & SHEETS
+       ========================================================================== -->
+
+  <!-- 1. Simulated Telehealth Video Consultation Screen (Prompt Section 48) -->
+  <div class="video-consult-modal" id="videoConsultModal">
+    <!-- Doctor Background Video Simulation -->
+    <img src="assets/physio_sharma.jpg" class="video-call-feed-bg" alt="Dr. Ramesh Sharma Video Stream" />
+
+    <!-- Top Overlay: Doctor Credentials & Session Timer -->
+    <div class="call-overlay-top">
+      <div class="call-doctor-profile">
+        <div style="width: 10px; height: 10px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e;"></div>
+        <div class="call-doctor-title">
+          <h3>Dr. Ramesh Sharma, MPT</h3>
+          <p>Consultant Physiotherapist • Renew Physio Clinic</p>
+        </div>
+      </div>
+      <div class="call-timer-badge" id="videoCallTimerDisplay">00:00</div>
+    </div>
+
+    <!-- Picture-in-Picture Self Camera (Aarav Shah) -->
+    <img src="assets/aarav.jpg" class="pip-self-camera" id="selfCameraPip" alt="Aarav Shah Self Camera" />
+
+    <!-- Bottom Controls Bar (Section 48) -->
+    <div class="call-controls-bar">
+      <button class="call-action-btn" id="btnToggleMic" title="Toggle Microphone">
+        🎤
+      </button>
+      <button class="call-action-btn" id="btnToggleCamera" title="Toggle Camera">
+        📹
+      </button>
+      <button class="call-action-btn" id="btnToggleSpeaker" title="Toggle Audio Output">
+        🔊
+      </button>
+      <button class="call-action-btn" id="btnOpenCallChat" title="In-Call Clinical Chat">
+        💬
+      </button>
+      <button class="call-action-btn btn-end-call" id="btnEndCallTrigger" title="End Telehealth Consultation">
+        📞
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. AI Assistant Floating Drawer (Prompt Section 33 & 58) -->
+  <div class="modal-backdrop" id="aiChatDrawerModal">
+    <div class="modal-drawer-sheet" style="height: 600px; display: flex; flex-direction: column;">
+      <div class="sheet-drag-handle"></div>
+
+      <div class="ai-chat-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">✨</span>
+          <div>
+            <h3 style="font-family: var(--font-headline); font-size: 16px; color: #fff;">FitSync AI Coach</h3>
+            <p style="font-size: 11px; color: var(--fitness-primary);">Connected to Aarav's Biometric Profile</p>
+          </div>
+        </div>
+        <button class="icon-btn-pill" id="btnCloseAiDrawer">✕</button>
+      </div>
+
+      <!-- Quick Suggested Prompts (Prompt Section 33) -->
+      <div class="ai-quick-prompts">
+        <button class="prompt-chip" data-query="What should I eat for dinner?">🍽️ What should I eat for dinner?</button>
+        <button class="prompt-chip" data-query="How can I increase my protein?">💪 How can I increase my protein?</button>
+        <button class="prompt-chip" data-query="Give me a vegetarian high-protein breakfast">🥗 High-protein vegetarian breakfast</button>
+        <button class="prompt-chip" data-query="I have 600 calories left today. What can I eat?">🔥 600 calories left today</button>
+      </div>
+
+      <!-- Chat History Stream -->
+      <div class="ai-chat-messages" id="aiChatMessagesList">
+        <!-- Messages rendered dynamically -->
+      </div>
+
+      <!-- Chat Input Field -->
+      <form id="aiChatForm" class="ai-input-bar">
+        <input type="text" id="aiChatInput" class="input-field" placeholder="Ask about meals, lifting form, or metrics..." autocomplete="off" />
+        <button type="submit" class="btn btn-ai btn-sm" style="padding: 10px 16px;">Send ✨</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Generic Multipurpose Detail / Library Sheet Modal -->
+  <div class="modal-backdrop" id="exerciseDetailModal">
+    <div class="modal-drawer-sheet" id="exerciseDetailBody">
+      <!-- Injected dynamically -->
+    </div>
+  </div>
+
+  <!-- 4. Tactile Toast HUD Notification -->
+  <div class="toast-hud" id="toastHud">
+    <span>✨</span> <span>FitSync AI Synchronized</span>
+  </div>
+
+  <!-- Application Bootstrap Module Script -->
+  <script type="module">
+    import { initApp, handleSendAiChat, openAiDrawer, closeAiDrawer, launchVideoCall, endVideoCall, playHaptic, showToast } from './app.js?v=1.0.1';
+
+    // Initialize application
+    initApp();
+
+    // AI Drawer Events
+    document.getElementById('btnCloseAiDrawer')?.addEventListener('click', () => {
+      playHaptic('tap');
+      closeAiDrawer();
+    });
+
+    document.getElementById('aiChatForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('aiChatInput');
+      if (input && input.value.trim()) {
+        handleSendAiChat(input.value.trim());
+        input.value = '';
+      }
+    });
+
+    document.querySelectorAll('.prompt-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        handleSendAiChat(chip.dataset.query);
+      });
+    });
+
+    // Video Call Controls
+    document.getElementById('btnEndCallTrigger')?.addEventListener('click', () => {
+      endVideoCall();
+    });
+
+    document.getElementById('btnToggleMic')?.addEventListener('click', function() {
+      playHaptic('tap');
+      this.classList.toggle('active-muted');
+      const isMuted = this.classList.contains('active-muted');
+      this.textContent = isMuted ? '🔇' : '🎤';
+      showToast(isMuted ? 'Microphone Muted' : 'Microphone Unmuted', isMuted ? '🔇' : '🎤');
+    });
+
+    document.getElementById('btnToggleCamera')?.addEventListener('click', function() {
+      playHaptic('tap');
+      this.classList.toggle('active-muted');
+      const isOff = this.classList.contains('active-muted');
+      const pip = document.getElementById('selfCameraPip');
+      if (pip) pip.style.opacity = isOff ? '0.2' : '1';
+      showToast(isOff ? 'Camera Paused' : 'Camera Active', isOff ? '📷' : '📹');
+    });
+
+    document.getElementById('btnToggleSpeaker')?.addEventListener('click', function() {
+      playHaptic('tap');
+      showToast('Speaker Output: High Fidelity Spatial', '🔊');
+    });
+
+    document.getElementById('btnOpenCallChat')?.addEventListener('click', () => {
+      playHaptic('tap');
+      showToast('In-call medical notes open in clinical channel', '💬');
+    });
+
+    // Quick Jump Dropdown
+    document.getElementById('quickStateJumpSelect')?.addEventListener('change', function() {
+      const val = this.value;
+      if (!val) return;
+      playHaptic('tap');
+      const [pageOrAction, target] = val.split(':');
+
+      if (pageOrAction === 'video' && target === 'call') {
+        launchVideoCall();
+        return;
+      }
+
+      // Activate corresponding tab button
+      document.querySelectorAll('.page-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.page === pageOrAction);
+      });
+
+      // Import app state via dynamic evaluation or dispatch
+      window.dispatchEvent(new CustomEvent('fitsync:jump', { detail: { page: pageOrAction, subScreen: target } }));
+    });
+
+    // Listen for custom jump event
+    window.addEventListener('fitsync:jump', (e) => {
+      const { page, subScreen } = e.detail;
+      // Trigger navigation in app
+      const navBtn = document.querySelector(`.page-tab-btn[data-page="${page}"]`);
+      if (navBtn) navBtn.click();
+    });
+  </script>
+</body>
+</html>
