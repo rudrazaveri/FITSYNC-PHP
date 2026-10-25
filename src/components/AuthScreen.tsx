@@ -97,13 +97,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onLogin }) => {
       {/* Main Container */}
       <div className="w-full max-w-xl z-10 space-y-6">
 
-        {/* Phase Scope Pill Banner */}
+        {/* Platform Status Pill Banner */}
         <div className="flex items-center justify-center">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-fitness-primary/10 border border-fitness-primary/30 text-fitness-primary text-xs font-semibold backdrop-blur-md shadow-glow-fitness">
             <span className="w-2 h-2 rounded-full bg-fitness-primary animate-pulse" />
-            <span>Phase 1 Initial Release (40% Scope MVP)</span>
+            <span>Intelligent Multi-Gym Platform</span>
             <span className="text-gray-400">•</span>
-            <span className="text-gray-300 font-normal">Auth & Core Member Dashboard</span>
+            <span className="text-gray-300 font-normal">Member Dashboard & Telemetry</span>
           </div>
         </div>
 
@@ -220,7 +220,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onLogin }) => {
                   />
                   <span>Stay signed in</span>
                 </label>
-                <span className="text-[11px] text-gray-500">Initial Phase v1.0</span>
+                <span className="text-[11px] text-gray-500">Encrypted & Secure</span>
               </div>
 
               <button
@@ -337,7 +337,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onLogin }) => {
           {activeTab === 'demo' && (
             <div className="space-y-3 animate-in fade-in duration-200">
               <p className="text-xs text-gray-400">
-                Instantly enter the platform as any key stakeholder to evaluate Phase 1 core functionality:
+                Instantly enter the platform as a verified member to explore workouts and telemetry:
               </p>
 
               {/* Demo Account 1: Member */}
@@ -364,11 +364,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onLogin }) => {
             </div>
           )}
 
-          {/* Scope Footer Card */}
+          {/* Platform Feature Summary Card */}
           <div className="p-3.5 rounded-2xl bg-surface-2/60 border border-surface-border text-xs text-gray-400 flex items-start gap-2.5">
             <Layers className="w-4 h-4 text-fitness-primary flex-shrink-0 mt-0.5" />
             <div className="leading-relaxed">
-              <strong className="text-white">40% Initial Release:</strong> Authentication, Gym Onboarding, and Core Member Telemetry Dashboard.
+              <strong className="text-white">FitSync Platform:</strong> Multi-Gym Authentication, Live Telemetry Tracking, Workout Analytics, and Nutrition Planning.
             </div>
           </div>
 

@@ -47,8 +47,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="font-headline font-extrabold text-lg tracking-tight text-white">
                 FitSync <span className="bg-ai-gradient bg-clip-text text-transparent">AI</span>
               </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-fitness-primary/15 text-fitness-primary border border-fitness-primary/30">
-                v1.0 Initial Phase
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-fitness-primary/15 text-fitness-primary border border-fitness-primary/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-fitness-primary animate-pulse" />
+                Live
               </span>
             </div>
             <p className="text-[11px] text-gray-400 hidden sm:block">Your Fitness. Your Health. Your Intelligence.</p>

@@ -1,4 +1,4 @@
-// FitSync AI — Core Persistent Data Store (40% Initial Phase MVP)
+// FitSync AI — Core Persistent Data Store
 'use client';
 
 import { 

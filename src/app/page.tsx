@@ -73,7 +73,7 @@ export default function FitSyncApp() {
 
   if (!mounted) return null;
 
-  // 1. Initial Phase: If user is not logged in, render Auth Screen!
+  // 1. If user is not logged in, render Auth Screen
   if (!state.isAuthenticated) {
     return (
       <AuthScreen
@@ -177,7 +177,7 @@ export default function FitSyncApp() {
       ...prev,
       isAuthenticated: false
     }));
-    showToast('Signed out successfully. Returned to initial phase login.', '👋');
+    showToast('Signed out successfully.', '👋');
   };
 
   return (

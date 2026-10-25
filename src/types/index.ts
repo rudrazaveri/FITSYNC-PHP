@@ -257,5 +257,5 @@ export interface NotificationItem {
   isRead?: boolean;
 }
 
-export type ReleaseScope = 'phase1_mvp' | 'full_showcase';
+export type PlatformMode = 'standard' | 'enterprise';
 
