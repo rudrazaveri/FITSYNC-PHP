@@ -256,3 +256,6 @@ export interface NotificationItem {
   actionText: string;
   isRead?: boolean;
 }
+
+export type ReleaseScope = 'phase1_mvp' | 'full_showcase';
+

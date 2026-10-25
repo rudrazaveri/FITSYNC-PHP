@@ -1,4 +1,4 @@
-// FitSync AI — Unified Persistent Data Access Layer & Store
+// FitSync AI — Core Persistent Data Store (40% Initial Phase MVP)
 'use client';
 
 import { 
@@ -8,23 +8,12 @@ import {
   Gym, 
   WorkoutRoutine, 
   PredefinedDietPlan, 
-  HealthcareProvider, 
-  Appointment, 
-  HealthReport, 
-  FoodReactionLog, 
-  TrainerIntervention, 
-  NotificationItem,
-  UserRole
+  NotificationItem
 } from '@/types';
 import { 
   INITIAL_GYMS, 
   INITIAL_WORKOUT_ROUTINE, 
   PREDEFINED_DIET_PLANS, 
-  INITIAL_HEALTHCARE_PROVIDERS, 
-  INITIAL_APPOINTMENTS, 
-  INITIAL_HEALTH_REPORTS, 
-  INITIAL_FOOD_REACTION_LOGS, 
-  INITIAL_TRAINER_INTERVENTIONS, 
   INITIAL_NOTIFICATIONS 
 } from './initial-data';
 import { calculateHealthMetrics } from './assessment-calculator';
@@ -32,7 +21,7 @@ import { calculateHealthMetrics } from './assessment-calculator';
 const STORAGE_KEY = 'fitsync_ai_state_v2';
 
 export interface AppState {
-  currentRole: UserRole;
+  isAuthenticated: boolean;
   userProfile: UserProfile;
   assessmentData: HealthAssessmentData;
   computedMetrics: ComputedMetrics;
@@ -52,11 +41,6 @@ export interface AppState {
     fat: number;
     ingredients: string;
   }[];
-  foodReactionLogs: FoodReactionLog[];
-  healthcareProviders: HealthcareProvider[];
-  appointments: Appointment[];
-  healthReports: HealthReport[];
-  trainerInterventions: TrainerIntervention[];
   notifications: NotificationItem[];
 }
 
@@ -92,10 +76,35 @@ const DEFAULT_USER: UserProfile = {
   waterTargetMl: 3300
 };
 
+const DEFAULT_LOGGED_MEALS = [
+  {
+    id: 'meal_1',
+    type: 'Breakfast',
+    title: 'Oatmeal with Whey Isolate & Blueberries',
+    time: '08:15 AM',
+    calories: 540,
+    protein: 42,
+    carbs: 68,
+    fat: 12,
+    ingredients: 'Rolled oats (80g), whey isolate (30g), almond milk'
+  },
+  {
+    id: 'meal_2',
+    type: 'Lunch',
+    title: 'Herb Grilled Chicken & Quinoa Fitness Bowl',
+    time: '01:30 PM',
+    calories: 680,
+    protein: 48,
+    carbs: 64,
+    fat: 22,
+    ingredients: 'Grilled chicken breast (180g), tri-color quinoa, avocado, sweet potato'
+  }
+];
+
 export function getInitialState(): AppState {
   if (typeof window === 'undefined') {
     return {
-      currentRole: 'member',
+      isAuthenticated: false,
       userProfile: DEFAULT_USER,
       assessmentData: DEFAULT_ASSESSMENT,
       computedMetrics: DEFAULT_METRICS,
@@ -104,35 +113,7 @@ export function getInitialState(): AppState {
       activeWorkout: INITIAL_WORKOUT_ROUTINE,
       predefinedDietPlans: PREDEFINED_DIET_PLANS,
       activeDietPlan: PREDEFINED_DIET_PLANS[0],
-      loggedMeals: [
-        {
-          id: 'meal_1',
-          type: 'Breakfast',
-          title: 'Oatmeal with Whey Isolate & Blueberries',
-          time: '08:15 AM',
-          calories: 540,
-          protein: 42,
-          carbs: 68,
-          fat: 12,
-          ingredients: 'Rolled oats (80g), whey isolate (30g), almond milk'
-        },
-        {
-          id: 'meal_2',
-          type: 'Lunch',
-          title: 'Herb Grilled Chicken & Quinoa Fitness Bowl',
-          time: '01:30 PM',
-          calories: 680,
-          protein: 48,
-          carbs: 64,
-          fat: 22,
-          ingredients: 'Grilled chicken breast (180g), tri-color quinoa, avocado, sweet potato'
-        }
-      ],
-      foodReactionLogs: INITIAL_FOOD_REACTION_LOGS,
-      healthcareProviders: INITIAL_HEALTHCARE_PROVIDERS,
-      appointments: INITIAL_APPOINTMENTS,
-      healthReports: INITIAL_HEALTH_REPORTS,
-      trainerInterventions: INITIAL_TRAINER_INTERVENTIONS,
+      loggedMeals: DEFAULT_LOGGED_MEALS,
       notifications: INITIAL_NOTIFICATIONS
     };
   }
@@ -140,14 +121,28 @@ export function getInitialState(): AppState {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      return {
+        ...parsed,
+        isAuthenticated: typeof parsed.isAuthenticated === 'boolean' ? parsed.isAuthenticated : false,
+        userProfile: parsed.userProfile || DEFAULT_USER,
+        assessmentData: parsed.assessmentData || DEFAULT_ASSESSMENT,
+        computedMetrics: parsed.computedMetrics || DEFAULT_METRICS,
+        gyms: parsed.gyms || INITIAL_GYMS,
+        selectedGym: parsed.selectedGym || INITIAL_GYMS[0],
+        activeWorkout: parsed.activeWorkout || INITIAL_WORKOUT_ROUTINE,
+        predefinedDietPlans: parsed.predefinedDietPlans || PREDEFINED_DIET_PLANS,
+        activeDietPlan: parsed.activeDietPlan || PREDEFINED_DIET_PLANS[0],
+        loggedMeals: parsed.loggedMeals || DEFAULT_LOGGED_MEALS,
+        notifications: parsed.notifications || INITIAL_NOTIFICATIONS
+      };
     }
   } catch (e) {
     console.error('Failed to load state from storage', e);
   }
 
   return {
-    currentRole: 'member',
+    isAuthenticated: false,
     userProfile: DEFAULT_USER,
     assessmentData: DEFAULT_ASSESSMENT,
     computedMetrics: DEFAULT_METRICS,
@@ -156,35 +151,7 @@ export function getInitialState(): AppState {
     activeWorkout: INITIAL_WORKOUT_ROUTINE,
     predefinedDietPlans: PREDEFINED_DIET_PLANS,
     activeDietPlan: PREDEFINED_DIET_PLANS[0],
-    loggedMeals: [
-      {
-        id: 'meal_1',
-        type: 'Breakfast',
-        title: 'Oatmeal with Whey Isolate & Blueberries',
-        time: '08:15 AM',
-        calories: 540,
-        protein: 42,
-        carbs: 68,
-        fat: 12,
-        ingredients: 'Rolled oats (80g), whey isolate (30g), almond milk'
-      },
-      {
-        id: 'meal_2',
-        type: 'Lunch',
-        title: 'Herb Grilled Chicken & Quinoa Fitness Bowl',
-        time: '01:30 PM',
-        calories: 680,
-        protein: 48,
-        carbs: 64,
-        fat: 22,
-        ingredients: 'Grilled chicken breast (180g), tri-color quinoa, avocado, sweet potato'
-      }
-    ],
-    foodReactionLogs: INITIAL_FOOD_REACTION_LOGS,
-    healthcareProviders: INITIAL_HEALTHCARE_PROVIDERS,
-    appointments: INITIAL_APPOINTMENTS,
-    healthReports: INITIAL_HEALTH_REPORTS,
-    trainerInterventions: INITIAL_TRAINER_INTERVENTIONS,
+    loggedMeals: DEFAULT_LOGGED_MEALS,
     notifications: INITIAL_NOTIFICATIONS
   };
 }

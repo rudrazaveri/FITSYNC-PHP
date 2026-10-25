@@ -2,22 +2,22 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { UserRole } from '@/types';
 import { haptics } from '@/lib/audio-haptics';
-import { Bell, Volume2, VolumeX, Shield, Activity } from 'lucide-react';
+import { Bell, Volume2, VolumeX, LogOut } from 'lucide-react';
+import { UserProfile } from '@/types';
 
 interface NavbarProps {
-  currentRole: UserRole;
-  onSelectRole: (role: UserRole) => void;
+  userProfile: UserProfile;
   unreadNotificationsCount: number;
   onOpenNotifications: () => void;
+  onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  currentRole,
-  onSelectRole,
+  userProfile,
   unreadNotificationsCount,
-  onOpenNotifications
+  onOpenNotifications,
+  onLogout
 }) => {
   const [soundOn, setSoundOn] = React.useState(true);
 
@@ -27,21 +27,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     haptics.playTap();
   };
 
-  const roles: { id: UserRole; label: string; icon: string }[] = [
-    { id: 'member', label: 'Member', icon: '📱' },
-    { id: 'trainer', label: 'Trainer', icon: '🏋️' },
-    { id: 'doctor', label: 'Doctor', icon: '🩺' },
-    { id: 'physiotherapist', label: 'Physio', icon: '🏃' },
-    { id: 'gym_admin', label: 'Gym Admin', icon: '🏢' },
-    { id: 'platform_admin', label: 'Platform Admin', icon: '🌐' }
-  ];
-
   return (
     <header className="sticky top-0 z-40 w-full bg-canvas-base/85 backdrop-blur-xl border-b border-surface-border">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         
         {/* Brand Badge */}
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => onSelectRole('member')}>
+        <div className="flex items-center gap-3">
           <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-fitness-primary/50 shadow-glow-fitness">
             <Image 
               src="/assets/logo.jpg" 
@@ -57,57 +48,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                 FitSync <span className="bg-ai-gradient bg-clip-text text-transparent">AI</span>
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-fitness-primary/15 text-fitness-primary border border-fitness-primary/30">
-                Live App
+                v1.0 Initial Phase
               </span>
             </div>
             <p className="text-[11px] text-gray-400 hidden sm:block">Your Fitness. Your Health. Your Intelligence.</p>
           </div>
         </div>
 
-        {/* Role Switcher Nav */}
-        <nav className="hidden lg:flex items-center bg-surface-2/80 p-1 rounded-xl border border-surface-border overflow-x-auto">
-          {roles.map((r) => {
-            const isActive = currentRole === r.id;
-            return (
-              <button
-                key={r.id}
-                onClick={() => {
-                  haptics.playTap();
-                  onSelectRole(r.id);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  isActive
-                    ? 'bg-fitness-primary text-gray-950 font-semibold shadow-glow-fitness'
-                    : 'text-gray-300 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <span>{r.icon}</span>
-                <span>{r.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Quick Tools & Indicators */}
-        <div className="flex items-center gap-2">
-          {/* Mobile Role Dropdown */}
-          <div className="lg:hidden">
-            <select
-              value={currentRole}
-              onChange={(e) => {
-                haptics.playTap();
-                onSelectRole(e.target.value as UserRole);
-              }}
-              className="bg-surface-2 text-xs text-white border border-surface-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-fitness-primary"
-            >
-              {roles.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.icon} {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        {/* User Status & Action Controls */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
@@ -135,32 +85,37 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {/* Current User Pill */}
-          <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-surface-border">
-            <div className="w-7 h-7 rounded-full overflow-hidden border border-fitness-primary/40 relative">
+          <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-surface-border">
+            <div className="w-8 h-8 rounded-full overflow-hidden border border-fitness-primary/40 relative">
               <Image 
-                src={
-                  currentRole === 'trainer' ? '/assets/trainer_raj.jpg' :
-                  currentRole === 'doctor' ? '/assets/doctor_iyer.jpg' :
-                  currentRole === 'physiotherapist' ? '/assets/physio_sharma.jpg' :
-                  '/assets/aarav.jpg'
-                } 
-                alt="User" 
+                src={userProfile.avatarUrl || '/assets/aarav.jpg'} 
+                alt={userProfile.fullName} 
                 fill 
                 className="object-cover" 
               />
             </div>
-            <div className="text-left text-xs">
+            <div className="text-left text-xs hidden sm:block">
               <div className="font-semibold text-white leading-tight">
-                {currentRole === 'trainer' ? 'Coach Raj' :
-                 currentRole === 'doctor' ? 'Dr. Ananya Iyer' :
-                 currentRole === 'physiotherapist' ? 'Dr. Ramesh Sharma' :
-                 currentRole === 'gym_admin' ? 'FitZone Admin' :
-                 currentRole === 'platform_admin' ? 'Network Admin' :
-                 'Aarav Shah'}
+                {userProfile.fullName}
               </div>
-              <div className="text-[10px] text-gray-400 capitalize">{currentRole.replace('_', ' ')}</div>
+              <div className="text-[10px] text-gray-400 capitalize">
+                {userProfile.membershipTier || 'Member'}
+              </div>
             </div>
           </div>
+
+          {/* Clean Sign Out Button */}
+          <button
+            onClick={() => {
+              haptics.playTap();
+              onLogout();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-status-danger/10 hover:bg-status-danger/25 text-red-400 hover:text-red-300 border border-status-danger/30 text-xs font-bold transition ml-1"
+            title="Sign Out"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Sign Out</span>
+          </button>
 
         </div>
 

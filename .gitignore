@@ -17,6 +17,8 @@
 .DS_Store
 *.pem
 cloudflared.exe
+__pycache__/
+
 
 # Debug logs
 npm-debug.log*

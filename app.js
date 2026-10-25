@@ -5,7 +5,7 @@ import { FITSYNC_DATA } from './data.js';
 const state = {
   activePage: 'member', // 'member' | 'trainer' | 'doctor' | 'physio' | 'gym-admin' | 'platform-admin' | 'design-system' | 'prototype-flow'
   activeMemberTab: 'home', // 'home' | 'workout' | 'nutrition' | 'health' | 'profile'
-  memberSubScreen: 'dashboard', // 'welcome' | 'register' | 'gym-select' | 'assessment' | 'assessment-result' | 'dashboard' | 'workout-detail' | 'exercise-lib' | 'trainer-profile' | 'doctor-profile' | 'physio-profile' | 'appointments' | 'health-reports' | 'progress'
+  memberSubScreen: 'welcome', // 'welcome' | 'register' | 'gym-select' | 'assessment' | 'assessment-result' | 'dashboard' | 'workout-detail' | 'exercise-lib' | 'trainer-profile' | 'doctor-profile' | 'physio-profile' | 'appointments' | 'health-reports' | 'progress'
   assessmentStep: 1, // 1 to 4
   assessmentData: {
     age: 23,

@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Home, Dumbbell, Utensils, HeartPulse, User } from 'lucide-react';
+import { Home, Dumbbell, Utensils, User } from 'lucide-react';
 import { haptics } from '@/lib/audio-haptics';
 
-export type MemberTab = 'home' | 'workout' | 'nutrition' | 'health' | 'profile';
+export type MemberTab = 'home' | 'workout' | 'nutrition' | 'profile';
 
 interface BottomNavProps {
   activeTab: MemberTab;
@@ -16,7 +16,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
     { id: 'home' as MemberTab, label: 'Home', icon: Home },
     { id: 'workout' as MemberTab, label: 'Workout', icon: Dumbbell },
     { id: 'nutrition' as MemberTab, label: 'Nutrition', icon: Utensils },
-    { id: 'health' as MemberTab, label: 'Health Hub', icon: HeartPulse },
     { id: 'profile' as MemberTab, label: 'Profile', icon: User },
   ];
 
@@ -39,10 +38,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
-              <div className={`p-1 rounded-lg ${isActive ? 'bg-fitness-primary/15' : ''}`}>
+              <div className={`p-1.5 rounded-xl ${isActive ? 'bg-fitness-primary/15' : ''}`}>
                 <Icon className={`w-5 h-5 ${isActive ? 'text-fitness-primary' : 'text-gray-400'}`} />
               </div>
-              <span className="text-[11px] mt-0.5 tracking-tight">{tab.label}</span>
+              <span className="text-[11px] mt-0.5 tracking-tight font-medium">{tab.label}</span>
             </button>
           );
         })}
