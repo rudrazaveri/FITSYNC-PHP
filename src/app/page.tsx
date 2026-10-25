@@ -7,6 +7,7 @@ import {
   HealthAssessmentData, 
   ComputedMetrics, 
   Exercise, 
+  ExerciseSet,
   PredefinedDietPlan,
   Gym
 } from '@/types';
@@ -32,7 +33,11 @@ import {
   Plus, 
   ChevronRight,
   Zap,
-  Info
+  Info,
+  Trash2,
+  Minus,
+  Scale,
+  X
 } from 'lucide-react';
 
 export default function FitSyncApp() {
@@ -57,6 +62,15 @@ export default function FitSyncApp() {
   const [newMealCalories, setNewMealCalories] = useState('550');
   const [newMealProtein, setNewMealProtein] = useState('40');
   const [newMealIngredients, setNewMealIngredients] = useState('');
+
+  // Manual Exercise Addition State
+  const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false);
+  const [newExName, setNewExName] = useState('');
+  const [newExMuscle, setNewExMuscle] = useState('Chest');
+  const [newExEquipment, setNewExEquipment] = useState('Dumbbell');
+  const [newExSets, setNewExSets] = useState('3');
+  const [newExReps, setNewExReps] = useState('10');
+  const [newExWeight, setNewExWeight] = useState('20.0 kg');
 
   useEffect(() => {
     setMounted(true);
@@ -109,8 +123,86 @@ export default function FitSyncApp() {
     showToast('Logged +250ml pure hydration! 💧', '💧');
   };
 
-  const handleToggleSetCompletion = (exerciseId: string, setNumber: number) => {
+  const calculateExerciseVolume = (ex: Exercise) => {
+    return ex.completedSets
+      .filter((s) => s.status === 'completed')
+      .reduce((sum, s) => {
+        const w = parseFloat(s.weight.replace(/[^0-9.]/g, '')) || 0;
+        return sum + (s.reps * w);
+      }, 0);
+  };
+
+  const totalWorkoutVolume = state.activeWorkout.exercises.reduce(
+    (sum, ex) => sum + calculateExerciseVolume(ex),
+    0
+  );
+
+  const totalCompletedSets = state.activeWorkout.exercises.reduce(
+    (sum, ex) => sum + ex.completedSets.filter((s) => s.status === 'completed').length,
+    0
+  );
+
+  const totalSetsCount = state.activeWorkout.exercises.reduce(
+    (sum, ex) => sum + ex.completedSets.length,
+    0
+  );
+
+  const handleUpdateSet = (
+    exerciseId: string,
+    setNumber: number,
+    field: 'reps' | 'weight',
+    value: any
+  ) => {
+    updateState((prev) => {
+      const updatedExercises = prev.activeWorkout.exercises.map((ex) => {
+        if (ex.id !== exerciseId) return ex;
+        const updatedSets = ex.completedSets.map((s) => {
+          if (s.set === setNumber) {
+            if (field === 'reps') {
+              const repsVal = typeof value === 'number' ? value : parseInt(value) || 0;
+              return { ...s, reps: Math.max(0, repsVal) };
+            } else {
+              return { ...s, weight: value };
+            }
+          }
+          return s;
+        });
+        return { ...ex, completedSets: updatedSets };
+      });
+      return {
+        ...prev,
+        activeWorkout: { ...prev.activeWorkout, exercises: updatedExercises }
+      };
+    });
+  };
+
+  const handleStepWeight = (exerciseId: string, setNumber: number, deltaKg: number) => {
     haptics.playTap();
+    updateState((prev) => {
+      const updatedExercises = prev.activeWorkout.exercises.map((ex) => {
+        if (ex.id !== exerciseId) return ex;
+        const updatedSets = ex.completedSets.map((s) => {
+          if (s.set === setNumber) {
+            const currentWeightVal = parseFloat(s.weight.replace(/[^0-9.]/g, '')) || 0;
+            const nextWeight = Math.max(0, currentWeightVal + deltaKg);
+            return {
+              ...s,
+              weight: `${nextWeight % 1 === 0 ? nextWeight.toFixed(0) : nextWeight.toFixed(1)} kg`
+            };
+          }
+          return s;
+        });
+        return { ...ex, completedSets: updatedSets };
+      });
+      return {
+        ...prev,
+        activeWorkout: { ...prev.activeWorkout, exercises: updatedExercises }
+      };
+    });
+  };
+
+  const handleToggleSetCompletion = (exerciseId: string, setNumber: number) => {
+    haptics.playSuccess();
     updateState((prev) => {
       const updatedExercises = prev.activeWorkout.exercises.map((ex) => {
         if (ex.id !== exerciseId) return ex;
@@ -130,7 +222,117 @@ export default function FitSyncApp() {
         activeWorkout: { ...prev.activeWorkout, exercises: updatedExercises }
       };
     });
-    showToast(`Set ${setNumber} toggled!`, '💪');
+    showToast(`Set ${setNumber} status updated!`, '💪');
+  };
+
+  const handleAddSet = (exerciseId: string) => {
+    haptics.playTap();
+    updateState((prev) => {
+      const updatedExercises = prev.activeWorkout.exercises.map((ex) => {
+        if (ex.id !== exerciseId) return ex;
+        const lastSet = ex.completedSets[ex.completedSets.length - 1];
+        const newSetNumber = ex.completedSets.length + 1;
+        const newSet: ExerciseSet = {
+          set: newSetNumber,
+          reps: lastSet ? lastSet.reps : 10,
+          weight: lastSet ? lastSet.weight : ex.targetWeight,
+          status: 'pending'
+        };
+        return {
+          ...ex,
+          targetSets: newSetNumber,
+          completedSets: [...ex.completedSets, newSet]
+        };
+      });
+      return {
+        ...prev,
+        activeWorkout: { ...prev.activeWorkout, exercises: updatedExercises }
+      };
+    });
+    showToast('Added new set to log!', '➕');
+  };
+
+  const handleRemoveSet = (exerciseId: string, setNumber: number) => {
+    haptics.playTap();
+    updateState((prev) => {
+      const updatedExercises = prev.activeWorkout.exercises.map((ex) => {
+        if (ex.id !== exerciseId) return ex;
+        const filtered = ex.completedSets.filter((s) => s.set !== setNumber);
+        const reindexed: ExerciseSet[] = filtered.map((s, idx) => ({ ...s, set: idx + 1 }));
+        return {
+          ...ex,
+          targetSets: reindexed.length,
+          completedSets: reindexed
+        };
+      });
+      return {
+        ...prev,
+        activeWorkout: { ...prev.activeWorkout, exercises: updatedExercises }
+      };
+    });
+    showToast('Set removed.', '🗑️');
+  };
+
+  const handleDeleteExercise = (exerciseId: string) => {
+    haptics.playTap();
+    updateState((prev) => ({
+      ...prev,
+      activeWorkout: {
+        ...prev.activeWorkout,
+        exercises: prev.activeWorkout.exercises.filter((ex) => ex.id !== exerciseId)
+      }
+    }));
+    showToast('Exercise removed from session.', '🗑️');
+  };
+
+  const handleAddNewExercise = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newExName.trim()) return;
+    haptics.playSuccess();
+    const setsCount = Math.max(1, parseInt(newExSets) || 3);
+    const repsCount = Math.max(1, parseInt(newExReps) || 10);
+    const formattedWeight = newExWeight.trim() 
+      ? (newExWeight.toLowerCase().includes('kg') ? newExWeight : `${newExWeight} kg`) 
+      : '20.0 kg';
+
+    const createdSets: ExerciseSet[] = Array.from({ length: setsCount }, (_, i) => ({
+      set: i + 1,
+      reps: repsCount,
+      weight: formattedWeight,
+      status: 'pending'
+    }));
+
+    const newExercise: Exercise = {
+      id: `ex_${Date.now()}`,
+      name: newExName.trim(),
+      muscle: newExMuscle,
+      equipment: newExEquipment,
+      thumbnail: '/assets/logo.jpg',
+      targetSets: setsCount,
+      targetReps: `${repsCount}`,
+      targetWeight: formattedWeight,
+      restSeconds: 90,
+      completedSets: createdSets,
+      instructions: [
+        `Execute ${newExName.trim()} with strict form through full range of motion.`,
+        'Keep core and stabilizer muscles firmly braced throughout the set.',
+        'Control the lowering phase and drive smoothly through the concentric contraction.'
+      ],
+      commonMistakes: 'Using excessive momentum or cutting range of motion.',
+      trainerTip: 'Focus on mind-muscle connection and deliberate breathing tempo.'
+    };
+
+    updateState((prev) => ({
+      ...prev,
+      activeWorkout: {
+        ...prev.activeWorkout,
+        exercises: [...prev.activeWorkout.exercises, newExercise]
+      }
+    }));
+
+    setIsAddExerciseModalOpen(false);
+    setNewExName('');
+    showToast(`Added ${newExercise.name} to workout!`, '🏋️');
   };
 
   const handleSaveAssessment = () => {
@@ -371,7 +573,7 @@ export default function FitSyncApp() {
                     </div>
                   </div>
                   <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300">
-                    {state.activeWorkout.duration} • 5 Exercises
+                    {state.activeWorkout.duration} • {state.activeWorkout.exercises.length} Exercises • {totalCompletedSets}/{totalSetsCount} Sets Done
                   </span>
                 </div>
 
@@ -420,22 +622,67 @@ export default function FitSyncApp() {
             <div className="space-y-6 animate-in fade-in duration-200">
               
               {/* Workout Top Bar */}
-              <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <span className="text-xs font-bold text-fitness-primary uppercase tracking-wider">
-                    Assigned Training Routine
-                  </span>
-                  <h2 className="font-headline font-extrabold text-2xl text-white mt-0.5">
-                    {state.activeWorkout.title}
-                  </h2>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {state.activeWorkout.focus} • {state.activeWorkout.difficulty}
-                  </p>
+              <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-fitness-primary uppercase tracking-wider">
+                        Active Training Session
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-fitness-primary/10 text-fitness-primary border border-fitness-primary/25 font-semibold">
+                        Manual Logging Enabled
+                      </span>
+                    </div>
+                    <h2 className="font-headline font-extrabold text-2xl text-white mt-1">
+                      {state.activeWorkout.title}
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {state.activeWorkout.focus} • {state.activeWorkout.difficulty}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setIsAddExerciseModalOpen(true)}
+                      className="px-4 py-2 bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs rounded-xl shadow-glow-fitness transition flex items-center gap-1.5"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Exercise</span>
+                    </button>
+                    <RestTimerWidget initialSeconds={90} />
+                  </div>
                 </div>
 
-                {/* Rest Timer Widget */}
-                <div className="w-full md:w-auto">
-                  <RestTimerWidget initialSeconds={90} />
+                {/* Session Telemetry & Progress Strip */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                  <div className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border">
+                    <div className="text-[11px] text-gray-400">Total Volume Moved</div>
+                    <div className="text-xl font-headline font-extrabold text-fitness-primary mt-0.5">
+                      {totalWorkoutVolume.toLocaleString()} <span className="text-xs font-normal text-gray-400">kg</span>
+                    </div>
+                    <div className="text-[10px] text-gray-400 mt-0.5">Sum of completed sets × reps × weight</div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border">
+                    <div className="text-[11px] text-gray-400">Sets Completed</div>
+                    <div className="text-xl font-headline font-extrabold text-white mt-0.5">
+                      {totalCompletedSets} <span className="text-xs font-normal text-gray-400">/ {totalSetsCount} sets</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-surface-1 mt-1.5 overflow-hidden">
+                      <div
+                        className="h-full bg-fitness-primary rounded-full transition-all duration-300"
+                        style={{ width: `${totalSetsCount > 0 ? (totalCompletedSets / totalSetsCount) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border">
+                    <div className="text-[11px] text-gray-400">Target Routine</div>
+                    <div className="text-xl font-headline font-extrabold text-white mt-0.5">
+                      {state.activeWorkout.exercises.length} <span className="text-xs font-normal text-gray-400">Exercises</span>
+                    </div>
+                    <div className="text-[10px] text-gray-400 mt-0.5">Estimated Duration: {state.activeWorkout.duration}</div>
+                  </div>
                 </div>
               </div>
 
@@ -459,49 +706,153 @@ export default function FitSyncApp() {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => setSelectedExerciseForModal(ex)}
-                        className="px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-gray-300 border border-surface-border transition flex items-center gap-1"
-                      >
-                        <Info className="w-3.5 h-3.5 text-fitness-primary" />
-                        <span>Exercise Guide</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSelectedExerciseForModal(ex)}
+                          className="px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-gray-300 border border-surface-border transition flex items-center gap-1"
+                        >
+                          <Info className="w-3.5 h-3.5 text-fitness-primary" />
+                          <span>Exercise Guide</span>
+                        </button>
+                        {state.activeWorkout.exercises.length > 1 && (
+                          <button
+                            onClick={() => handleDeleteExercise(ex.id)}
+                            className="p-1.5 rounded-xl bg-surface-2 hover:bg-red-500/15 text-gray-400 hover:text-red-400 border border-surface-border transition"
+                            title="Remove exercise from today's workout"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Set-by-Set Logging Table */}
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
+                      <table className="w-full text-left text-xs min-w-[500px]">
                         <thead>
                           <tr className="border-b border-surface-border text-gray-400 font-medium">
-                            <th className="pb-2 pl-2">Set</th>
-                            <th className="pb-2">Reps</th>
-                            <th className="pb-2">Weight</th>
+                            <th className="pb-2 pl-2 w-20">Set</th>
+                            <th className="pb-2 w-44">Reps</th>
+                            <th className="pb-2 w-48">Weight</th>
                             <th className="pb-2 text-right pr-2">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-surface-border">
                           {ex.completedSets.map((s) => (
                             <tr key={s.set} className="hover:bg-white/[0.02] transition">
-                              <td className="py-2.5 pl-2 font-mono font-bold text-white">{s.set}</td>
-                              <td className="py-2.5 text-gray-300">{s.reps} reps</td>
-                              <td className="py-2.5 font-mono text-fitness-primary">{s.weight}</td>
-                              <td className="py-2.5 text-right pr-2">
-                                <button
-                                  onClick={() => handleToggleSetCompletion(ex.id, s.set)}
-                                  className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ml-auto ${
-                                    s.status === 'completed'
-                                      ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
-                                      : 'bg-surface-2 text-gray-400 hover:text-white border border-surface-border'
-                                  }`}
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>{s.status === 'completed' ? 'Completed' : 'Mark Done'}</span>
-                                </button>
+                              
+                              {/* Set Label */}
+                              <td className="py-2.5 pl-2 font-mono font-bold text-white">
+                                <span className="inline-block px-2.5 py-1 rounded-lg bg-surface-2 border border-surface-border text-xs">
+                                  Set {s.set}
+                                </span>
                               </td>
+
+                              {/* Reps Stepper */}
+                              <td className="py-2.5">
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateSet(ex.id, s.set, 'reps', Math.max(1, s.reps - 1))}
+                                    className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95"
+                                    title="Decrease Reps"
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="200"
+                                    value={s.reps}
+                                    onChange={(e) => handleUpdateSet(ex.id, s.set, 'reps', parseInt(e.target.value) || 0)}
+                                    className="w-16 px-2 py-1 text-center font-mono font-bold text-xs bg-surface-2 border border-surface-border rounded-lg text-white focus:outline-none focus:border-fitness-primary transition"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateSet(ex.id, s.set, 'reps', s.reps + 1)}
+                                    className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95"
+                                    title="Increase Reps"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                  <span className="text-[11px] text-gray-400">reps</span>
+                                </div>
+                              </td>
+
+                              {/* Weight Stepper */}
+                              <td className="py-2.5">
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStepWeight(ex.id, s.set, -2.5)}
+                                    className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95 text-xs font-bold"
+                                    title="Decrease Weight (-2.5 kg)"
+                                  >
+                                    -
+                                  </button>
+                                  <input
+                                    type="text"
+                                    value={s.weight}
+                                    onChange={(e) => handleUpdateSet(ex.id, s.set, 'weight', e.target.value)}
+                                    className="w-24 px-2 py-1 text-center font-mono font-bold text-xs bg-surface-2 border border-surface-border rounded-lg text-fitness-primary focus:outline-none focus:border-fitness-primary transition"
+                                    placeholder="0 kg"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStepWeight(ex.id, s.set, 2.5)}
+                                    className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95 text-xs font-bold"
+                                    title="Increase Weight (+2.5 kg)"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </td>
+
+                              {/* Action Button */}
+                              <td className="py-2.5 text-right pr-2">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => handleToggleSetCompletion(ex.id, s.set)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                                      s.status === 'completed'
+                                        ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
+                                        : 'bg-surface-2 text-gray-400 hover:text-white border border-surface-border'
+                                    }`}
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>{s.status === 'completed' ? 'Done' : 'Mark Done'}</span>
+                                  </button>
+                                  {ex.completedSets.length > 1 && (
+                                    <button
+                                      onClick={() => handleRemoveSet(ex.id, s.set)}
+                                      className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                                      title="Remove this set"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+
                             </tr>
                           ))}
                         </tbody>
                       </table>
+                    </div>
+
+                    {/* Exercise Card Footer */}
+                    <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-surface-border/60">
+                      <button
+                        onClick={() => handleAddSet(ex.id)}
+                        className="px-3.5 py-1.5 rounded-xl border border-dashed border-fitness-primary/50 text-fitness-primary hover:bg-fitness-primary/10 text-xs font-semibold flex items-center gap-1.5 transition self-start"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Set {ex.completedSets.length + 1}</span>
+                      </button>
+                      <div className="flex items-center gap-4 text-xs text-gray-400">
+                        <span>Sets: <strong className="text-white">{ex.completedSets.filter(s => s.status === 'completed').length} / {ex.completedSets.length}</strong></span>
+                        <span>Volume: <strong className="font-mono text-fitness-primary">{calculateExerciseVolume(ex).toLocaleString()} kg</strong></span>
+                      </div>
                     </div>
 
                   </div>
@@ -845,7 +1196,160 @@ export default function FitSyncApp() {
         </div>
       )}
 
-      {/* 6. Notifications Drawer */}
+      {/* 7. Add Custom Exercise Modal */}
+      {isAddExerciseModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-surface-2 border border-surface-border w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-fitness-primary/15 text-fitness-primary border border-fitness-primary/30">
+                  <Dumbbell className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-headline font-bold text-white text-base">Add Exercise</h3>
+                  <p className="text-[11px] text-gray-400">Log custom exercises to today&apos;s workout</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddExerciseModalOpen(false)}
+                className="text-gray-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quick Suggestion Chips */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-gray-400">Popular Suggestions</label>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { name: 'Incline Dumbbell Press', muscle: 'Chest', eq: 'Dumbbell' },
+                  { name: 'Lat Pulldown', muscle: 'Back', eq: 'Cable' },
+                  { name: 'Dumbbell Lateral Raise', muscle: 'Shoulders', eq: 'Dumbbell' },
+                  { name: 'Leg Press', muscle: 'Legs', eq: 'Machine' },
+                  { name: 'Cable Bicep Curls', muscle: 'Arms', eq: 'Cable' },
+                  { name: 'Hanging Leg Raises', muscle: 'Core', eq: 'Bodyweight' }
+                ].map((sugg) => (
+                  <button
+                    key={sugg.name}
+                    type="button"
+                    onClick={() => {
+                      setNewExName(sugg.name);
+                      setNewExMuscle(sugg.muscle);
+                      setNewExEquipment(sugg.eq);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-surface-1 hover:bg-surface-3 border border-surface-border text-[11px] text-gray-300 hover:text-fitness-primary transition"
+                  >
+                    + {sugg.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleAddNewExercise} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-300">Exercise Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Overhead Dumbbell Tricep Extension"
+                  value={newExName}
+                  onChange={(e) => setNewExName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-1 border border-surface-border text-xs text-white placeholder-gray-500 focus:outline-none focus:border-fitness-primary transition"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-300">Target Muscle</label>
+                  <select
+                    value={newExMuscle}
+                    onChange={(e) => setNewExMuscle(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-1 border border-surface-border text-xs text-white focus:outline-none focus:border-fitness-primary"
+                  >
+                    <option value="Chest">Chest</option>
+                    <option value="Back">Back</option>
+                    <option value="Shoulders">Shoulders</option>
+                    <option value="Legs">Legs</option>
+                    <option value="Arms">Arms</option>
+                    <option value="Core">Core</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-300">Equipment</label>
+                  <select
+                    value={newExEquipment}
+                    onChange={(e) => setNewExEquipment(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-1 border border-surface-border text-xs text-white focus:outline-none focus:border-fitness-primary"
+                  >
+                    <option value="Barbell">Barbell</option>
+                    <option value="Dumbbell">Dumbbell</option>
+                    <option value="Cable">Cable</option>
+                    <option value="Machine">Machine</option>
+                    <option value="Bodyweight">Bodyweight</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-300">Sets</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    required
+                    value={newExSets}
+                    onChange={(e) => setNewExSets(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-1 border border-surface-border text-xs text-white focus:outline-none focus:border-fitness-primary"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-300">Reps/Set</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    required
+                    value={newExReps}
+                    onChange={(e) => setNewExReps(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-1 border border-surface-border text-xs text-white focus:outline-none focus:border-fitness-primary"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-300">Weight</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="25.0 kg"
+                    value={newExWeight}
+                    onChange={(e) => setNewExWeight(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-1 border border-surface-border text-xs text-white focus:outline-none focus:border-fitness-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAddExerciseModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-surface-1 hover:bg-surface-3 border border-surface-border text-xs font-semibold text-gray-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition"
+                >
+                  Add to Routine
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Notifications Drawer */}
       {isNotificationsDrawerOpen && (
         <div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-surface-2 border-l border-surface-border shadow-2xl p-5 flex flex-col animate-in slide-in-from-right duration-200">
           <div className="flex items-center justify-between pb-3 border-b border-surface-border mb-4">
