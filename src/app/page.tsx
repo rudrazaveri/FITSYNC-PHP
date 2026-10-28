@@ -11,13 +11,22 @@ import {
   PredefinedDietPlan,
   Gym
 } from '@/types';
-import { getInitialState, saveState, AppState } from '@/lib/store';
+import { 
+  getInitialState, 
+  saveState, 
+  AppState, 
+  createCleanUserState, 
+  createDemoState, 
+  saveRegisteredUserRecord, 
+  findRegisteredUser,
+  AttendanceRecord 
+} from '@/lib/store';
 import { calculateHealthMetrics } from '@/lib/assessment-calculator';
 import { haptics } from '@/lib/audio-haptics';
 import { useToast } from '@/components/Toast';
 import { Navbar } from '@/components/Navbar';
 import { BottomNav, MemberTab } from '@/components/BottomNav';
-import { AuthScreen } from '@/components/AuthScreen';
+import { AuthScreen, AuthUserCredentials } from '@/components/AuthScreen';
 import { ExerciseDetailModal } from '@/components/ExerciseDetailModal';
 import { RestTimerWidget } from '@/components/RestTimerWidget';
 import { 
@@ -92,35 +101,138 @@ export default function FitSyncApp() {
     return (
       <AuthScreen
         gyms={state.gyms}
-        onLogin={(credentials) => {
-          updateState((prev) => ({
-            ...prev,
-            isAuthenticated: true,
-            userProfile: {
-              ...prev.userProfile,
-              email: credentials.email,
-              fullName: credentials.name || prev.userProfile.fullName,
-              gymId: credentials.gym ? credentials.gym.id : prev.userProfile.gymId
-            },
-            selectedGym: credentials.gym || prev.selectedGym
-          }));
-          showToast(`Welcome back, ${credentials.name || 'Athlete'}!`, '👋');
+        onAuthenticate={(credentials: AuthUserCredentials) => {
+          // A) BRAND NEW REGISTRATION: Create 100% clean state with ZERO predefined meals, 0 hydration, 0 volume
+          if (credentials.isNewRegistration && credentials.registrationParams) {
+            const cleanState = createCleanUserState(credentials.registrationParams);
+            saveRegisteredUserRecord({
+              email: credentials.email.toLowerCase(),
+              name: credentials.name || credentials.registrationParams.fullName,
+              password: credentials.password || credentials.registrationParams.password,
+              gymId: credentials.registrationParams.gym.id,
+              registeredAt: new Date().toISOString(),
+              state: cleanState
+            });
+            setState(cleanState);
+            saveState(cleanState);
+            showToast(`Welcome to FitSync AI, ${credentials.name}! Your account has started with a clean slate. 🎉`, '🎉');
+            return;
+          }
+
+          // B) DEMO ACCOUNT: Load Aarav Shah's populated demo state
+          if (credentials.isDemo) {
+            const demoState = createDemoState();
+            setState(demoState);
+            saveState(demoState);
+            showToast('Welcome to Demo Mode, Aarav! Sample data loaded. 👋', '👋');
+            return;
+          }
+
+          // C) EXISTING REGISTERED USER SIGN IN
+          const found = findRegisteredUser(credentials.email);
+          if (found) {
+            const restoredState: AppState = {
+              ...found.state,
+              isAuthenticated: true
+            };
+            setState(restoredState);
+            saveState(restoredState);
+            showToast(`Welcome back, ${found.name}! 🏋️`, '👋');
+            return;
+          }
+
+          // D) FALLBACK: If email entered directly in sign in without prior registration, initialize clean state
+          const fallbackCleanState = createCleanUserState({
+            fullName: credentials.name || 'Athlete',
+            email: credentials.email,
+            gym: credentials.gym || state.gyms[0],
+            goal: 'Build Muscle'
+          });
+          setState(fallbackCleanState);
+          saveState(fallbackCleanState);
+          showToast(`Welcome, ${credentials.name || 'Athlete'}! Your profile is ready.`, '👋');
         }}
       />
     );
   }
 
-  // 2. Member Dashboard Handlers
+  // 2. Member Dashboard Handlers & Dynamic Telemetry
+  const totalCaloriesConsumed = (state.loggedMeals || []).reduce(
+    (sum, m) => sum + (Number(m.calories) || 0),
+    0
+  );
+  const calorieTarget = state.computedMetrics.calorieTarget || 2000;
+  const caloriesRemaining = Math.max(0, calorieTarget - totalCaloriesConsumed);
+  const caloriesPct = calorieTarget > 0 ? Math.min(100, Math.round((totalCaloriesConsumed / calorieTarget) * 100)) : 0;
+
+  const totalProteinConsumed = (state.loggedMeals || []).reduce(
+    (sum, m) => sum + (Number(m.protein) || 0),
+    0
+  );
+  const proteinTarget = state.computedMetrics.proteinG || 140;
+  const proteinRemaining = Math.max(0, proteinTarget - totalProteinConsumed);
+  const proteinPct = proteinTarget > 0 ? Math.min(100, Math.round((totalProteinConsumed / proteinTarget) * 100)) : 0;
+
   const handleLogHydration = () => {
     haptics.playTap();
     updateState((prev) => ({
       ...prev,
       userProfile: {
         ...prev.userProfile,
-        waterLoggedMl: Math.min(prev.userProfile.waterTargetMl, prev.userProfile.waterLoggedMl + 250)
+        waterLoggedMl: Math.min(
+          prev.userProfile.waterTargetMl,
+          (prev.userProfile.waterLoggedMl || 0) + 250
+        )
       }
     }));
     showToast('Logged +250ml pure hydration! 💧', '💧');
+  };
+
+  const handleDeleteMeal = (mealId: string) => {
+    haptics.playTap();
+    updateState((prev) => ({
+      ...prev,
+      loggedMeals: (prev.loggedMeals || []).filter((m) => m.id !== mealId)
+    }));
+    showToast('Meal removed from log.', '🗑️');
+  };
+
+  const handleCheckInToday = () => {
+    haptics.playSuccess();
+    const today = new Date();
+    const dayNum = today.getDate();
+    const dateStr = today.toISOString().split('T')[0];
+    const timeStr = today.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const records = state.attendanceRecords || [];
+    const alreadyCheckedIn = records.some(
+      (r) => r.date === dateStr || r.dayNumber === dayNum
+    );
+
+    if (alreadyCheckedIn) {
+      showToast('You are already checked in for today! 🏋️', '✓');
+      return;
+    }
+
+    const newRecord: AttendanceRecord = {
+      id: `att_${Date.now()}`,
+      date: dateStr,
+      dayNumber: dayNum,
+      time: timeStr,
+      gymId: state.selectedGym.id,
+      gymName: state.selectedGym.name
+    };
+
+    updateState((prev) => ({
+      ...prev,
+      userProfile: {
+        ...prev.userProfile,
+        streakDays: Math.max(1, (prev.userProfile.streakDays || 0) + 1)
+      },
+      attendanceRecords: [...(prev.attendanceRecords || []), newRecord]
+    }));
+
+    showToast(`Checked in to ${state.selectedGym.name}! Streak updated 🔥`, '📍');
   };
 
   const calculateExerciseVolume = (ex: Exercise) => {
@@ -483,17 +595,17 @@ export default function FitSyncApp() {
                     <span className="flex items-center gap-1.5 font-semibold text-gray-300">
                       <Zap className="w-4 h-4 text-fitness-primary" /> Daily Energy
                     </span>
-                    <span className="font-mono">{state.computedMetrics.calorieTarget} kcal target</span>
+                    <span className="font-mono">{calorieTarget.toLocaleString()} kcal target</span>
                   </div>
                   <div className="text-2xl font-headline font-extrabold text-white">
-                    1,840 <span className="text-xs font-normal text-gray-400">/ {state.computedMetrics.calorieTarget} kcal</span>
+                    {totalCaloriesConsumed.toLocaleString()} <span className="text-xs font-normal text-gray-400">/ {calorieTarget.toLocaleString()} kcal</span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
-                    <div className="h-full bg-fitness-primary rounded-full" style={{ width: `${Math.min(100, (1840 / state.computedMetrics.calorieTarget) * 100)}%` }} />
+                    <div className="h-full bg-fitness-primary rounded-full transition-all duration-300" style={{ width: `${caloriesPct}%` }} />
                   </div>
                   <div className="text-[11px] text-gray-400 flex justify-between">
-                    <span>Remaining: {state.computedMetrics.calorieTarget - 1840} kcal</span>
-                    <span className="text-fitness-primary font-semibold">69% Hit</span>
+                    <span>Remaining: {caloriesRemaining.toLocaleString()} kcal</span>
+                    <span className="text-fitness-primary font-semibold">{caloriesPct}% Hit</span>
                   </div>
                 </div>
 
@@ -506,14 +618,14 @@ export default function FitSyncApp() {
                     <span className="font-mono">2.1g / kg target</span>
                   </div>
                   <div className="text-2xl font-headline font-extrabold text-white">
-                    112 <span className="text-xs font-normal text-gray-400">/ {state.computedMetrics.proteinG}g</span>
+                    {totalProteinConsumed.toLocaleString()} <span className="text-xs font-normal text-gray-400">/ {proteinTarget.toLocaleString()}g</span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
-                    <div className="h-full bg-healthcare-primary rounded-full" style={{ width: `${Math.min(100, (112 / state.computedMetrics.proteinG) * 100)}%` }} />
+                    <div className="h-full bg-healthcare-primary rounded-full transition-all duration-300" style={{ width: `${proteinPct}%` }} />
                   </div>
                   <div className="text-[11px] text-gray-400 flex justify-between">
-                    <span>Remaining: {state.computedMetrics.proteinG - 112}g</span>
-                    <span className="text-healthcare-accent font-semibold">75% Hit</span>
+                    <span>Remaining: {proteinRemaining.toLocaleString()}g</span>
+                    <span className="text-healthcare-accent font-semibold">{proteinPct}% Hit</span>
                   </div>
                 </div>
 
@@ -526,10 +638,10 @@ export default function FitSyncApp() {
                     <span className="font-mono">{state.userProfile.waterTargetMl} ml</span>
                   </div>
                   <div className="text-2xl font-headline font-extrabold text-white">
-                    {state.userProfile.waterLoggedMl} <span className="text-xs font-normal text-gray-400">/ {state.userProfile.waterTargetMl} ml</span>
+                    {state.userProfile.waterLoggedMl || 0} <span className="text-xs font-normal text-gray-400">/ {state.userProfile.waterTargetMl} ml</span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
-                    <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${Math.min(100, (state.userProfile.waterLoggedMl / state.userProfile.waterTargetMl) * 100)}%` }} />
+                    <div className="h-full bg-cyan-400 rounded-full transition-all duration-300" style={{ width: `${Math.min(100, (((state.userProfile.waterLoggedMl || 0) / (state.userProfile.waterTargetMl || 3000)) * 100))}%` }} />
                   </div>
                   <button
                     onClick={handleLogHydration}
@@ -971,26 +1083,52 @@ export default function FitSyncApp() {
 
               {/* Logged Meals List */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
-                <h3 className="font-headline font-bold text-white text-lg">Today&apos;s Recorded Meals</h3>
-                <div className="space-y-3">
-                  {state.loggedMeals.map((meal) => (
-                    <div key={meal.id} className="p-4 rounded-2xl bg-surface-2 border border-surface-border flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white">{meal.title}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-3 text-gray-300 font-mono">
-                            {meal.type} • {meal.time}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-gray-400 mt-1">{meal.ingredients}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold font-mono text-fitness-primary">{meal.calories} kcal</div>
-                        <div className="text-[11px] text-healthcare-accent">{meal.protein}g Protein</div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <h3 className="font-headline font-bold text-white text-lg">Today&apos;s Recorded Meals</h3>
+                  <span className="text-xs text-gray-400 font-mono">
+                    {state.loggedMeals.length} {state.loggedMeals.length === 1 ? 'entry' : 'entries'} • {totalCaloriesConsumed} kcal total
+                  </span>
                 </div>
+
+                {state.loggedMeals.length === 0 ? (
+                  <div className="p-8 text-center rounded-2xl bg-surface-2/60 border border-dashed border-surface-border space-y-2">
+                    <Utensils className="w-8 h-8 text-gray-500 mx-auto" />
+                    <div className="text-xs font-bold text-gray-300">No Meals Logged Yet Today</div>
+                    <p className="text-[11px] text-gray-500 max-w-sm mx-auto">
+                      Use the &quot;Log Athletic Meal&quot; form above to record your breakfast, lunch, or post-workout nutrition.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {state.loggedMeals.map((meal) => (
+                      <div key={meal.id} className="p-4 rounded-2xl bg-surface-2 border border-surface-border flex items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-white">{meal.title}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-3 text-gray-300 font-mono">
+                              {meal.type} • {meal.time}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-gray-400 mt-1">{meal.ingredients}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-sm font-bold font-mono text-fitness-primary">{meal.calories} kcal</div>
+                            <div className="text-[11px] text-healthcare-accent">{meal.protein}g Protein</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMeal(meal.id)}
+                            className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                            title="Delete this meal log"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
             </div>
@@ -1002,8 +1140,14 @@ export default function FitSyncApp() {
               
               {/* Profile Summary Card */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border flex flex-col md:flex-row items-center gap-6">
-                <div className="w-24 h-24 rounded-3xl overflow-hidden relative border-2 border-fitness-primary shadow-glow-fitness">
-                  <Image src={state.userProfile.avatarUrl || '/assets/aarav.jpg'} alt={state.userProfile.fullName} fill className="object-cover" />
+                <div className="w-24 h-24 rounded-3xl overflow-hidden relative border-2 border-fitness-primary shadow-glow-fitness flex-shrink-0 flex items-center justify-center bg-surface-2">
+                  {state.userProfile.avatarUrl ? (
+                    <Image src={state.userProfile.avatarUrl} alt={state.userProfile.fullName} fill className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-tr from-fitness-primary to-healthcare-accent flex items-center justify-center text-gray-950 font-extrabold text-2xl font-headline select-none">
+                      {state.userProfile.fullName ? state.userProfile.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
+                    </div>
+                  )}
                 </div>
                 <div className="text-center md:text-left">
                   <h2 className="font-headline font-extrabold text-2xl text-white">{state.userProfile.fullName}</h2>
@@ -1073,24 +1217,47 @@ export default function FitSyncApp() {
 
               {/* Monthly Turnstile Attendance Heatmap */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
-                <h3 className="font-headline font-bold text-white text-lg">Monthly Attendance</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-headline font-bold text-white text-lg">Gym Attendance & Check-Ins</h3>
+                    <p className="text-xs text-gray-400">Turnstile check-in telemetry at {state.selectedGym.name}</p>
+                  </div>
+
+                  {/* Real Interactive Check In Button */}
+                  <button
+                    onClick={handleCheckInToday}
+                    className="px-4 py-2 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition flex items-center gap-1.5 self-start sm:self-auto"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Check In to Gym Today</span>
+                  </button>
+                </div>
+
+                {/* Attendance Metric Bar */}
                 <div className="flex items-center justify-between text-xs text-gray-400 pb-2 border-b border-surface-border">
-                  <span>18 Check-ins this month (86.4% consistency)</span>
+                  <span>
+                    <strong className="text-white">{(state.attendanceRecords || []).length}</strong> Check-ins this month
+                    {new Date().getDate() > 0 && ` (${Math.min(100, Math.round(((state.attendanceRecords || []).length / new Date().getDate()) * 100))}% consistency)`}
+                  </span>
                   <span className="text-fitness-primary font-bold">{state.selectedGym.name}</span>
                 </div>
+
+                {/* Monthly Heatmap Grid */}
                 <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                   {Array.from({ length: 28 }).map((_, i) => {
-                    const isVisited = (i + 1) % 3 !== 0;
+                    const dayNum = i + 1;
+                    const isVisited = (state.attendanceRecords || []).some((r) => r.dayNumber === dayNum);
                     return (
                       <div
                         key={i}
                         className={`h-9 rounded-xl flex items-center justify-center text-xs font-mono font-semibold transition ${
                           isVisited
-                            ? 'bg-fitness-primary/20 text-fitness-primary border border-fitness-primary/40'
+                            ? 'bg-fitness-primary/20 text-fitness-primary border border-fitness-primary/50 shadow-glow-fitness'
                             : 'bg-surface-2 text-gray-600 border border-surface-border'
                         }`}
+                        title={isVisited ? `Checked in on Day ${dayNum}` : `Day ${dayNum} - No check-in`}
                       >
-                        {i + 1}
+                        {dayNum}
                       </div>
                     );
                   })}

@@ -87,13 +87,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Current User Pill */}
           <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-surface-border">
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-fitness-primary/40 relative">
-              <Image 
-                src={userProfile.avatarUrl || '/assets/aarav.jpg'} 
-                alt={userProfile.fullName} 
-                fill 
-                className="object-cover" 
-              />
+            <div className="w-8 h-8 rounded-full overflow-hidden border border-fitness-primary/40 relative flex items-center justify-center bg-surface-2">
+              {userProfile.avatarUrl ? (
+                <Image 
+                  src={userProfile.avatarUrl} 
+                  alt={userProfile.fullName} 
+                  fill 
+                  className="object-cover" 
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-tr from-fitness-primary to-healthcare-accent flex items-center justify-center text-gray-950 font-bold text-[11px] font-headline select-none">
+                  {userProfile.fullName ? userProfile.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
+                </div>
+              )}
             </div>
             <div className="text-left text-xs hidden sm:block">
               <div className="font-semibold text-white leading-tight">
