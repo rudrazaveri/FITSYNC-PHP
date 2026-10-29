@@ -47,6 +47,7 @@ import {
   Building2, 
   Plus, 
   ChevronRight,
+  ChevronLeft,
   Zap,
   Info,
   Trash2,
@@ -82,6 +83,9 @@ export default function FitSyncApp() {
     goal: state.assessmentData?.goal || 'Build Muscle',
     activity: state.assessmentData?.activity || 'Moderately Active'
   });
+
+  // Month-wise Attendance Calendar State (0 = Current Month, -1 = Last Month, +1 = Next Month)
+  const [attendanceMonthOffset, setAttendanceMonthOffset] = useState<number>(0);
 
   // Keep editingStats and draftAssessment synced when state changes
   useEffect(() => {
@@ -339,13 +343,11 @@ export default function FitSyncApp() {
     haptics.playSuccess();
     const today = new Date();
     const dayNum = today.getDate();
-    const dateStr = today.toISOString().split('T')[0];
+    const dateStr = today.toLocaleDateString('en-CA');
     const timeStr = today.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const records = state.attendanceRecords || [];
-    const alreadyCheckedIn = records.some(
-      (r) => r.date === dateStr || r.dayNumber === dayNum
-    );
+    const alreadyCheckedIn = records.some((r) => r.date === dateStr);
 
     if (alreadyCheckedIn) {
       showToast('You are already checked in for today! 🏋️', '✓');
@@ -1630,54 +1632,193 @@ export default function FitSyncApp() {
                 </div>
               </div>
 
-              {/* Monthly Turnstile Attendance Heatmap */}
-              <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-headline font-bold text-white text-lg">Gym Attendance & Check-Ins</h3>
-                    <p className="text-xs text-gray-400">Turnstile check-in telemetry at {state.selectedGym.name}</p>
-                  </div>
+              {/* Month-Wise Turnstile Attendance Heatmap & Calendar */}
+              {(() => {
+                const now = new Date();
+                const activeAttendanceDate = new Date(now.getFullYear(), now.getMonth() + attendanceMonthOffset, 1);
+                const currentMonthYear = activeAttendanceDate.getFullYear();
+                const currentMonthIdx = activeAttendanceDate.getMonth(); // 0-11
+                const currentMonthLabel = activeAttendanceDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                const daysInSelectedMonth = new Date(currentMonthYear, currentMonthIdx + 1, 0).getDate();
+                const firstDayOfWeek = new Date(currentMonthYear, currentMonthIdx, 1).getDay(); // 0=Sun, 1=Mon...
+                const monthPrefix = `${currentMonthYear}-${(currentMonthIdx + 1).toString().padStart(2, '0')}`;
 
-                  {/* Real Interactive Check In Button */}
-                  <button
-                    onClick={handleCheckInToday}
-                    className="px-4 py-2 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition flex items-center gap-1.5 self-start sm:self-auto"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Check In to Gym Today</span>
-                  </button>
-                </div>
+                const isViewingCurrentMonth = attendanceMonthOffset === 0;
+                const todayDayNumber = now.getDate();
+                const todayDateStr = now.toLocaleDateString('en-CA');
 
-                {/* Attendance Metric Bar */}
-                <div className="flex items-center justify-between text-xs text-gray-400 pb-2 border-b border-surface-border">
-                  <span>
-                    <strong className="text-white">{(state.attendanceRecords || []).length}</strong> Check-ins this month
-                    {new Date().getDate() > 0 && ` (${Math.min(100, Math.round(((state.attendanceRecords || []).length / new Date().getDate()) * 100))}% consistency)`}
-                  </span>
-                  <span className="text-fitness-primary font-bold">{state.selectedGym.name}</span>
-                </div>
+                // Filter attendance records strictly for the active viewing month
+                const monthAttendanceRecords = (state.attendanceRecords || []).filter((r) => {
+                  if (r.date) {
+                    return r.date.startsWith(monthPrefix);
+                  }
+                  return attendanceMonthOffset === 0;
+                });
 
-                {/* Monthly Heatmap Grid */}
-                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                  {Array.from({ length: 28 }).map((_, i) => {
-                    const dayNum = i + 1;
-                    const isVisited = (state.attendanceRecords || []).some((r) => r.dayNumber === dayNum);
-                    return (
-                      <div
-                        key={i}
-                        className={`h-9 rounded-xl flex items-center justify-center text-xs font-mono font-semibold transition ${
-                          isVisited
-                            ? 'bg-fitness-primary/20 text-fitness-primary border border-fitness-primary/50 shadow-glow-fitness'
-                            : 'bg-surface-2 text-gray-600 border border-surface-border'
-                        }`}
-                        title={isVisited ? `Checked in on Day ${dayNum}` : `Day ${dayNum} - No check-in`}
-                      >
-                        {dayNum}
+                const daysElapsedInMonth = isViewingCurrentMonth ? Math.max(1, todayDayNumber) : daysInSelectedMonth;
+                const consistencyPct = Math.min(100, Math.round((monthAttendanceRecords.length / daysElapsedInMonth) * 100));
+
+                const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+                return (
+                  <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                    
+                    {/* Header: Title & Actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-headline font-bold text-white text-lg">Gym Attendance &amp; Check-Ins</h3>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-fitness-primary/15 text-fitness-primary border border-fitness-primary/30 font-semibold">
+                            Month-Wise Calendar
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400">Turnstile check-in telemetry at {state.selectedGym.name}</p>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+
+                      {/* Real Interactive Check In Button */}
+                      <button
+                        onClick={handleCheckInToday}
+                        className="px-4 py-2 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition flex items-center gap-1.5 self-start sm:self-auto"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Check In to Gym Today</span>
+                      </button>
+                    </div>
+
+                    {/* Month Switcher Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-surface-2 border border-surface-border">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            haptics.playTap();
+                            setAttendanceMonthOffset((prev) => prev - 1);
+                          }}
+                          className="p-1.5 rounded-xl bg-surface-3 hover:bg-white/10 text-gray-300 hover:text-white transition border border-surface-border"
+                          title="Previous Month"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <div className="px-3 py-1 font-headline font-bold text-white text-xs sm:text-sm flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-fitness-primary" />
+                          <span>{currentMonthLabel}</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            haptics.playTap();
+                            setAttendanceMonthOffset((prev) => prev + 1);
+                          }}
+                          className="p-1.5 rounded-xl bg-surface-3 hover:bg-white/10 text-gray-300 hover:text-white transition border border-surface-border"
+                          title="Next Month"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {!isViewingCurrentMonth && (
+                          <button
+                            onClick={() => {
+                              haptics.playTap();
+                              setAttendanceMonthOffset(0);
+                            }}
+                            className="text-[11px] px-2.5 py-1 rounded-lg bg-surface-3 hover:bg-fitness-primary hover:text-gray-950 text-fitness-primary border border-fitness-primary/30 font-semibold transition"
+                          >
+                            Current Month
+                          </button>
+                        )}
+                        <span className="text-[11px] text-gray-400 font-mono">
+                          {daysInSelectedMonth} Days Total
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Attendance Metric Bar */}
+                    <div className="flex flex-wrap items-center justify-between text-xs text-gray-400 pb-2 border-b border-surface-border gap-2">
+                      <span>
+                        <strong className="text-white">{monthAttendanceRecords.length}</strong> Check-ins in {activeAttendanceDate.toLocaleDateString('en-US', { month: 'short' })}
+                        {' '}({consistencyPct}% consistency)
+                      </span>
+                      <span className="text-fitness-primary font-bold">{state.selectedGym.name}</span>
+                    </div>
+
+                    {/* Weekday Labels */}
+                    <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center">
+                      {weekdayNames.map((d) => (
+                        <div key={d} className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider py-1">
+                          {d}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Monthly Calendar Grid */}
+                    <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                      {/* Blank offset cells for start of month */}
+                      {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                        <div key={`blank_${i}`} className="h-9 sm:h-10 rounded-xl bg-surface-2/20 border border-transparent" />
+                      ))}
+
+                      {/* Day cells for all days in month */}
+                      {Array.from({ length: daysInSelectedMonth }).map((_, i) => {
+                        const dayNum = i + 1;
+                        const dayDateStr = `${monthPrefix}-${dayNum.toString().padStart(2, '0')}`;
+                        const record = (state.attendanceRecords || []).find(
+                          (r) => r.date === dayDateStr || (isViewingCurrentMonth && r.dayNumber === dayNum)
+                        );
+                        const isVisited = Boolean(record);
+                        const isToday = isViewingCurrentMonth && dayNum === todayDayNumber;
+                        const isFuture = isViewingCurrentMonth && dayNum > todayDayNumber;
+
+                        return (
+                          <div
+                            key={dayNum}
+                            className={`h-9 sm:h-10 rounded-xl flex flex-col items-center justify-center text-xs font-mono font-semibold transition border ${
+                              isVisited
+                                ? 'bg-fitness-primary/20 text-fitness-primary border-fitness-primary/60 shadow-glow-fitness'
+                                : isToday
+                                ? 'bg-surface-2 text-white border-healthcare-accent/80'
+                                : isFuture
+                                ? 'bg-surface-2/40 text-gray-600 border-surface-border'
+                                : 'bg-surface-2 text-gray-400 border-surface-border'
+                            }`}
+                            title={
+                              isVisited
+                                ? `Checked in: ${record?.gymName || state.selectedGym.name} on ${dayDateStr} (${record?.time || 'Recorded'})`
+                                : isToday
+                                ? `Today - Day ${dayNum}`
+                                : `Day ${dayNum} - No check-in`
+                            }
+                          >
+                            <span>{dayNum}</span>
+                            {isVisited && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-fitness-primary mt-0.5" />
+                            )}
+                            {isToday && !isVisited && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-healthcare-accent mt-0.5 animate-pulse" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-2 text-[11px] text-gray-400 border-t border-surface-border/60">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-fitness-primary shadow-glow-fitness" />
+                        <span>Attended ({monthAttendanceRecords.length})</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-healthcare-accent" />
+                        <span>Today</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-gray-600" />
+                        <span>Rest / No Check-In</span>
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })()}
 
             </div>
           )}
