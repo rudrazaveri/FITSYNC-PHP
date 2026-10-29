@@ -9,7 +9,8 @@ import {
   Exercise, 
   ExerciseSet,
   PredefinedDietPlan,
-  Gym
+  Gym,
+  WeekDay
 } from '@/types';
 import { 
   getInitialState, 
@@ -21,6 +22,11 @@ import {
   findRegisteredUser,
   AttendanceRecord 
 } from '@/lib/store';
+import { 
+  WEEK_DAYS, 
+  getTodayDayName, 
+  getWorkoutForDay 
+} from '@/lib/initial-data';
 import { calculateHealthMetrics } from '@/lib/assessment-calculator';
 import { haptics } from '@/lib/audio-haptics';
 import { useToast } from '@/components/Toast';
@@ -46,7 +52,10 @@ import {
   Trash2,
   Minus,
   Scale,
-  X
+  X,
+  Calendar,
+  RotateCcw,
+  Edit3
 } from 'lucide-react';
 
 export default function FitSyncApp() {
@@ -64,6 +73,49 @@ export default function FitSyncApp() {
 
   // Assessment Wizard Draft State
   const [draftAssessment, setDraftAssessment] = useState<HealthAssessmentData>(state.assessmentData);
+
+  // Quick Stat Editing State (Age, Weight, Height, Goal, Activity)
+  const [editingStats, setEditingStats] = useState({
+    age: state.assessmentData?.age || 24,
+    weightKg: state.assessmentData?.weightKg || 70,
+    heightCm: state.assessmentData?.heightCm || 175,
+    goal: state.assessmentData?.goal || 'Build Muscle',
+    activity: state.assessmentData?.activity || 'Moderately Active'
+  });
+
+  // Keep editingStats and draftAssessment synced when state changes
+  useEffect(() => {
+    if (state.assessmentData) {
+      setEditingStats({
+        age: state.assessmentData.age || 24,
+        weightKg: state.assessmentData.weightKg || 70,
+        heightCm: state.assessmentData.heightCm || 175,
+        goal: state.assessmentData.goal || 'Build Muscle',
+        activity: state.assessmentData.activity || 'Moderately Active'
+      });
+      setDraftAssessment(state.assessmentData);
+    }
+  }, [state.assessmentData]);
+
+  // Daily Rollover Check: When date changes, reset daily trackers
+  useEffect(() => {
+    const todayDateStr = new Date().toLocaleDateString('en-CA');
+    const todayDayName = getTodayDayName();
+
+    if (state.lastActiveDate && state.lastActiveDate !== todayDateStr) {
+      // Automatic day reset!
+      updateState((prev) => ({
+        ...prev,
+        lastActiveDate: todayDateStr,
+        selectedWorkoutDay: todayDayName,
+        activeWorkout: JSON.parse(JSON.stringify(getWorkoutForDay(todayDayName))),
+        userProfile: {
+          ...prev.userProfile,
+          waterLoggedMl: 0 // Reset daily hydration
+        }
+      }));
+    }
+  }, []);
 
   // New Meal Logging Draft State
   const [newMealType, setNewMealType] = useState('Lunch');
@@ -115,7 +167,7 @@ export default function FitSyncApp() {
             });
             setState(cleanState);
             saveState(cleanState);
-            showToast(`Welcome to FitSync AI, ${credentials.name}! Your account has started with a clean slate. 🎉`, '🎉');
+            showToast(`Welcome to FitSync AI, ${credentials.name}! Your account is ready. 🎉`, '🎉');
             return;
           }
 
@@ -157,7 +209,18 @@ export default function FitSyncApp() {
   }
 
   // 2. Member Dashboard Handlers & Dynamic Telemetry
-  const totalCaloriesConsumed = (state.loggedMeals || []).reduce(
+  const todayDateStr = new Date().toLocaleDateString('en-CA');
+  const todayDayName = getTodayDayName();
+
+  // Filter meals: Today's fresh meals vs earlier days history
+  const todayMeals = (state.loggedMeals || []).filter(
+    (m) => !m.date || m.date === todayDateStr
+  );
+  const earlierMeals = (state.loggedMeals || []).filter(
+    (m) => m.date && m.date !== todayDateStr
+  );
+
+  const totalCaloriesConsumed = todayMeals.reduce(
     (sum, m) => sum + (Number(m.calories) || 0),
     0
   );
@@ -165,13 +228,88 @@ export default function FitSyncApp() {
   const caloriesRemaining = Math.max(0, calorieTarget - totalCaloriesConsumed);
   const caloriesPct = calorieTarget > 0 ? Math.min(100, Math.round((totalCaloriesConsumed / calorieTarget) * 100)) : 0;
 
-  const totalProteinConsumed = (state.loggedMeals || []).reduce(
+  const totalProteinConsumed = todayMeals.reduce(
     (sum, m) => sum + (Number(m.protein) || 0),
     0
   );
   const proteinTarget = state.computedMetrics.proteinG || 140;
   const proteinRemaining = Math.max(0, proteinTarget - totalProteinConsumed);
   const proteinPct = proteinTarget > 0 ? Math.min(100, Math.round((totalProteinConsumed / proteinTarget) * 100)) : 0;
+
+  // Manual Reset of Today's Trackers (Water & Today's Meals)
+  const handleResetTodayTrackers = () => {
+    haptics.playTap();
+    updateState((prev) => ({
+      ...prev,
+      userProfile: {
+        ...prev.userProfile,
+        waterLoggedMl: 0
+      },
+      loggedMeals: (prev.loggedMeals || []).filter((m) => m.date && m.date !== todayDateStr)
+    }));
+    showToast("Today's water and meal logs reset for a fresh start!", "🔄");
+  };
+
+  // Workout Split: Switch routine to selected day of week
+  const handleSelectWorkoutDay = (day: WeekDay) => {
+    haptics.playTap();
+    const routine = getWorkoutForDay(day);
+    updateState((prev) => ({
+      ...prev,
+      selectedWorkoutDay: day,
+      activeWorkout: JSON.parse(JSON.stringify(routine))
+    }));
+    showToast(`Loaded ${day}'s workout: ${routine.title}`, '🏋️');
+  };
+
+  // Reset active workout sets to pending
+  const handleResetWorkoutSets = () => {
+    haptics.playTap();
+    updateState((prev) => ({
+      ...prev,
+      activeWorkout: {
+        ...prev.activeWorkout,
+        exercises: prev.activeWorkout.exercises.map((ex) => ({
+          ...ex,
+          completedSets: ex.completedSets.map((s) => ({ ...s, status: 'pending' as const }))
+        }))
+      }
+    }));
+    showToast("Workout sets reset to fresh pending status for today!", "🔄");
+  };
+
+  // Option for changing user stats: Age, Weight, Height, Goal, Activity Level
+  const handleSaveStats = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    haptics.playSuccess();
+    const age = Math.max(14, Math.min(100, Number(editingStats.age) || 24));
+    const weightKg = Math.max(30, Math.min(300, Number(editingStats.weightKg) || 70));
+    const heightCm = Math.max(100, Math.min(250, Number(editingStats.heightCm) || 175));
+
+    const updatedAssessment: HealthAssessmentData = {
+      ...state.assessmentData,
+      age,
+      weightKg,
+      heightCm,
+      goal: editingStats.goal as any,
+      activity: editingStats.activity as any
+    };
+
+    const newMetrics = calculateHealthMetrics(updatedAssessment);
+    const newWaterTarget = Math.round(weightKg * 42);
+
+    updateState((prev) => ({
+      ...prev,
+      assessmentData: updatedAssessment,
+      computedMetrics: newMetrics,
+      userProfile: {
+        ...prev.userProfile,
+        waterTargetMl: newWaterTarget
+      }
+    }));
+
+    showToast(`Stats updated: ${weightKg}kg, ${heightCm}cm, age ${age}. Targets recalculated! 🎉`, '✅');
+  };
 
   const handleLogHydration = () => {
     haptics.playTap();
@@ -450,13 +588,18 @@ export default function FitSyncApp() {
   const handleSaveAssessment = () => {
     haptics.playSuccess();
     const newMetrics = calculateHealthMetrics(draftAssessment);
+    const newWaterTarget = Math.round((Number(draftAssessment.weightKg) || 70) * 42);
     updateState((prev) => ({
       ...prev,
       assessmentData: draftAssessment,
-      computedMetrics: newMetrics
+      computedMetrics: newMetrics,
+      userProfile: {
+        ...prev.userProfile,
+        waterTargetMl: newWaterTarget
+      }
     }));
     setIsAssessmentModalOpen(false);
-    showToast('Health Metrics calculated with Mifflin-St Jeor formula!', '📊');
+    showToast('Health metrics and caloric targets updated!', '✅');
   };
 
   const handleAddMeal = (e: React.FormEvent) => {
@@ -466,6 +609,7 @@ export default function FitSyncApp() {
     haptics.playSuccess();
     const meal = {
       id: `m_${Date.now()}`,
+      date: todayDateStr,
       type: newMealType,
       title: newMealTitle.trim(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -548,6 +692,34 @@ export default function FitSyncApp() {
           {activeTab === 'home' && (
             <div className="space-y-6 animate-in fade-in duration-200">
               
+              {/* Daily Reset Status & Quick Action Banner */}
+              <div className="p-3.5 rounded-2xl bg-surface-1 border border-surface-border flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-1.5 rounded-xl bg-fitness-primary/10 text-fitness-primary border border-fitness-primary/30">
+                    <Calendar className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <span className="font-bold text-white">
+                      {todayDayName}, {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    <span className="text-gray-400 text-[11px] ml-2">
+                      • Daily trackers reset automatically for today
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleResetTodayTrackers}
+                    className="px-2.5 py-1 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white border border-surface-border text-[11px] font-semibold transition flex items-center gap-1"
+                    title="Reset today's water and meal logs to 0"
+                  >
+                    <RotateCcw className="w-3 h-3 text-fitness-primary" />
+                    <span>Reset Today&apos;s Trackers</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Hero Greeting Card */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border relative overflow-hidden">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
@@ -680,7 +852,7 @@ export default function FitSyncApp() {
                       <Dumbbell className="w-5 h-5" />
                     </span>
                     <div>
-                      <h3 className="font-headline font-bold text-white text-lg">Today&apos;s Workout Routine</h3>
+                      <h3 className="font-headline font-bold text-white text-lg">{todayDayName}&apos;s Workout Routine</h3>
                       <p className="text-xs text-gray-400">{state.activeWorkout.title} • {state.activeWorkout.focus}</p>
                     </div>
                   </div>
@@ -735,14 +907,56 @@ export default function FitSyncApp() {
               
               {/* Workout Top Bar */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                
+                {/* 7-Day Workout Schedule Split Selector */}
+                <div className="space-y-2 pb-3 border-b border-surface-border">
+                  <div className="flex items-center justify-between text-xs text-gray-400">
+                    <span className="flex items-center gap-1.5 font-bold text-white">
+                      <Calendar className="w-3.5 h-3.5 text-fitness-primary" /> Daily Workout Split (7 Days)
+                    </span>
+                    <span className="text-[11px] text-fitness-primary font-mono">
+                      Today: <strong className="text-white">{todayDayName}</strong>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                    {WEEK_DAYS.map((day) => {
+                      const isSelected = (state.selectedWorkoutDay || todayDayName) === day;
+                      const isToday = day === todayDayName;
+                      return (
+                        <button
+                          key={day}
+                          onClick={() => handleSelectWorkoutDay(day)}
+                          className={`py-2 px-1 rounded-xl text-center transition flex flex-col items-center justify-center border ${
+                            isSelected
+                              ? 'bg-fitness-primary text-gray-950 font-bold border-fitness-primary shadow-glow-fitness'
+                              : isToday
+                              ? 'bg-surface-2 text-white border-fitness-primary/50'
+                              : 'bg-surface-2/60 text-gray-400 border-surface-border hover:text-white hover:border-gray-500'
+                          }`}
+                        >
+                          <span className="text-[10px] sm:text-xs font-semibold">{day.slice(0, 3)}</span>
+                          {isToday && (
+                            <span className={`text-[8px] sm:text-[9px] px-1 rounded-full uppercase tracking-wider font-extrabold ${
+                              isSelected ? 'bg-gray-950 text-fitness-primary' : 'bg-fitness-primary/20 text-fitness-primary'
+                            }`}>
+                              Today
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-fitness-primary uppercase tracking-wider">
-                        Active Training Session
+                        {state.selectedWorkoutDay || todayDayName}&apos;s Routine
                       </span>
                       <span className="text-[10px] px-2 py-0.5 rounded-md bg-fitness-primary/10 text-fitness-primary border border-fitness-primary/25 font-semibold">
-                        Manual Logging Enabled
+                        {state.selectedWorkoutDay === todayDayName ? 'Today Scheduled' : 'Daily Routine Preview'}
                       </span>
                     </div>
                     <h2 className="font-headline font-extrabold text-2xl text-white mt-1">
@@ -753,7 +967,15 @@ export default function FitSyncApp() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center flex-wrap gap-2.5">
+                    <button
+                      onClick={handleResetWorkoutSets}
+                      className="px-3 py-2 bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white font-semibold text-xs rounded-xl border border-surface-border transition flex items-center gap-1.5"
+                      title="Reset completed sets to pending for today"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-fitness-primary" />
+                      <span>Reset Sets</span>
+                    </button>
                     <button
                       onClick={() => setIsAddExerciseModalOpen(true)}
                       className="px-4 py-2 bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs rounded-xl shadow-glow-fitness transition flex items-center gap-1.5"
@@ -989,11 +1211,22 @@ export default function FitSyncApp() {
                       Daily Caloric Target: {state.computedMetrics.calorieTarget} kcal
                     </h2>
                     <p className="text-xs text-gray-400">
-                      Calculated for <strong className="text-white">{state.assessmentData.goal}</strong> using Mifflin-St Jeor formula
+                      Personalized daily targets tailored for <strong className="text-white">{state.assessmentData.goal}</strong> based on your physical metrics &amp; activity
                     </p>
                   </div>
-                  <div className="text-right sm:text-left">
-                    <span className="text-xs bg-surface-2 px-3 py-1 rounded-full border border-surface-border text-gray-300">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => {
+                        haptics.playTap();
+                        setActiveTab('profile');
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 border border-fitness-primary/40 text-xs text-fitness-primary font-semibold flex items-center gap-1.5 transition shadow-sm"
+                      title="Edit Age, Weight, Height in Profile"
+                    >
+                      <Scale className="w-3.5 h-3.5" />
+                      <span>Change Stats (Weight/Age/Height)</span>
+                    </button>
+                    <span className="text-xs bg-surface-2 px-3 py-1.5 rounded-xl border border-surface-border text-gray-300">
                       Active: <strong className="text-white">{state.activeDietPlan.title}</strong>
                     </span>
                   </div>
@@ -1086,21 +1319,21 @@ export default function FitSyncApp() {
                 <div className="flex items-center justify-between">
                   <h3 className="font-headline font-bold text-white text-lg">Today&apos;s Recorded Meals</h3>
                   <span className="text-xs text-gray-400 font-mono">
-                    {state.loggedMeals.length} {state.loggedMeals.length === 1 ? 'entry' : 'entries'} • {totalCaloriesConsumed} kcal total
+                    {todayMeals.length} {todayMeals.length === 1 ? 'entry' : 'entries'} • {totalCaloriesConsumed} kcal total
                   </span>
                 </div>
 
-                {state.loggedMeals.length === 0 ? (
+                {todayMeals.length === 0 ? (
                   <div className="p-8 text-center rounded-2xl bg-surface-2/60 border border-dashed border-surface-border space-y-2">
                     <Utensils className="w-8 h-8 text-gray-500 mx-auto" />
                     <div className="text-xs font-bold text-gray-300">No Meals Logged Yet Today</div>
                     <p className="text-[11px] text-gray-500 max-w-sm mx-auto">
-                      Use the &quot;Log Athletic Meal&quot; form above to record your breakfast, lunch, or post-workout nutrition.
+                      Today started fresh with 0 kcal consumed. Use the &quot;Log Athletic Meal&quot; form above to record your nutrition for today!
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {state.loggedMeals.map((meal) => (
+                    {todayMeals.map((meal) => (
                       <div key={meal.id} className="p-4 rounded-2xl bg-surface-2 border border-surface-border flex items-center justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
@@ -1127,6 +1360,26 @@ export default function FitSyncApp() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Earlier Days History Section */}
+                {earlierMeals.length > 0 && (
+                  <div className="pt-4 border-t border-surface-border space-y-2">
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Earlier Logged History ({earlierMeals.length} past meals)
+                    </div>
+                    <div className="space-y-2 opacity-80">
+                      {earlierMeals.slice(0, 5).map((meal) => (
+                        <div key={meal.id} className="p-3 rounded-xl bg-surface-2/60 border border-surface-border flex items-center justify-between text-xs">
+                          <div>
+                            <span className="text-gray-300 font-semibold">{meal.title}</span>
+                            <span className="text-[10px] text-gray-500 ml-2">{meal.date || 'Earlier'} • {meal.time}</span>
+                          </div>
+                          <span className="text-gray-400 font-mono">{meal.calories} kcal</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1168,12 +1421,174 @@ export default function FitSyncApp() {
                 </div>
               </div>
 
+              {/* Quick Body Stats & Biometrics Editor */}
+              <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-headline font-bold text-white text-lg flex items-center gap-2">
+                      <Scale className="w-5 h-5 text-fitness-primary" /> Body Stats &amp; Physical Attributes
+                    </h3>
+                    <p className="text-xs text-gray-400">
+                      Change your age, weight, or height anytime to update your caloric targets and macro goals.
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-fitness-primary bg-fitness-primary/10 border border-fitness-primary/30 px-2.5 py-1 rounded-full font-semibold self-start sm:self-auto">
+                    Live Telemetry Sync
+                  </span>
+                </div>
+
+                <form onSubmit={handleSaveStats} className="space-y-4 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    
+                    {/* Weight Input with Steppers */}
+                    <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border space-y-2">
+                      <label className="text-xs font-semibold text-gray-300 flex items-center justify-between">
+                        <span>Weight (kg)</span>
+                        <span className="text-[10px] text-fitness-primary font-mono font-bold">{editingStats.weightKg} kg</span>
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditingStats(prev => ({ ...prev, weightKg: Math.max(30, +(prev.weightKg - 0.5).toFixed(1)) }))}
+                          className="w-8 h-8 rounded-xl bg-surface-3 hover:bg-white/10 text-gray-300 font-bold flex items-center justify-center transition border border-surface-border"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="30"
+                          max="250"
+                          value={editingStats.weightKg}
+                          onChange={(e) => setEditingStats(prev => ({ ...prev, weightKg: parseFloat(e.target.value) || 0 }))}
+                          className="w-full bg-surface-1 border border-surface-border rounded-xl px-3 py-1.5 text-center text-xs font-bold text-white focus:outline-none focus:border-fitness-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setEditingStats(prev => ({ ...prev, weightKg: Math.min(250, +(prev.weightKg + 0.5).toFixed(1)) }))}
+                          className="w-8 h-8 rounded-xl bg-surface-3 hover:bg-white/10 text-gray-300 font-bold flex items-center justify-center transition border border-surface-border"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Height Input with Steppers */}
+                    <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border space-y-2">
+                      <label className="text-xs font-semibold text-gray-300 flex items-center justify-between">
+                        <span>Height (cm)</span>
+                        <span className="text-[10px] text-healthcare-accent font-mono font-bold">{editingStats.heightCm} cm</span>
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditingStats(prev => ({ ...prev, heightCm: Math.max(100, prev.heightCm - 1) }))}
+                          className="w-8 h-8 rounded-xl bg-surface-3 hover:bg-white/10 text-gray-300 font-bold flex items-center justify-center transition border border-surface-border"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="100"
+                          max="240"
+                          value={editingStats.heightCm}
+                          onChange={(e) => setEditingStats(prev => ({ ...prev, heightCm: parseInt(e.target.value) || 0 }))}
+                          className="w-full bg-surface-1 border border-surface-border rounded-xl px-3 py-1.5 text-center text-xs font-bold text-white focus:outline-none focus:border-fitness-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setEditingStats(prev => ({ ...prev, heightCm: Math.min(240, prev.heightCm + 1) }))}
+                          className="w-8 h-8 rounded-xl bg-surface-3 hover:bg-white/10 text-gray-300 font-bold flex items-center justify-center transition border border-surface-border"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Age Input with Steppers */}
+                    <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border space-y-2">
+                      <label className="text-xs font-semibold text-gray-300 flex items-center justify-between">
+                        <span>Age (years)</span>
+                        <span className="text-[10px] text-amber-300 font-mono font-bold">{editingStats.age} yrs</span>
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditingStats(prev => ({ ...prev, age: Math.max(14, prev.age - 1) }))}
+                          className="w-8 h-8 rounded-xl bg-surface-3 hover:bg-white/10 text-gray-300 font-bold flex items-center justify-center transition border border-surface-border"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="14"
+                          max="95"
+                          value={editingStats.age}
+                          onChange={(e) => setEditingStats(prev => ({ ...prev, age: parseInt(e.target.value) || 0 }))}
+                          className="w-full bg-surface-1 border border-surface-border rounded-xl px-3 py-1.5 text-center text-xs font-bold text-white focus:outline-none focus:border-fitness-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setEditingStats(prev => ({ ...prev, age: Math.min(95, prev.age + 1) }))}
+                          className="w-8 h-8 rounded-xl bg-surface-3 hover:bg-white/10 text-gray-300 font-bold flex items-center justify-center transition border border-surface-border"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Goal & Activity Level */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-400">Primary Goal</label>
+                      <select
+                        value={editingStats.goal}
+                        onChange={(e) => setEditingStats(prev => ({ ...prev, goal: e.target.value as any }))}
+                        className="w-full bg-surface-2 border border-surface-border rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-fitness-primary"
+                      >
+                        <option value="Build Muscle">Build Muscle (Hypertrophy Surplus)</option>
+                        <option value="Lose Weight">Lose Weight (Fat Loss Deficit)</option>
+                        <option value="Increase Strength">Increase Strength</option>
+                        <option value="General Fitness">General Fitness</option>
+                        <option value="Improve Endurance">Improve Endurance</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-400">Activity Level</label>
+                      <select
+                        value={editingStats.activity}
+                        onChange={(e) => setEditingStats(prev => ({ ...prev, activity: e.target.value as any }))}
+                        className="w-full bg-surface-2 border border-surface-border rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-fitness-primary"
+                      >
+                        <option value="Sedentary">Sedentary (Little or no exercise)</option>
+                        <option value="Lightly Active">Lightly Active (1-3 days/wk)</option>
+                        <option value="Moderately Active">Moderately Active (3-5 days/wk)</option>
+                        <option value="Very Active">Very Active (6-7 days/wk)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition flex items-center gap-1.5"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Save &amp; Recalculate Daily Targets</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+
               {/* Biometrics Engine Summary */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-headline font-bold text-white text-lg">Biometric Health Calculations</h3>
-                    <p className="text-xs text-gray-400">Computed using Mifflin-St Jeor & U.S. Navy Body Fat Model</p>
+                    <p className="text-xs text-gray-400">Personalized biometrics based on your body composition</p>
                   </div>
                   <button
                     onClick={() => {
@@ -1211,7 +1626,7 @@ export default function FitSyncApp() {
 
                 <div className="p-3 rounded-2xl bg-surface-2 border border-white/5 flex items-start gap-2.5 text-xs text-gray-400">
                   <Info className="w-4 h-4 text-healthcare-primary flex-shrink-0 mt-0.5" />
-                  <span>Athletic wellness calculations. Mifflin-St Jeor formula calculates resting metabolic rate adjusted by activity level and training goals.</span>
+                  <span>Your personalized caloric burn and macro budget are dynamically calculated to support your current body weight, height, age, and fitness goal.</span>
                 </div>
               </div>
 
@@ -1286,7 +1701,7 @@ export default function FitSyncApp() {
             <div className="p-5 border-b border-surface-border flex items-center justify-between bg-surface-1">
               <div>
                 <h3 className="font-headline font-bold text-white text-lg">Health Assessment</h3>
-                <p className="text-xs text-gray-400">Mifflin-St Jeor BMR & Athletic Energy Engine</p>
+                <p className="text-xs text-gray-400">Personalized Caloric Target &amp; Macro Allocation</p>
               </div>
               <button onClick={() => setIsAssessmentModalOpen(false)} className="text-gray-400 hover:text-white text-xs">Cancel</button>
             </div>

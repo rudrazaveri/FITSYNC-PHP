@@ -8,11 +8,15 @@ import {
   Gym, 
   WorkoutRoutine, 
   PredefinedDietPlan, 
-  NotificationItem
+  NotificationItem,
+  WeekDay
 } from '@/types';
 import { 
   INITIAL_GYMS, 
   INITIAL_WORKOUT_ROUTINE, 
+  WEEKLY_WORKOUT_ROUTINES,
+  getTodayDayName,
+  getWorkoutForDay,
   PREDEFINED_DIET_PLANS, 
   INITIAL_NOTIFICATIONS 
 } from './initial-data';
@@ -33,6 +37,8 @@ export interface AttendanceRecord {
 export interface AppState {
   isAuthenticated: boolean;
   isDemoUser?: boolean;
+  lastActiveDate: string; // YYYY-MM-DD
+  selectedWorkoutDay: WeekDay;
   userProfile: UserProfile;
   assessmentData: HealthAssessmentData;
   computedMetrics: ComputedMetrics;
@@ -43,6 +49,7 @@ export interface AppState {
   activeDietPlan: PredefinedDietPlan;
   loggedMeals: {
     id: string;
+    date?: string; // YYYY-MM-DD
     type: string;
     title: string;
     time: string;
@@ -148,27 +155,39 @@ const DEMO_ATTENDANCE: AttendanceRecord[] = DEMO_ATTENDANCE_DAYS.map((day) => ({
 }));
 
 export function createDemoState(): AppState {
+  const todayDateStr = new Date().toLocaleDateString('en-CA');
+  const todayDayName = getTodayDayName();
+  const demoMeals = DEFAULT_LOGGED_MEALS.map((m) => ({
+    ...m,
+    date: todayDateStr
+  }));
+
   return {
     isAuthenticated: true,
     isDemoUser: true,
+    lastActiveDate: todayDateStr,
+    selectedWorkoutDay: todayDayName,
     userProfile: { ...DEFAULT_USER },
     assessmentData: { ...DEFAULT_ASSESSMENT },
     computedMetrics: { ...DEFAULT_METRICS },
     gyms: INITIAL_GYMS,
     selectedGym: INITIAL_GYMS[0],
-    activeWorkout: JSON.parse(JSON.stringify(INITIAL_WORKOUT_ROUTINE)),
+    activeWorkout: JSON.parse(JSON.stringify(getWorkoutForDay(todayDayName))),
     predefinedDietPlans: PREDEFINED_DIET_PLANS,
     activeDietPlan: PREDEFINED_DIET_PLANS[0],
-    loggedMeals: [...DEFAULT_LOGGED_MEALS],
+    loggedMeals: [...demoMeals],
     notifications: [...INITIAL_NOTIFICATIONS],
     attendanceRecords: [...DEMO_ATTENDANCE]
   };
 }
 
 // ---------------- NEWLY REGISTERED USER CLEAN STATE ----------------
-// Creates a 100% clean state with NO PREDEFINED MEALS, 0 hydration, 0 volume moved,
-// fresh pending workout sets, and strictly personalized Mifflin-St Jeor metrics.
+// Creates a clean state with NO PREDEFINED MEALS, 0 hydration, 0 volume moved,
+// fresh pending workout sets, and personalized body metrics.
 export function createCleanUserState(params: NewUserRegistrationParams): AppState {
+  const todayDateStr = new Date().toLocaleDateString('en-CA');
+  const todayDayName = getTodayDayName();
+
   const age = params.age && params.age > 0 ? params.age : 24;
   const heightCm = params.heightCm && params.heightCm > 0 ? params.heightCm : 175;
   const weightKg = params.weightKg && params.weightKg > 0 ? params.weightKg : 70;
@@ -193,8 +212,9 @@ export function createCleanUserState(params: NewUserRegistrationParams): AppStat
   const metrics = calculateHealthMetrics(assessment);
   const waterTarget = Math.round(weightKg * 42);
 
-  // Fresh workout routine where every set starts clean as 'pending' (0 volume moved, 0 completed sets)
-  const freshExercises = INITIAL_WORKOUT_ROUTINE.exercises.map((ex) => ({
+  // Today's scheduled workout routine with fresh pending sets
+  const todayRoutine = getWorkoutForDay(todayDayName);
+  const freshExercises = todayRoutine.exercises.map((ex) => ({
     ...ex,
     completedSets: ex.completedSets.map((s, idx) => ({
       ...s,
@@ -204,7 +224,7 @@ export function createCleanUserState(params: NewUserRegistrationParams): AppStat
   }));
 
   const freshWorkout: WorkoutRoutine = {
-    ...INITIAL_WORKOUT_ROUTINE,
+    ...todayRoutine,
     exercises: freshExercises
   };
 
@@ -238,7 +258,7 @@ export function createCleanUserState(params: NewUserRegistrationParams): AppStat
     {
       id: `notif_${Date.now()}`,
       title: `Welcome to ${gym.name}!`,
-      desc: `Hi ${params.fullName.split(' ')[0]}, your personal athletic profile has been initialized with 0 pre-filled logs. Track your meals, hydration, and gym workouts right here.`,
+      desc: `Hi ${params.fullName.split(' ')[0]}, your personal athletic profile has been initialized with clean daily trackers. Track your meals, hydration, and gym workouts right here.`,
       time: 'Just now',
       type: 'gym',
       actionText: 'Get Started',
@@ -249,6 +269,8 @@ export function createCleanUserState(params: NewUserRegistrationParams): AppStat
   return {
     isAuthenticated: true,
     isDemoUser: false,
+    lastActiveDate: todayDateStr,
+    selectedWorkoutDay: todayDayName,
     userProfile,
     assessmentData: assessment,
     computedMetrics: metrics,
@@ -294,6 +316,9 @@ export function findRegisteredUser(email: string): RegisteredUserRecord | null {
 
 // ---------------- GET & SAVE APP STATE ----------------
 export function getInitialState(): AppState {
+  const todayDateStr = new Date().toLocaleDateString('en-CA');
+  const todayDayName = getTodayDayName();
+
   if (typeof window === 'undefined') {
     const demo = createDemoState();
     return { ...demo, isAuthenticated: false };
@@ -303,9 +328,25 @@ export function getInitialState(): AppState {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
+      const isNewDay = parsed.lastActiveDate && parsed.lastActiveDate !== todayDateStr;
+
+      const userProfile = parsed.userProfile || DEFAULT_USER;
+      if (isNewDay) {
+        userProfile.waterLoggedMl = 0; // Daily reset: hydration starts fresh today!
+      }
+
+      const selectedWorkoutDay: WeekDay = isNewDay ? todayDayName : (parsed.selectedWorkoutDay || todayDayName);
+      const activeWorkout = isNewDay 
+        ? JSON.parse(JSON.stringify(getWorkoutForDay(todayDayName)))
+        : (parsed.activeWorkout || JSON.parse(JSON.stringify(getWorkoutForDay(selectedWorkoutDay))));
+
       return {
         ...parsed,
         isAuthenticated: typeof parsed.isAuthenticated === 'boolean' ? parsed.isAuthenticated : false,
+        lastActiveDate: todayDateStr,
+        selectedWorkoutDay,
+        userProfile,
+        activeWorkout,
         gyms: parsed.gyms || INITIAL_GYMS,
         selectedGym: parsed.selectedGym || INITIAL_GYMS[0],
         predefinedDietPlans: parsed.predefinedDietPlans || PREDEFINED_DIET_PLANS,

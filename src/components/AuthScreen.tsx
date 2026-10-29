@@ -4,23 +4,23 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { UserRole, Gym } from '@/types';
 import { haptics } from '@/lib/audio-haptics';
-import { 
-  NewUserRegistrationParams, 
-  findRegisteredUser, 
-  getRegisteredUsers 
+import {
+  NewUserRegistrationParams,
+  findRegisteredUser,
+  getRegisteredUsers
 } from '@/lib/store';
-import { 
-  Dumbbell, 
-  Sparkles, 
-  ShieldCheck, 
-  ArrowRight, 
-  Building2, 
-  UserCheck, 
-  Flame, 
-  CheckCircle2, 
-  Lock, 
-  Mail, 
-  KeyRound, 
+import {
+  Dumbbell,
+  Sparkles,
+  ShieldCheck,
+  ArrowRight,
+  Building2,
+  UserCheck,
+  Flame,
+  CheckCircle2,
+  Lock,
+  Mail,
+  KeyRound,
   Activity,
   Layers,
   Scale,
@@ -46,7 +46,7 @@ interface AuthScreenProps {
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) => {
   const [activeTab, setActiveTab] = useState<'signin' | 'register' | 'demo'>('register');
-  
+
   // Sign In Form State
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -60,7 +60,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
   const [regPassword, setRegPassword] = useState('');
   const [selectedGymId, setSelectedGymId] = useState<string>(gyms[0]?.id || 'gym_fitzone_vadodara');
   const [regGoal, setRegGoal] = useState<'Build Muscle' | 'Lose Weight' | 'Increase Strength' | 'Improve Endurance' | 'General Fitness'>('Build Muscle');
-  
+
   // Biometrics for accurate Mifflin-St Jeor calculation (No pre-defined fake data!)
   const [regGender, setRegGender] = useState<'Male' | 'Female' | 'Other'>('Male');
   const [regAge, setRegAge] = useState<number>(24);
@@ -174,7 +174,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
 
   return (
     <div className="min-h-screen bg-canvas-base text-gray-100 flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
-      
+
       {/* Background Ambient Glows */}
       <div className="absolute top-1/4 -left-48 w-96 h-96 bg-fitness-primary/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-healthcare-primary/10 rounded-full blur-3xl pointer-events-none" />
@@ -182,24 +182,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
       {/* Main Container */}
       <div className="w-full max-w-xl z-10 space-y-6">
 
-        {/* Platform Status Pill Banner */}
-        <div className="flex items-center justify-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-fitness-primary/10 border border-fitness-primary/30 text-fitness-primary text-xs font-semibold backdrop-blur-md shadow-glow-fitness">
-            <span className="w-2 h-2 rounded-full bg-fitness-primary animate-pulse" />
-            <span>Intelligent Multi-Gym Platform</span>
-            <span className="text-gray-400">•</span>
-            <span className="text-gray-300 font-normal">Clean Athlete Onboarding</span>
-          </div>
-        </div>
-
         {/* Brand Header */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-surface-2 border border-fitness-primary/40 shadow-glow-fitness mb-1">
             <div className="relative w-12 h-12 rounded-xl overflow-hidden">
-              <Image 
-                src="/assets/logo.jpg" 
-                alt="FitSync AI Logo" 
-                fill 
+              <Image
+                src="/assets/logo.jpg"
+                alt="FitSync AI Logo"
+                fill
                 className="object-cover"
                 priority
               />
@@ -215,7 +205,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
 
         {/* Card Box */}
         <div className="bg-surface-1/90 backdrop-blur-xl border border-surface-border rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-          
+
           {/* Tabs Selector */}
           <div className="grid grid-cols-3 gap-1.5 bg-surface-2 p-1.5 rounded-2xl border border-surface-border">
             <button
@@ -223,11 +213,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
                 haptics.playTap();
                 setActiveTab('register');
               }}
-              className={`py-2 text-xs font-bold rounded-xl transition-all ${
-                activeTab === 'register'
+              className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'register'
                   ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
                   : 'text-gray-400 hover:text-white'
-              }`}
+                }`}
             >
               Register (New)
             </button>
@@ -236,11 +225,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
                 haptics.playTap();
                 setActiveTab('signin');
               }}
-              className={`py-2 text-xs font-bold rounded-xl transition-all ${
-                activeTab === 'signin'
+              className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'signin'
                   ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
                   : 'text-gray-400 hover:text-white'
-              }`}
+                }`}
             >
               Sign In
             </button>
@@ -249,27 +237,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
                 haptics.playTap();
                 setActiveTab('demo');
               }}
-              className={`py-2 text-xs font-bold rounded-xl transition-all ${
-                activeTab === 'demo'
+              className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'demo'
                   ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
                   : 'text-gray-400 hover:text-white'
-              }`}
+                }`}
             >
               ⚡ 1-Click Demo
             </button>
           </div>
 
-          {/* TAB 1: NEW MEMBER REGISTRATION & CLEAN ONBOARDING */}
+          {/* TAB 1: NEW MEMBER REGISTRATION & ONBOARDING */}
           {activeTab === 'register' && (
             <form onSubmit={handleRegister} className="space-y-4 animate-in fade-in duration-200">
-              
-              {/* Clean Account Notice */}
-              <div className="p-3 rounded-2xl bg-fitness-primary/10 border border-fitness-primary/30 text-xs text-fitness-primary flex items-start gap-2">
-                <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>
-                  <strong>Clean Slate Guarantee:</strong> New registrations start with 0 pre-filled meals, 0 hydration logs, 0 volume moved, and personalized BMR/TDEE calculated from your stats.
-                </span>
-              </div>
 
               {/* 1. Account Details */}
               <div className="space-y-3">
@@ -423,11 +402,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
                           haptics.playTap();
                           setSelectedGymId(gym.id);
                         }}
-                        className={`p-3 rounded-2xl border cursor-pointer transition flex items-center justify-between ${
-                          isSelected
+                        className={`p-3 rounded-2xl border cursor-pointer transition flex items-center justify-between ${isSelected
                             ? 'bg-fitness-primary/10 border-fitness-primary shadow-glow-fitness'
                             : 'bg-surface-2 border-surface-border hover:border-gray-500'
-                        }`}
+                          }`}
                       >
                         <div>
                           <div className="text-xs font-bold text-white flex items-center gap-1.5">
@@ -447,7 +425,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
                 type="submit"
                 className="w-full py-3.5 bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs rounded-xl shadow-glow-fitness transition flex items-center justify-center gap-2 mt-3"
               >
-                <span>Register & Open Clean Dashboard</span>
+                <span>Create Account & Get Started</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -456,7 +434,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
           {/* TAB 2: SIGN IN FORM */}
           {activeTab === 'signin' && (
             <form onSubmit={handleSignIn} className="space-y-4 animate-in fade-in duration-200">
-              
+
               {loginError && (
                 <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-xs text-red-300 flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
@@ -578,14 +556,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
               </div>
             </div>
           )}
-
-          {/* Platform Feature Summary Card */}
-          <div className="p-3.5 rounded-2xl bg-surface-2/60 border border-surface-border text-xs text-gray-400 flex items-start gap-2.5">
-            <Layers className="w-4 h-4 text-fitness-primary flex-shrink-0 mt-0.5" />
-            <div className="leading-relaxed">
-              <strong className="text-white">FitSync Platform:</strong> Multi-Gym Authentication, Live Telemetry Tracking, Workout Volume Analytics, and Nutrition Planning.
-            </div>
-          </div>
 
         </div>
 

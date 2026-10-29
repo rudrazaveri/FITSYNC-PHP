@@ -124,6 +124,8 @@ export interface Exercise {
   trainerTip: string;
 }
 
+export type WeekDay = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+
 export interface WorkoutRoutine {
   id: string;
   title: string;
@@ -131,11 +133,13 @@ export interface WorkoutRoutine {
   duration: string;
   totalExercises: number;
   difficulty: string;
+  day?: WeekDay;
   exercises: Exercise[];
 }
 
 export interface Meal {
   id: string;
+  date?: string; // YYYY-MM-DD
   type: 'Breakfast' | 'Lunch' | 'Evening Snack' | 'Dinner' | 'Pre-Workout Snack';
   title: string;
   time: string;
