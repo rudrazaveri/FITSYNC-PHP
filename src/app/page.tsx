@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { 
+import Link from 'next/link';
+import {
   UserProfile,
-  HealthAssessmentData, 
-  ComputedMetrics, 
-  Exercise, 
+  HealthAssessmentData,
+  ComputedMetrics,
+  Exercise,
   ExerciseSet,
   PredefinedDietPlan,
   Gym,
@@ -16,20 +17,20 @@ import {
   TrainerBooking,
   TrainerClientAthlete
 } from '@/types';
-import { 
-  getInitialState, 
-  saveState, 
-  AppState, 
-  createCleanUserState, 
-  createDemoState, 
-  saveRegisteredUserRecord, 
+import {
+  getInitialState,
+  saveState,
+  AppState,
+  createCleanUserState,
+  createDemoState,
+  saveRegisteredUserRecord,
   findRegisteredUser,
-  AttendanceRecord 
+  AttendanceRecord
 } from '@/lib/store';
-import { 
-  WEEK_DAYS, 
-  getTodayDayName, 
-  getWorkoutForDay 
+import {
+  WEEK_DAYS,
+  getTodayDayName,
+  getWorkoutForDay
 } from '@/lib/initial-data';
 import { calculateHealthMetrics } from '@/lib/assessment-calculator';
 import { haptics } from '@/lib/audio-haptics';
@@ -39,17 +40,18 @@ import { BottomNav, MemberTab } from '@/components/BottomNav';
 import { AuthScreen, AuthUserCredentials } from '@/components/AuthScreen';
 import { ExerciseDetailModal } from '@/components/ExerciseDetailModal';
 import { RestTimerWidget } from '@/components/RestTimerWidget';
-import { 
-  Dumbbell, 
-  Utensils, 
-  HeartPulse, 
-  Sparkles, 
-  Droplet, 
-  Flame, 
-  CheckCircle2, 
-  Activity, 
-  Building2, 
-  Plus, 
+import {
+  Dumbbell,
+  Utensils,
+  HeartPulse,
+  Sparkles,
+  Droplet,
+  Flame,
+  CheckCircle2,
+  Activity,
+  Building2,
+  Plus,
+  ExternalLink,
   ChevronRight,
   ChevronLeft,
   Zap,
@@ -601,7 +603,7 @@ export default function FitSyncApp() {
   const handleTrainerPushSplit = (member: TrainerClientAthlete) => {
     haptics.playSuccess();
     const targetRoutine = getWorkoutForDay(trainerPushSplitDay);
-    
+
     // Update local client status and notification
     updateState((prev) => ({
       ...prev,
@@ -776,14 +778,24 @@ export default function FitSyncApp() {
     showToast('Exercise removed from session.', '🗑️');
   };
 
+  const handleAskTrainerForExercise = (ex: Exercise) => {
+    haptics.playSuccess();
+    const currentCoach = state.selectedTrainer || state.trainers[0];
+    const inquiryText = `Hi Coach ${currentCoach.name.replace('Coach ', '')}, I need a technique check on ${ex.name}. How can I improve my form or brace better on this?`;
+    setChatCategory('form_check');
+    setChatInputText(inquiryText);
+    setActiveTab('trainer');
+    showToast(`Drafted form check inquiry for Coach ${currentCoach.name.split(' ')[1] || 'Raj'}! 🏋️`, '💬');
+  };
+
   const handleAddNewExercise = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExName.trim()) return;
     haptics.playSuccess();
     const setsCount = Math.max(1, parseInt(newExSets) || 3);
     const repsCount = Math.max(1, parseInt(newExReps) || 10);
-    const formattedWeight = newExWeight.trim() 
-      ? (newExWeight.toLowerCase().includes('kg') ? newExWeight : `${newExWeight} kg`) 
+    const formattedWeight = newExWeight.trim()
+      ? (newExWeight.toLowerCase().includes('kg') ? newExWeight : `${newExWeight} kg`)
       : '20.0 kg';
 
     const createdSets: ExerciseSet[] = Array.from({ length: setsCount }, (_, i) => ({
@@ -883,13 +895,14 @@ export default function FitSyncApp() {
 
   return (
     <div className="min-h-screen bg-canvas-base text-gray-100 flex flex-col pb-20 lg:pb-8">
-      
+
       {/* 1. Global Navigation Bar */}
       <Navbar
         userProfile={state.userProfile}
         unreadNotificationsCount={state.notifications.filter((n) => !n.isRead).length}
         onOpenNotifications={() => setIsNotificationsDrawerOpen(true)}
         onLogout={handleLogout}
+        onSelectTrainer={handleSelectTrainer}
       />
 
       {/* 2. Main Workspace Layout */}
@@ -899,12 +912,12 @@ export default function FitSyncApp() {
           {/* Sub-Tabs Selector */}
           <div className="flex items-center justify-between border-b border-surface-border pb-3">
             <div className="flex items-center gap-2 overflow-x-auto">
-              {(isTrainer 
+              {(isTrainer
                 ? (['home', 'roster', 'messages', 'splits'] as const)
                 : (['home', 'workout', 'trainer', 'nutrition', 'profile'] as const)
               ).map((tab) => {
                 const isActive = activeTab === tab;
-                const label = isTrainer 
+                const label = isTrainer
                   ? (tab === 'home' ? 'Coach Overview' : tab === 'roster' ? 'Athlete Roster' : tab === 'messages' ? 'Athlete Inbox' : 'Workout Splits')
                   : (tab === 'trainer' ? 'Gym Coach' : tab);
 
@@ -915,11 +928,10 @@ export default function FitSyncApp() {
                       haptics.playTap();
                       setActiveTab(tab as any);
                     }}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition whitespace-nowrap flex items-center gap-1.5 ${
-                      isActive
+                    className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition whitespace-nowrap flex items-center gap-1.5 ${isActive
                         ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
                         : 'bg-surface-2 text-gray-400 hover:text-white'
-                    }`}
+                      }`}
                   >
                     {tab === 'trainer' && <MessageSquareText className="w-3.5 h-3.5" />}
                     {isTrainer && tab === 'roster' && <Users className="w-3.5 h-3.5" />}
@@ -957,17 +969,17 @@ export default function FitSyncApp() {
           {/* ======================================================== */}
           {isTrainer && activeTab !== 'profile' && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              
+
               {/* Coach Strip Hero */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border relative overflow-hidden">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                   <div className="flex items-center gap-4">
                     <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-fitness-primary shadow-glow-fitness flex-shrink-0">
-                      <Image 
-                        src="/assets/trainer_raj.jpg" 
-                        alt="Coach Raj Patel" 
-                        fill 
-                        className="object-cover" 
+                      <Image
+                        src="/assets/trainer_raj.jpg"
+                        alt="Coach Raj Patel"
+                        fill
+                        className="object-cover"
                       />
                     </div>
                     <div>
@@ -986,7 +998,14 @@ export default function FitSyncApp() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href="/trainer/dashboard"
+                      className="px-3.5 py-2 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition flex items-center gap-1.5"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open Full Trainer Workspace</span>
+                    </Link>
                     <span className="px-3.5 py-2 rounded-xl bg-surface-2 border border-surface-border text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                       <span>On Gym Floor Duty</span>
@@ -1027,11 +1046,11 @@ export default function FitSyncApp() {
 
               {/* Athlete Live Roster & Program Assignment */}
               <div className={`grid grid-cols-1 ${activeTab === 'home' ? 'lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
-                
+
                 {/* Column 1 & 2: Athletes Roster & Routine Pusher */}
                 {(activeTab === 'home' || activeTab === 'roster' || activeTab === 'splits') && (
                   <div className={`${activeTab === 'home' ? 'lg:col-span-2' : ''} space-y-6`}>
-                    
+
                     {/* Roster Table */}
                     <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
                       <div className="flex items-center justify-between">
@@ -1056,11 +1075,10 @@ export default function FitSyncApp() {
                                 haptics.playTap();
                                 setTrainerSelectedMemberId(client.id);
                               }}
-                              className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                                isSelected
+                              className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isSelected
                                   ? 'bg-fitness-primary/10 border-fitness-primary shadow-glow-fitness'
                                   : 'bg-surface-2 border-surface-border hover:border-gray-500'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center gap-3">
                                 <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-fitness-primary/40 flex-shrink-0">
@@ -1069,13 +1087,12 @@ export default function FitSyncApp() {
                                 <div>
                                   <div className="text-sm font-bold text-white flex items-center gap-2">
                                     <span>{client.name} ({client.age}y)</span>
-                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                                      client.status === 'Active on Floor'
+                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${client.status === 'Active on Floor'
                                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                         : client.status === 'Needs Technique Check'
-                                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                        : 'bg-surface-3 text-gray-300'
-                                    }`}>
+                                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                          : 'bg-surface-3 text-gray-300'
+                                      }`}>
                                       {client.status}
                                     </span>
                                   </div>
@@ -1131,11 +1148,10 @@ export default function FitSyncApp() {
                                     haptics.playTap();
                                     setTrainerPushSplitDay(day);
                                   }}
-                                  className={`p-3 rounded-xl border text-left transition ${
-                                    isChosen
+                                  className={`p-3 rounded-xl border text-left transition ${isChosen
                                       ? 'bg-fitness-primary text-gray-950 font-bold border-fitness-primary shadow-glow-fitness'
                                       : 'bg-surface-2 border-surface-border text-gray-300 hover:text-white'
-                                  }`}
+                                    }`}
                                 >
                                   <div className="text-[11px] font-bold uppercase">{day}</div>
                                   <div className="text-xs truncate font-semibold mt-0.5">{routine.title}</div>
@@ -1163,7 +1179,7 @@ export default function FitSyncApp() {
                 {/* Column 3: Athlete Inquiries & Floor Bookings */}
                 {(activeTab === 'home' || activeTab === 'messages') && (
                   <div className={`${activeTab === 'messages' ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-6'}`}>
-                    
+
                     {/* Messages Channel with Athletes */}
                     <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4 flex flex-col h-[520px]">
                       <div className="flex items-center justify-between pb-3 border-b border-surface-border">
@@ -1180,11 +1196,10 @@ export default function FitSyncApp() {
                           return (
                             <div
                               key={m.id}
-                              className={`p-3 rounded-2xl border ${
-                                isCoach
+                              className={`p-3 rounded-2xl border ${isCoach
                                   ? 'bg-fitness-primary/10 border-fitness-primary/40 text-gray-200'
                                   : 'bg-surface-2 border-surface-border text-gray-300'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center justify-between mb-1">
                                 <span className="font-bold text-white text-[11px]">{m.senderName}</span>
@@ -1264,7 +1279,7 @@ export default function FitSyncApp() {
           {/* ======================================================== */}
           {!isTrainer && activeTab === 'home' && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              
+
               {/* Daily Reset Status & Quick Action Banner */}
               <div className="p-3.5 rounded-2xl bg-surface-1 border border-surface-border flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2.5">
@@ -1333,7 +1348,7 @@ export default function FitSyncApp() {
 
               {/* Daily Telemetry Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                
+
                 {/* Calories Progress Card */}
                 <div className="p-5 rounded-2xl bg-surface-1 border border-surface-border space-y-3">
                   <div className="flex justify-between items-center text-xs text-gray-400">
@@ -1477,10 +1492,10 @@ export default function FitSyncApp() {
           {/* ---------------- TAB 2: WORKOUT ---------------- */}
           {!isTrainer && activeTab === 'workout' && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              
+
               {/* Workout Top Bar */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
-                
+
                 {/* 7-Day Workout Schedule Split Selector */}
                 <div className="space-y-2 pb-3 border-b border-surface-border">
                   <div className="flex items-center justify-between text-xs text-gray-400">
@@ -1500,19 +1515,17 @@ export default function FitSyncApp() {
                         <button
                           key={day}
                           onClick={() => handleSelectWorkoutDay(day)}
-                          className={`py-2 px-1 rounded-xl text-center transition flex flex-col items-center justify-center border ${
-                            isSelected
+                          className={`py-2 px-1 rounded-xl text-center transition flex flex-col items-center justify-center border ${isSelected
                               ? 'bg-fitness-primary text-gray-950 font-bold border-fitness-primary shadow-glow-fitness'
                               : isToday
-                              ? 'bg-surface-2 text-white border-fitness-primary/50'
-                              : 'bg-surface-2/60 text-gray-400 border-surface-border hover:text-white hover:border-gray-500'
-                          }`}
+                                ? 'bg-surface-2 text-white border-fitness-primary/50'
+                                : 'bg-surface-2/60 text-gray-400 border-surface-border hover:text-white hover:border-gray-500'
+                            }`}
                         >
                           <span className="text-[10px] sm:text-xs font-semibold">{day.slice(0, 3)}</span>
                           {isToday && (
-                            <span className={`text-[8px] sm:text-[9px] px-1 rounded-full uppercase tracking-wider font-extrabold ${
-                              isSelected ? 'bg-gray-950 text-fitness-primary' : 'bg-fitness-primary/20 text-fitness-primary'
-                            }`}>
+                            <span className={`text-[8px] sm:text-[9px] px-1 rounded-full uppercase tracking-wider font-extrabold ${isSelected ? 'bg-gray-950 text-fitness-primary' : 'bg-fitness-primary/20 text-fitness-primary'
+                              }`}>
                               Today
                             </span>
                           )}
@@ -1597,7 +1610,7 @@ export default function FitSyncApp() {
               <div className="space-y-4">
                 {state.activeWorkout.exercises.map((ex) => (
                   <div key={ex.id} className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
-                    
+
                     {/* Exercise Header */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3.5">
@@ -1614,6 +1627,14 @@ export default function FitSyncApp() {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleAskTrainerForExercise(ex)}
+                          className="px-3 py-1.5 rounded-xl bg-fitness-primary/15 hover:bg-fitness-primary/25 text-fitness-primary border border-fitness-primary/30 text-xs font-bold transition flex items-center gap-1"
+                          title="Ask assigned gym coach for guidance"
+                        >
+                          <MessageSquareText className="w-3.5 h-3.5" />
+                          <span>Ask Trainer</span>
+                        </button>
                         <button
                           onClick={() => setSelectedExerciseForModal(ex)}
                           className="px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-gray-300 border border-surface-border transition flex items-center gap-1"
@@ -1647,7 +1668,7 @@ export default function FitSyncApp() {
                         <tbody className="divide-y divide-surface-border">
                           {ex.completedSets.map((s) => (
                             <tr key={s.set} className="hover:bg-white/[0.02] transition">
-                              
+
                               {/* Set Label */}
                               <td className="py-2.5 pl-2 font-mono font-bold text-white">
                                 <span className="inline-block px-2.5 py-1 rounded-lg bg-surface-2 border border-surface-border text-xs">
@@ -1720,11 +1741,10 @@ export default function FitSyncApp() {
                                 <div className="flex items-center justify-end gap-2">
                                   <button
                                     onClick={() => handleToggleSetCompletion(ex.id, s.set)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                                      s.status === 'completed'
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${s.status === 'completed'
                                         ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
                                         : 'bg-surface-2 text-gray-400 hover:text-white border border-surface-border'
-                                    }`}
+                                      }`}
                                   >
                                     <CheckCircle2 className="w-3.5 h-3.5" />
                                     <span>{s.status === 'completed' ? 'Done' : 'Mark Done'}</span>
@@ -1772,17 +1792,17 @@ export default function FitSyncApp() {
           {/* ---------------- TAB: GYM TRAINER & COACH INTERACTION ---------------- */}
           {!isTrainer && activeTab === 'trainer' && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              
+
               {/* Active Coach Banner */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border relative overflow-hidden">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                   <div className="flex items-start sm:items-center gap-4">
                     <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-fitness-primary shadow-glow-fitness flex-shrink-0">
-                      <Image 
-                        src={state.selectedTrainer?.avatar || '/assets/trainer_raj.jpg'} 
-                        alt={state.selectedTrainer?.name || 'Coach Raj Patel'} 
-                        fill 
-                        className="object-cover" 
+                      <Image
+                        src={state.selectedTrainer?.avatar || '/assets/trainer_raj.jpg'}
+                        alt={state.selectedTrainer?.name || 'Coach Raj Patel'}
+                        fill
+                        className="object-cover"
                       />
                     </div>
                     <div>
@@ -1842,20 +1862,20 @@ export default function FitSyncApp() {
 
               {/* Two-Column Layout: Live Communication & Scheduled Floor Sessions */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
+
                 {/* Column 1 & 2: Direct Coach Communication Channel */}
                 <div className="lg:col-span-2 space-y-4">
                   <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4 flex flex-col h-[600px]">
-                    
+
                     {/* Chat Header */}
                     <div className="flex items-center justify-between pb-3 border-b border-surface-border">
                       <div className="flex items-center gap-3">
                         <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-fitness-primary/50">
-                          <Image 
-                            src={state.selectedTrainer?.avatar || '/assets/trainer_raj.jpg'} 
-                            alt={state.selectedTrainer?.name || 'Coach'} 
-                            fill 
-                            className="object-cover" 
+                          <Image
+                            src={state.selectedTrainer?.avatar || '/assets/trainer_raj.jpg'}
+                            alt={state.selectedTrainer?.name || 'Coach'}
+                            fill
+                            className="object-cover"
                           />
                         </div>
                         <div>
@@ -1903,11 +1923,10 @@ export default function FitSyncApp() {
                               )}
                             </div>
                             <div
-                              className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
-                                isUser
+                              className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${isUser
                                   ? 'bg-fitness-primary text-gray-950 font-medium rounded-tr-sm shadow-glow-fitness'
                                   : 'bg-surface-2 text-gray-200 border border-surface-border rounded-tl-sm'
-                              }`}
+                                }`}
                             >
                               {msg.text}
                             </div>
@@ -1928,11 +1947,10 @@ export default function FitSyncApp() {
                               haptics.playTap();
                               setChatCategory(cat);
                             }}
-                            className={`px-2.5 py-0.5 rounded-lg border text-[10px] font-bold transition ${
-                              chatCategory === cat
+                            className={`px-2.5 py-0.5 rounded-lg border text-[10px] font-bold transition ${chatCategory === cat
                                 ? 'bg-fitness-primary/20 text-fitness-primary border-fitness-primary'
                                 : 'bg-surface-2 text-gray-400 border-surface-border hover:text-white'
-                            }`}
+                              }`}
                           >
                             {cat === 'general' ? 'General' : cat === 'form_check' ? 'Technique / Form' : cat === 'nutrition' ? 'Nutrition' : 'Scheduling'}
                           </button>
@@ -1963,7 +1981,7 @@ export default function FitSyncApp() {
 
                 {/* Column 3: Scheduled 1-on-1 Sessions & Gym Trainer Roster */}
                 <div className="space-y-6">
-                  
+
                   {/* Scheduled Sessions Card */}
                   <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
                     <div className="flex items-center justify-between">
@@ -2034,11 +2052,10 @@ export default function FitSyncApp() {
                         return (
                           <div
                             key={t.id}
-                            className={`p-3.5 rounded-2xl border transition flex items-center justify-between gap-3 ${
-                              isCurrent
+                            className={`p-3.5 rounded-2xl border transition flex items-center justify-between gap-3 ${isCurrent
                                 ? 'bg-fitness-primary/10 border-fitness-primary shadow-glow-fitness'
                                 : 'bg-surface-2 border-surface-border hover:border-gray-500'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center gap-3">
                               <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-fitness-primary/40 flex-shrink-0">
@@ -2084,7 +2101,7 @@ export default function FitSyncApp() {
           {/* ---------------- TAB 3: NUTRITION ---------------- */}
           {!isTrainer && activeTab === 'nutrition' && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              
+
               {/* Daily Caloric Target Summary */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -2275,7 +2292,7 @@ export default function FitSyncApp() {
           {/* ---------------- TAB 4: PROFILE & BIOMETRICS ---------------- */}
           {activeTab === 'profile' && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              
+
               {/* Profile Summary Card */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border flex flex-col md:flex-row items-center gap-6">
                 <div className="w-24 h-24 rounded-3xl overflow-hidden relative border-2 border-fitness-primary shadow-glow-fitness flex-shrink-0 flex items-center justify-center bg-surface-2">
@@ -2324,7 +2341,7 @@ export default function FitSyncApp() {
 
                 <form onSubmit={handleSaveStats} className="space-y-4 pt-1">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    
+
                     {/* Weight Input with Steppers */}
                     <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border space-y-2">
                       <label className="text-xs font-semibold text-gray-300 flex items-center justify-between">
@@ -2545,7 +2562,7 @@ export default function FitSyncApp() {
 
                 return (
                   <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
-                    
+
                     {/* Header: Title & Actions */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
@@ -2654,21 +2671,20 @@ export default function FitSyncApp() {
                         return (
                           <div
                             key={dayNum}
-                            className={`h-9 sm:h-10 rounded-xl flex flex-col items-center justify-center text-xs font-mono font-semibold transition border ${
-                              isVisited
+                            className={`h-9 sm:h-10 rounded-xl flex flex-col items-center justify-center text-xs font-mono font-semibold transition border ${isVisited
                                 ? 'bg-fitness-primary/20 text-fitness-primary border-fitness-primary/60 shadow-glow-fitness'
                                 : isToday
-                                ? 'bg-surface-2 text-white border-healthcare-accent/80'
-                                : isFuture
-                                ? 'bg-surface-2/40 text-gray-600 border-surface-border'
-                                : 'bg-surface-2 text-gray-400 border-surface-border'
-                            }`}
+                                  ? 'bg-surface-2 text-white border-healthcare-accent/80'
+                                  : isFuture
+                                    ? 'bg-surface-2/40 text-gray-600 border-surface-border'
+                                    : 'bg-surface-2 text-gray-400 border-surface-border'
+                              }`}
                             title={
                               isVisited
                                 ? `Checked in: ${record?.gymName || state.selectedGym.name} on ${dayDateStr} (${record?.time || 'Recorded'})`
                                 : isToday
-                                ? `Today - Day ${dayNum}`
-                                : `Day ${dayNum} - No check-in`
+                                  ? `Today - Day ${dayNum}`
+                                  : `Day ${dayNum} - No check-in`
                             }
                           >
                             <span>{dayNum}</span>

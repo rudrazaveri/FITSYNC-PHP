@@ -288,12 +288,95 @@ export interface TrainerClientAthlete {
   email: string;
   avatar: string;
   age: number;
+  heightCm?: number;
   goal: string;
   lastActive: string;
   attendanceConsistency: string;
   status: 'Active on Floor' | 'Rest Day' | 'Needs Technique Check' | 'Session Booked';
+  statusLevel?: 'On Track' | 'Needs Attention' | 'High Attention';
   currentWeight: string;
   activeRoutineTitle: string;
+  membershipTier?: string;
+  joinDate?: string;
+  phone?: string;
+}
+
+export interface DetailedMemberProfile extends TrainerClientAthlete {
+  heightCm: number;
+  membershipTier: string;
+  joinDate: string;
+  phone: string;
+  statusLevel: 'On Track' | 'Needs Attention' | 'High Attention';
+  weightHistory: { date: string; weightKg: number }[];
+  workoutHistory: { 
+    id: string;
+    date: string; 
+    routineTitle: string; 
+    volumeKg: number; 
+    durationMins: number; 
+    status: 'completed' | 'missed';
+    rpeAvg?: number;
+  }[];
+  nutritionOverview: {
+    targetCalories: number;
+    avgCalories: number;
+    targetProteinG: number;
+    avgProteinG: number;
+    targetCarbsG: number;
+    avgCarbsG: number;
+    targetFatG: number;
+    avgFatG: number;
+    lastLoggedDate: string;
+    loggingStreak: number;
+    recentMeals: {
+      type: string;
+      title: string;
+      time: string;
+      calories: number;
+      protein: number;
+    }[];
+  };
+  attendance: {
+    weeklyVisits: number;
+    weeklyTarget: number;
+    monthlyRate: string;
+    streakDays: number;
+    totalVisits: number;
+    recentLogs: { date: string; time: string; gymName: string }[];
+  };
+}
+
+export interface TrainerInterventionInsight {
+  id: string;
+  memberId: string;
+  memberName: string;
+  memberAvatar: string;
+  sourceType: 'rule_based' | 'ai_insight';
+  title: string;
+  description: string;
+  reason: string;
+  dateDetected: string;
+  attentionStatus: 'Low' | 'Moderate' | 'High';
+  status: 'Open' | 'Resolved' | 'In Progress';
+  metricCategory: 'workout' | 'attendance' | 'nutrition' | 'technique';
+}
+
+export interface TrainerSessionItem {
+  id: string;
+  trainerId: string;
+  trainerName: string;
+  memberId: string;
+  memberName: string;
+  memberAvatar: string;
+  date: string;
+  timeSlot: string;
+  durationMinutes: number;
+  sessionType: 'floor_1on1' | 'online_video';
+  status: 'Scheduled' | 'Confirmed' | 'In Progress' | 'Completed' | 'Cancelled';
+  meetingLink?: string;
+  telehealthRoomId?: string;
+  focusArea: string;
+  notes?: string;
 }
 
 export interface TrainerBooking {
