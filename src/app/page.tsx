@@ -13,7 +13,8 @@ import {
   WeekDay,
   Trainer,
   TrainerMessage,
-  TrainerBooking
+  TrainerBooking,
+  TrainerClientAthlete
 } from '@/types';
 import { 
   getInitialState, 
@@ -69,7 +70,11 @@ import {
   Video,
   UserCheck,
   Check,
-  Star
+  Star,
+  Users,
+  ClipboardList,
+  AlertTriangle,
+  ArrowUpRight
 } from 'lucide-react';
 
 export default function FitSyncApp() {
@@ -154,6 +159,11 @@ export default function FitSyncApp() {
   const [bookingNotes, setBookingNotes] = useState('');
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
+  // Trainer Portal Specific State (For when userProfile.role === 'trainer')
+  const [trainerSelectedMemberId, setTrainerSelectedMemberId] = useState<string>('ath_01');
+  const [trainerPushSplitDay, setTrainerPushSplitDay] = useState<WeekDay>('Monday');
+  const [trainerCoachReplyInput, setTrainerCoachReplyInput] = useState<string>('');
+
   // Manual Exercise Addition State
   const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false);
   const [newExName, setNewExName] = useState('');
@@ -201,8 +211,31 @@ export default function FitSyncApp() {
             return;
           }
 
-          // B) DEMO ACCOUNT: Load Aarav Shah's populated demo state
+          // B) DEMO ACCOUNT: Load Aarav Shah or Coach Raj Patel
           if (credentials.isDemo) {
+            if (credentials.role === 'trainer') {
+              const trainerState: AppState = {
+                ...createDemoState(),
+                userProfile: {
+                  id: 'usr_coach_raj',
+                  role: 'trainer',
+                  fullName: 'Coach Raj Patel',
+                  email: 'coach.raj@fitsync.health',
+                  phone: '+91 98251 44321',
+                  avatarUrl: '/assets/trainer_raj.jpg',
+                  gymId: 'gym_fitzone_vadodara',
+                  membershipTier: 'Senior Head Coach',
+                  streakDays: 142,
+                  waterLoggedMl: 2600,
+                  waterTargetMl: 3500
+                }
+              };
+              setState(trainerState);
+              saveState(trainerState);
+              showToast('Welcome to Gym Coach Portal, Coach Raj! 🏋️', '👋');
+              return;
+            }
+
             const demoState = createDemoState();
             setState(demoState);
             saveState(demoState);
@@ -539,6 +572,48 @@ export default function FitSyncApp() {
     showToast('Coaching session cancelled.', '🗑️');
   };
 
+  // Trainer Dashboard Specific Actions (When role === 'trainer')
+  const handleTrainerSendCoachMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trainerCoachReplyInput.trim()) return;
+
+    haptics.playSuccess();
+    const now = new Date();
+    const newCoachMsg: TrainerMessage = {
+      id: `msg_coach_portal_${Date.now()}`,
+      sender: 'trainer',
+      senderName: state.userProfile.fullName || 'Coach Raj Patel',
+      text: trainerCoachReplyInput.trim(),
+      timestamp: now.toISOString(),
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      category: 'general'
+    };
+
+    updateState((prev) => ({
+      ...prev,
+      trainerMessages: [...prev.trainerMessages, newCoachMsg]
+    }));
+
+    setTrainerCoachReplyInput('');
+    showToast('Message sent to assigned athletes! 🏋️', '💬');
+  };
+
+  const handleTrainerPushSplit = (member: TrainerClientAthlete) => {
+    haptics.playSuccess();
+    const targetRoutine = getWorkoutForDay(trainerPushSplitDay);
+    
+    // Update local client status and notification
+    updateState((prev) => ({
+      ...prev,
+      trainerClients: prev.trainerClients.map((c) =>
+        c.id === member.id ? { ...c, activeRoutineTitle: targetRoutine.title, status: 'Active on Floor' } : c
+      ),
+      activeWorkout: JSON.parse(JSON.stringify(targetRoutine))
+    }));
+
+    showToast(`Pushed "${targetRoutine.title}" routine to ${member.name}! 🚀`, '📋');
+  };
+
   const calculateExerciseVolume = (ex: Exercise) => {
     return ex.completedSets
       .filter((s) => s.status === 'completed')
@@ -804,6 +879,8 @@ export default function FitSyncApp() {
     showToast('Signed out successfully.', '👋');
   };
 
+  const isTrainer = state.userProfile?.role === 'trainer';
+
   return (
     <div className="min-h-screen bg-canvas-base text-gray-100 flex flex-col pb-20 lg:pb-8">
       
@@ -822,41 +899,370 @@ export default function FitSyncApp() {
           {/* Sub-Tabs Selector */}
           <div className="flex items-center justify-between border-b border-surface-border pb-3">
             <div className="flex items-center gap-2 overflow-x-auto">
-              {(['home', 'workout', 'trainer', 'nutrition', 'profile'] as MemberTab[]).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    haptics.playTap();
-                    setActiveTab(tab);
-                  }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition whitespace-nowrap flex items-center gap-1.5 ${
-                    activeTab === tab
-                      ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
-                      : 'bg-surface-2 text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {tab === 'trainer' && <MessageSquareText className="w-3.5 h-3.5" />}
-                  <span>{tab === 'trainer' ? 'Gym Coach / Trainer' : tab}</span>
-                </button>
-              ))}
+              {(isTrainer 
+                ? (['home', 'roster', 'messages', 'splits'] as const)
+                : (['home', 'workout', 'trainer', 'nutrition', 'profile'] as const)
+              ).map((tab) => {
+                const isActive = activeTab === tab;
+                const label = isTrainer 
+                  ? (tab === 'home' ? 'Coach Overview' : tab === 'roster' ? 'Athlete Roster' : tab === 'messages' ? 'Athlete Inbox' : 'Workout Splits')
+                  : (tab === 'trainer' ? 'Gym Coach' : tab);
+
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => {
+                      haptics.playTap();
+                      setActiveTab(tab as any);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition whitespace-nowrap flex items-center gap-1.5 ${
+                      isActive
+                        ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
+                        : 'bg-surface-2 text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {tab === 'trainer' && <MessageSquareText className="w-3.5 h-3.5" />}
+                    {isTrainer && tab === 'roster' && <Users className="w-3.5 h-3.5" />}
+                    {isTrainer && tab === 'messages' && <MessageSquareText className="w-3.5 h-3.5" />}
+                    {isTrainer && tab === 'splits' && <ClipboardList className="w-3.5 h-3.5" />}
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Assessment Re-evaluation Button */}
-            <button
-              onClick={() => {
-                haptics.playTap();
-                setDraftAssessment(state.assessmentData);
-                setIsAssessmentModalOpen(true);
-              }}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-healthcare-accent border border-healthcare-primary/30 transition"
-            >
-              <Activity className="w-3.5 h-3.5 text-healthcare-primary" />
-              <span>Health Assessment (BMR/TDEE)</span>
-            </button>
+            {/* Assessment Re-evaluation Button (Hidden for trainers) */}
+            {!isTrainer ? (
+              <button
+                onClick={() => {
+                  haptics.playTap();
+                  setDraftAssessment(state.assessmentData);
+                  setIsAssessmentModalOpen(true);
+                }}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-healthcare-accent border border-healthcare-primary/30 transition"
+              >
+                <Activity className="w-3.5 h-3.5 text-healthcare-primary" />
+                <span>Health Assessment</span>
+              </button>
+            ) : (
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-fitness-primary bg-fitness-primary/10 border border-fitness-primary/30 px-3 py-1.5 rounded-xl font-bold">
+                <Award className="w-3.5 h-3.5" />
+                <span>Head Strength Coach • FitZone Vadodara</span>
+              </span>
+            )}
           </div>
 
-          {/* ---------------- TAB 1: HOME DASHBOARD ---------------- */}
-          {activeTab === 'home' && (
+          {/* ======================================================== */}
+          {/* TRAINER VIEW: DEDICATED GYM COACH PORTAL                */}
+          {/* ======================================================== */}
+          {isTrainer && activeTab !== 'profile' && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              
+              {/* Coach Strip Hero */}
+              <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border relative overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-fitness-primary shadow-glow-fitness flex-shrink-0">
+                      <Image 
+                        src="/assets/trainer_raj.jpg" 
+                        alt="Coach Raj Patel" 
+                        fill 
+                        className="object-cover" 
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-fitness-primary/20 text-fitness-primary border border-fitness-primary/30 uppercase tracking-wider">
+                          Gym Trainer Portal
+                        </span>
+                        <span className="text-xs text-gray-400">FitZone Vadodara</span>
+                      </div>
+                      <h1 className="font-headline font-extrabold text-2xl sm:text-3xl text-white">
+                        {state.userProfile.fullName}
+                      </h1>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Monitoring 24 assigned athletes, real-time gym floor sessions, technique inquiries &amp; workout progression.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="px-3.5 py-2 rounded-xl bg-surface-2 border border-surface-border text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>On Gym Floor Duty</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coach Telemetry Metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-4 rounded-2xl bg-surface-1 border border-surface-border text-center">
+                  <div className="text-xs text-gray-400">Assigned Athletes</div>
+                  <div className="font-headline font-extrabold text-2xl text-white mt-1">24</div>
+                  <div className="text-[10px] text-fitness-primary">FitZone Roster</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-surface-1 border border-surface-border text-center">
+                  <div className="text-xs text-gray-400">Active on Floor Today</div>
+                  <div className="font-headline font-extrabold text-2xl text-emerald-400 mt-1">
+                    {state.trainerClients.filter(c => c.status === 'Active on Floor').length + 2}
+                  </div>
+                  <div className="text-[10px] text-gray-400">Turnstile Checked-in</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-surface-1 border border-surface-border text-center">
+                  <div className="text-xs text-gray-400">1-on-1 Sessions</div>
+                  <div className="font-headline font-extrabold text-2xl text-healthcare-accent mt-1">
+                    {state.trainerBookings.length}
+                  </div>
+                  <div className="text-[10px] text-gray-400">Floor Bookings</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-surface-1 border border-surface-border text-center">
+                  <div className="text-xs text-gray-400">Pending Messages</div>
+                  <div className="font-headline font-extrabold text-2xl text-amber-300 mt-1">
+                    {state.trainerMessages.filter(m => m.sender === 'user').length}
+                  </div>
+                  <div className="text-[10px] text-gray-400">Athlete Inquiries</div>
+                </div>
+              </div>
+
+              {/* Athlete Live Roster & Program Assignment */}
+              <div className={`grid grid-cols-1 ${activeTab === 'home' ? 'lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
+                
+                {/* Column 1 & 2: Athletes Roster & Routine Pusher */}
+                {(activeTab === 'home' || activeTab === 'roster' || activeTab === 'splits') && (
+                  <div className={`${activeTab === 'home' ? 'lg:col-span-2' : ''} space-y-6`}>
+                    
+                    {/* Roster Table */}
+                    <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-headline font-bold text-white text-lg flex items-center gap-2">
+                            <Users className="w-5 h-5 text-fitness-primary" /> Assigned Athletes Roster
+                          </h3>
+                          <p className="text-xs text-gray-400">Click any athlete to review their active routine or push a new split</p>
+                        </div>
+                        <span className="text-xs font-mono text-fitness-primary">
+                          {state.trainerClients.length} Members
+                        </span>
+                      </div>
+
+                      <div className="space-y-3">
+                        {state.trainerClients.map((client) => {
+                          const isSelected = trainerSelectedMemberId === client.id;
+                          return (
+                            <div
+                              key={client.id}
+                              onClick={() => {
+                                haptics.playTap();
+                                setTrainerSelectedMemberId(client.id);
+                              }}
+                              className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                                isSelected
+                                  ? 'bg-fitness-primary/10 border-fitness-primary shadow-glow-fitness'
+                                  : 'bg-surface-2 border-surface-border hover:border-gray-500'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-fitness-primary/40 flex-shrink-0">
+                                  <Image src={client.avatar} alt={client.name} fill className="object-cover" />
+                                </div>
+                                <div>
+                                  <div className="text-sm font-bold text-white flex items-center gap-2">
+                                    <span>{client.name} ({client.age}y)</span>
+                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                                      client.status === 'Active on Floor'
+                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                        : client.status === 'Needs Technique Check'
+                                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                        : 'bg-surface-3 text-gray-300'
+                                    }`}>
+                                      {client.status}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-0.5">
+                                    Goal: <span className="text-white font-semibold">{client.goal}</span> • Weight: {client.currentWeight}
+                                  </div>
+                                  <div className="text-[11px] text-fitness-primary font-mono mt-0.5">
+                                    Routine: {client.activeRoutineTitle}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 self-end sm:self-auto">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTrainerPushSplit(client);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition flex items-center gap-1"
+                                >
+                                  <ClipboardList className="w-3.5 h-3.5" />
+                                  <span>Push Split</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Routine Split Selector for Selected Member */}
+                    {(() => {
+                      const selMember = state.trainerClients.find(c => c.id === trainerSelectedMemberId) || state.trainerClients[0];
+                      return (
+                        <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <h3 className="font-headline font-bold text-white text-base flex items-center gap-2">
+                                <ClipboardList className="w-4 h-4 text-healthcare-accent" /> Assign Workout Split for {selMember.name}
+                              </h3>
+                              <p className="text-xs text-gray-400">Select which daily routine to push directly to {selMember.name}&apos;s dashboard</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {WEEK_DAYS.map((day) => {
+                              const isChosen = trainerPushSplitDay === day;
+                              const routine = getWorkoutForDay(day);
+                              return (
+                                <button
+                                  key={day}
+                                  onClick={() => {
+                                    haptics.playTap();
+                                    setTrainerPushSplitDay(day);
+                                  }}
+                                  className={`p-3 rounded-xl border text-left transition ${
+                                    isChosen
+                                      ? 'bg-fitness-primary text-gray-950 font-bold border-fitness-primary shadow-glow-fitness'
+                                      : 'bg-surface-2 border-surface-border text-gray-300 hover:text-white'
+                                  }`}
+                                >
+                                  <div className="text-[11px] font-bold uppercase">{day}</div>
+                                  <div className="text-xs truncate font-semibold mt-0.5">{routine.title}</div>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className="pt-2 flex justify-end">
+                            <button
+                              onClick={() => handleTrainerPushSplit(selMember)}
+                              className="px-5 py-2.5 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition flex items-center gap-1.5"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>Confirm &amp; Push Routine to {selMember.name}</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                  </div>
+                )}
+
+                {/* Column 3: Athlete Inquiries & Floor Bookings */}
+                {(activeTab === 'home' || activeTab === 'messages') && (
+                  <div className={`${activeTab === 'messages' ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-6'}`}>
+                    
+                    {/* Messages Channel with Athletes */}
+                    <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4 flex flex-col h-[520px]">
+                      <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+                        <div className="font-headline font-bold text-white text-sm flex items-center gap-2">
+                          <MessageSquareText className="w-4 h-4 text-fitness-primary" />
+                          <span>Athlete Inquiries Stream</span>
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-mono">Live</span>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+                        {state.trainerMessages.map((m) => {
+                          const isCoach = m.sender === 'trainer';
+                          return (
+                            <div
+                              key={m.id}
+                              className={`p-3 rounded-2xl border ${
+                                isCoach
+                                  ? 'bg-fitness-primary/10 border-fitness-primary/40 text-gray-200'
+                                  : 'bg-surface-2 border-surface-border text-gray-300'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-bold text-white text-[11px]">{m.senderName}</span>
+                                <span className="text-[10px] text-gray-500 font-mono">{m.time}</span>
+                              </div>
+                              <p className="leading-relaxed text-[11px]">{m.text}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Quick Reply Form */}
+                      <form onSubmit={handleTrainerSendCoachMessage} className="pt-2 border-t border-surface-border space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={trainerCoachReplyInput}
+                            onChange={(e) => setTrainerCoachReplyInput(e.target.value)}
+                            placeholder="Send coaching cue to athletes..."
+                            className="flex-1 bg-surface-2 border border-surface-border rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-fitness-primary"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!trainerCoachReplyInput.trim()}
+                            className="px-3.5 py-2 bg-fitness-primary hover:bg-fitness-light disabled:opacity-50 text-gray-950 font-bold text-xs rounded-xl shadow-glow-fitness transition"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* Floor Session Bookings Queue */}
+                    <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                      <h3 className="font-headline font-bold text-white text-base flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-healthcare-accent" /> Upcoming 1-on-1 Floor Bookings
+                      </h3>
+
+                      {state.trainerBookings.length === 0 ? (
+                        <div className="p-4 text-center rounded-2xl bg-surface-2/60 text-xs text-gray-500 border border-dashed border-surface-border">
+                          No upcoming bookings today.
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {state.trainerBookings.map((b) => (
+                            <div key={b.id} className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border space-y-1 text-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-white">{b.focusArea}</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-fitness-primary/20 text-fitness-primary font-bold">
+                                  {b.status}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-gray-400">
+                                {b.date} • {b.timeSlot}
+                              </div>
+                              {b.notes && (
+                                <div className="text-[11px] text-gray-400 bg-surface-1 p-2 rounded-xl mt-1">
+                                  Note: {b.notes}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* ATHLETE VIEW: ONLY RENDERED WHEN USER IS NOT A TRAINER  */}
+          {/* ======================================================== */}
+          {!isTrainer && activeTab === 'home' && (
             <div className="space-y-6 animate-in fade-in duration-200">
               
               {/* Daily Reset Status & Quick Action Banner */}
@@ -1069,7 +1475,7 @@ export default function FitSyncApp() {
           )}
 
           {/* ---------------- TAB 2: WORKOUT ---------------- */}
-          {activeTab === 'workout' && (
+          {!isTrainer && activeTab === 'workout' && (
             <div className="space-y-6 animate-in fade-in duration-200">
               
               {/* Workout Top Bar */}
@@ -1364,7 +1770,7 @@ export default function FitSyncApp() {
           )}
 
           {/* ---------------- TAB: GYM TRAINER & COACH INTERACTION ---------------- */}
-          {activeTab === 'trainer' && (
+          {!isTrainer && activeTab === 'trainer' && (
             <div className="space-y-6 animate-in fade-in duration-200">
               
               {/* Active Coach Banner */}
@@ -1676,7 +2082,7 @@ export default function FitSyncApp() {
           )}
 
           {/* ---------------- TAB 3: NUTRITION ---------------- */}
-          {activeTab === 'nutrition' && (
+          {!isTrainer && activeTab === 'nutrition' && (
             <div className="space-y-6 animate-in fade-in duration-200">
               
               {/* Daily Caloric Target Summary */}
@@ -2304,7 +2710,7 @@ export default function FitSyncApp() {
       </main>
 
       {/* 3. Floating Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} isTrainer={isTrainer} />
 
       {/* 4. Exercise Detail Modal */}
       <ExerciseDetailModal

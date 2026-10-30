@@ -1,25 +1,36 @@
 'use client';
 
 import React from 'react';
-import { Home, Dumbbell, Utensils, User, MessageSquareText } from 'lucide-react';
+import { Home, Dumbbell, Utensils, User, MessageSquareText, Users, ClipboardList } from 'lucide-react';
 import { haptics } from '@/lib/audio-haptics';
 
-export type MemberTab = 'home' | 'workout' | 'nutrition' | 'trainer' | 'profile';
+export type MemberTab = 'home' | 'workout' | 'nutrition' | 'trainer' | 'profile' | 'roster' | 'messages' | 'splits';
 
 interface BottomNavProps {
   activeTab: MemberTab;
   onTabChange: (tab: MemberTab) => void;
   unreadTrainerCount?: number;
+  isTrainer?: boolean;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, unreadTrainerCount = 0 }) => {
-  const tabs = [
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, unreadTrainerCount = 0, isTrainer = false }) => {
+  const memberTabs = [
     { id: 'home' as MemberTab, label: 'Home', icon: Home },
     { id: 'workout' as MemberTab, label: 'Workout', icon: Dumbbell },
     { id: 'trainer' as MemberTab, label: 'Trainer', icon: MessageSquareText },
     { id: 'nutrition' as MemberTab, label: 'Nutrition', icon: Utensils },
     { id: 'profile' as MemberTab, label: 'Profile', icon: User },
   ];
+
+  const trainerTabs = [
+    { id: 'home' as MemberTab, label: 'Overview', icon: Home },
+    { id: 'roster' as MemberTab, label: 'Roster', icon: Users },
+    { id: 'messages' as MemberTab, label: 'Inbox', icon: MessageSquareText },
+    { id: 'splits' as MemberTab, label: 'Splits', icon: ClipboardList },
+    { id: 'profile' as MemberTab, label: 'Account', icon: User },
+  ];
+
+  const tabs = isTrainer ? trainerTabs : memberTabs;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 bg-canvas-base/95 backdrop-blur-xl border-t border-surface-border py-2 px-4">

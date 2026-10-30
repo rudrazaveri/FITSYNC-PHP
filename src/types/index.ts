@@ -282,6 +282,20 @@ export interface TrainerMessage {
   category?: 'general' | 'form_check' | 'nutrition' | 'schedule';
 }
 
+export interface TrainerClientAthlete {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  age: number;
+  goal: string;
+  lastActive: string;
+  attendanceConsistency: string;
+  status: 'Active on Floor' | 'Rest Day' | 'Needs Technique Check' | 'Session Booked';
+  currentWeight: string;
+  activeRoutineTitle: string;
+}
+
 export interface TrainerBooking {
   id: string;
   trainerId: string;

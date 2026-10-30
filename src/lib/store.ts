@@ -12,7 +12,8 @@ import {
   WeekDay,
   Trainer,
   TrainerMessage,
-  TrainerBooking
+  TrainerBooking,
+  TrainerClientAthlete
 } from '@/types';
 import { 
   INITIAL_GYMS, 
@@ -24,7 +25,8 @@ import {
   INITIAL_NOTIFICATIONS,
   INITIAL_TRAINERS,
   INITIAL_TRAINER_MESSAGES,
-  INITIAL_TRAINER_BOOKINGS
+  INITIAL_TRAINER_BOOKINGS,
+  INITIAL_TRAINER_CLIENTS
 } from './initial-data';
 import { calculateHealthMetrics } from './assessment-calculator';
 
@@ -71,6 +73,7 @@ export interface AppState {
   selectedTrainer: Trainer;
   trainerMessages: TrainerMessage[];
   trainerBookings: TrainerBooking[];
+  trainerClients: TrainerClientAthlete[];
 }
 
 export interface RegisteredUserRecord {
@@ -191,7 +194,8 @@ export function createDemoState(): AppState {
     trainers: INITIAL_TRAINERS,
     selectedTrainer: INITIAL_TRAINERS[0],
     trainerMessages: [...INITIAL_TRAINER_MESSAGES],
-    trainerBookings: [...INITIAL_TRAINER_BOOKINGS]
+    trainerBookings: [...INITIAL_TRAINER_BOOKINGS],
+    trainerClients: [...INITIAL_TRAINER_CLIENTS]
   };
 }
 
@@ -309,7 +313,8 @@ export function createCleanUserState(params: NewUserRegistrationParams): AppStat
         category: 'general'
       }
     ],
-    trainerBookings: []
+    trainerBookings: [],
+    trainerClients: [...INITIAL_TRAINER_CLIENTS]
   };
 }
 
@@ -385,7 +390,8 @@ export function getInitialState(): AppState {
         trainers: Array.isArray(parsed.trainers) && parsed.trainers.length > 0 ? parsed.trainers : INITIAL_TRAINERS,
         selectedTrainer: parsed.selectedTrainer || INITIAL_TRAINERS[0],
         trainerMessages: Array.isArray(parsed.trainerMessages) ? parsed.trainerMessages : [...INITIAL_TRAINER_MESSAGES],
-        trainerBookings: Array.isArray(parsed.trainerBookings) ? parsed.trainerBookings : [...INITIAL_TRAINER_BOOKINGS]
+        trainerBookings: Array.isArray(parsed.trainerBookings) ? parsed.trainerBookings : [...INITIAL_TRAINER_BOOKINGS],
+        trainerClients: Array.isArray(parsed.trainerClients) ? parsed.trainerClients : [...INITIAL_TRAINER_CLIENTS]
       };
     }
   } catch (e) {

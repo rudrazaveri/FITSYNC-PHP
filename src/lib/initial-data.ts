@@ -13,7 +13,8 @@ import {
   WeekDay,
   Trainer,
   TrainerMessage,
-  TrainerBooking
+  TrainerBooking,
+  TrainerClientAthlete
 } from '@/types';
 
 export const INITIAL_GYMS: Gym[] = [
@@ -1559,5 +1560,60 @@ export const INITIAL_TRAINER_BOOKINGS: TrainerBooking[] = [
     focusArea: "Squat Depth & Thoracic Mobility Check",
     status: "Confirmed",
     notes: "Review bar path and warm-up hip opener drill on the platform."
+  }
+];
+
+export const INITIAL_TRAINER_CLIENTS: TrainerClientAthlete[] = [
+  {
+    id: "ath_01",
+    name: "Aarav Shah",
+    email: "aarav.shah@fitsync.health",
+    avatar: "/assets/aarav.jpg",
+    age: 23,
+    goal: "Build Muscle (Hypertrophy)",
+    lastActive: "Today • 45m ago",
+    attendanceConsistency: "88% (5-day streak)",
+    status: "Active on Floor",
+    currentWeight: "72.4 kg",
+    activeRoutineTitle: "Chest & Triceps Hypertrophy"
+  },
+  {
+    id: "ath_02",
+    name: "Rahul Verma",
+    email: "rahul.verma@example.com",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80",
+    age: 27,
+    goal: "Lose Weight (Fat Loss)",
+    lastActive: "Yesterday",
+    attendanceConsistency: "64% (2 days/wk)",
+    status: "Needs Technique Check",
+    currentWeight: "84.2 kg",
+    activeRoutineTitle: "Back & Biceps Power"
+  },
+  {
+    id: "ath_03",
+    name: "Priya Nair",
+    email: "priya.nair@example.com",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
+    age: 29,
+    goal: "General Fitness & Mobility",
+    lastActive: "Today • 2h ago",
+    attendanceConsistency: "92% (4 days/wk)",
+    status: "Active on Floor",
+    currentWeight: "58.1 kg",
+    activeRoutineTitle: "Legs & Lower Body Strength"
+  },
+  {
+    id: "ath_04",
+    name: "Dev Patel",
+    email: "dev.patel@example.com",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=80",
+    age: 31,
+    goal: "Increase Strength",
+    lastActive: "Tomorrow Booked",
+    attendanceConsistency: "80% (3 days/wk)",
+    status: "Session Booked",
+    currentWeight: "79.0 kg",
+    activeRoutineTitle: "Shoulders, Traps & Core"
   }
 ];

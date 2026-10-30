@@ -96,7 +96,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
       haptics.playSuccess();
       onAuthenticate({
         email: registeredUser.email,
-        role: 'member',
+        role: registeredUser.state.userProfile?.role || 'member',
         name: registeredUser.name,
         isDemo: false,
         isNewRegistration: false
@@ -104,7 +104,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
       return;
     }
 
-    // 2. Check if user typed Aarav's demo email
+    // 2. Check if user typed Coach Raj's email
+    if (cleanEmail === 'coach.raj@fitsync.health' || cleanEmail.includes('raj') || cleanEmail.includes('coach')) {
+      haptics.playSuccess();
+      onAuthenticate({
+        email: 'coach.raj@fitsync.health',
+        role: 'trainer',
+        name: 'Coach Raj Patel',
+        isDemo: true,
+        isNewRegistration: false
+      });
+      return;
+    }
+
+    // 3. Check if user typed Aarav's demo email
     if (cleanEmail === 'aarav.shah@fitsync.health' || cleanEmail.includes('aarav') || cleanEmail.includes('demo')) {
       haptics.playSuccess();
       onAuthenticate({
@@ -505,16 +518,29 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
                   />
                   <span>Stay signed in</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginEmail('aarav.shah@fitsync.health');
-                    setLoginPassword('password123');
-                  }}
-                  className="text-[11px] text-fitness-primary hover:underline cursor-pointer"
-                >
-                  ⚡ Fill Demo Account
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginEmail('aarav.shah@fitsync.health');
+                      setLoginPassword('password123');
+                    }}
+                    className="text-[11px] text-fitness-primary hover:underline cursor-pointer"
+                  >
+                    ⚡ Athlete Demo
+                  </button>
+                  <span className="text-gray-500">•</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginEmail('coach.raj@fitsync.health');
+                      setLoginPassword('password123');
+                    }}
+                    className="text-[11px] text-healthcare-accent hover:underline cursor-pointer font-semibold"
+                  >
+                    🏋️ Coach Demo
+                  </button>
+                </div>
               </div>
 
               <button
@@ -545,13 +571,37 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
                   </div>
                   <div>
                     <div className="text-sm font-bold text-white group-hover:text-fitness-primary transition">
-                      Aarav Shah (Sample Demo Data)
+                      Aarav Shah (Gym Athlete Member)
                     </div>
-                    <div className="text-xs text-gray-400">FitZone Vadodara • 5-day streak, 2 logged meals, 18 check-ins</div>
+                    <div className="text-xs text-gray-400">FitZone Vadodara • Daily workouts, sets, nutrition & attendance</div>
                   </div>
                 </div>
                 <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-fitness-primary text-gray-950 shadow-glow-fitness flex-shrink-0">
-                  Launch Demo →
+                  Athlete Dashboard →
+                </span>
+              </div>
+
+              {/* Demo Account: Coach Raj Patel */}
+              <div
+                onClick={() => handleQuickDemo('trainer', 'coach.raj@fitsync.health', 'Coach Raj Patel')}
+                className="p-4 rounded-2xl bg-surface-2 border border-surface-border hover:border-fitness-primary/60 cursor-pointer transition flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden relative border-2 border-fitness-primary/70">
+                    <Image src="/assets/trainer_raj.jpg" alt="Coach Raj Patel" fill className="object-cover" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white group-hover:text-fitness-primary transition flex items-center gap-1.5">
+                      <span>Coach Raj Patel (Gym Trainer Portal)</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-fitness-primary/20 text-fitness-primary border border-fitness-primary/30 uppercase font-bold">
+                        Coach
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-400">FitZone Vadodara • 24 assigned athletes, floor queue, routine pusher & chat</div>
+                  </div>
+                </div>
+                <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-fitness-primary text-gray-950 shadow-glow-fitness flex-shrink-0">
+                  Trainer Dashboard →
                 </span>
               </div>
             </div>
