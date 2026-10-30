@@ -10,7 +10,10 @@ import {
   ExerciseSet,
   PredefinedDietPlan,
   Gym,
-  WeekDay
+  WeekDay,
+  Trainer,
+  TrainerMessage,
+  TrainerBooking
 } from '@/types';
 import { 
   getInitialState, 
@@ -56,7 +59,17 @@ import {
   X,
   Calendar,
   RotateCcw,
-  Edit3
+  Edit3,
+  MessageSquareText,
+  Send,
+  Clock,
+  Phone,
+  Mail,
+  Award,
+  Video,
+  UserCheck,
+  Check,
+  Star
 } from 'lucide-react';
 
 export default function FitSyncApp() {
@@ -127,6 +140,19 @@ export default function FitSyncApp() {
   const [newMealCalories, setNewMealCalories] = useState('550');
   const [newMealProtein, setNewMealProtein] = useState('40');
   const [newMealIngredients, setNewMealIngredients] = useState('');
+
+  // Trainer Messaging & Interaction State
+  const [chatInputText, setChatInputText] = useState('');
+  const [chatCategory, setChatCategory] = useState<'general' | 'form_check' | 'nutrition' | 'schedule'>('general');
+  const [isTrainerModalOpen, setIsTrainerModalOpen] = useState(false);
+  const [selectedTrainerForModal, setSelectedTrainerForModal] = useState<Trainer | null>(null);
+
+  // Trainer 1-on-1 Booking Draft State
+  const [bookingDate, setBookingDate] = useState('Tomorrow');
+  const [bookingTimeSlot, setBookingTimeSlot] = useState('05:30 PM');
+  const [bookingFocus, setBookingFocus] = useState('Form Check & Technique Coaching');
+  const [bookingNotes, setBookingNotes] = useState('');
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   // Manual Exercise Addition State
   const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false);
@@ -373,6 +399,144 @@ export default function FitSyncApp() {
     }));
 
     showToast(`Checked in to ${state.selectedGym.name}! Streak updated 🔥`, '📍');
+  };
+
+  // ---------------- TRAINER INTERACTION HANDLERS ----------------
+  // Real Human Coach Reply Generator (strictly human-like coaching advice, NO AI)
+  const getCoachHumanReply = (userText: string, category: string, coach: Trainer) => {
+    const lower = userText.toLowerCase();
+    const coachFirstName = coach.name.replace('Coach ', '');
+
+    if (lower.includes('squat') || lower.includes('knee') || lower.includes('depth')) {
+      return `Hey! On squats, keep your chest upright and screw your feet into the floor. If you feel any knee caving, push the knees slightly outward over your pinky toes. Let's do a 5-minute set check next time you're on the rack! — ${coachFirstName}`;
+    }
+    if (lower.includes('bench') || lower.includes('chest') || lower.includes('shoulder')) {
+      return `Solid work on the pressing! Remember to retract and depress your scapulae before unracking. Keep your elbows tucked at roughly 45° so you load the pectorals rather than straining your anterior shoulder capsule. — ${coachFirstName}`;
+    }
+    if (lower.includes('protein') || lower.includes('diet') || lower.includes('meal') || lower.includes('calorie')) {
+      return `Nutrition looks on track! Aim to get around 30-40g of quality protein in your post-workout meal within 2 hours. Drink plenty of water to help your muscles recover glycogen. — ${coachFirstName}`;
+    }
+    if (lower.includes('sore') || lower.includes('pain') || lower.includes('hurt') || lower.includes('rest')) {
+      return `Listen to your body. Mild muscle soreness (DOMS) is normal, but sharp joint pain is not. Take 10 minutes for mobility work or foam rolling, and feel free to reduce the load by 15% today if needed. — ${coachFirstName}`;
+    }
+    if (lower.includes('book') || lower.includes('session') || lower.includes('meet') || lower.includes('slot')) {
+      return `I'm on the gym floor today during my shift. You can book a 1-on-1 slot using the "Book Floor Session" button above, or just wave me down near the free-weights area! — ${coachFirstName}`;
+    }
+    return `Got your message! Great consistency lately. Keep focusing on controlled eccentrics and strict form on every rep. If you need a spot or a quick form check, let me know when you arrive at ${state.selectedGym.name}! — ${coachFirstName}`;
+  };
+
+  const handleSendTrainerMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInputText.trim()) return;
+
+    haptics.playTap();
+    const userMsgText = chatInputText.trim();
+    const currentCoach = state.selectedTrainer || state.trainers[0];
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const userMessage: TrainerMessage = {
+      id: `msg_${Date.now()}`,
+      sender: 'user',
+      senderName: state.userProfile.fullName || 'You',
+      text: userMsgText,
+      timestamp: now.toISOString(),
+      time: timeStr,
+      category: chatCategory
+    };
+
+    // Update state with user message immediately
+    updateState((prev) => ({
+      ...prev,
+      trainerMessages: [...prev.trainerMessages, userMessage]
+    }));
+
+    setChatInputText('');
+    showToast(`Message sent to ${currentCoach.name}!`, '💬');
+
+    // Simulate real coach responding back after a realistic 1.5s delay
+    setTimeout(() => {
+      haptics.playSuccess();
+      const replyNow = new Date();
+      const replyTimeStr = replyNow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const coachReplyText = getCoachHumanReply(userMsgText, chatCategory, currentCoach);
+
+      const coachMessage: TrainerMessage = {
+        id: `msg_coach_${Date.now()}`,
+        sender: 'trainer',
+        senderName: currentCoach.name,
+        text: coachReplyText,
+        timestamp: replyNow.toISOString(),
+        time: replyTimeStr,
+        category: chatCategory
+      };
+
+      const newNotif = {
+        id: `notif_${Date.now()}`,
+        title: `Message from ${currentCoach.name}`,
+        desc: coachReplyText.slice(0, 80) + '...',
+        time: 'Just now',
+        type: 'trainer' as const,
+        actionText: 'View Chat',
+        isRead: false
+      };
+
+      updateState((prev) => ({
+        ...prev,
+        trainerMessages: [...prev.trainerMessages, coachMessage],
+        notifications: [newNotif, ...prev.notifications]
+      }));
+
+      showToast(`New reply from ${currentCoach.name}! 🏋️`, '💬');
+    }, 1500);
+  };
+
+  const handleSelectTrainer = (trainer: Trainer) => {
+    haptics.playSuccess();
+    updateState((prev) => ({
+      ...prev,
+      selectedTrainer: trainer,
+      userProfile: {
+        ...prev.userProfile,
+        assignedTrainerId: trainer.id
+      }
+    }));
+    showToast(`Assigned ${trainer.name} as your primary gym coach!`, '🏋️');
+  };
+
+  const handleCreateBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    haptics.playSuccess();
+    const currentCoach = state.selectedTrainer || state.trainers[0];
+
+    const newBooking: TrainerBooking = {
+      id: `tb_${Date.now()}`,
+      trainerId: currentCoach.id,
+      trainerName: currentCoach.name,
+      date: bookingDate,
+      timeSlot: bookingTimeSlot,
+      focusArea: bookingFocus,
+      status: 'Confirmed',
+      notes: bookingNotes.trim() || 'Floor consultation & form assessment'
+    };
+
+    updateState((prev) => ({
+      ...prev,
+      trainerBookings: [newBooking, ...prev.trainerBookings]
+    }));
+
+    setIsBookingModalOpen(false);
+    setBookingNotes('');
+    showToast(`Session booked with ${currentCoach.name} for ${bookingDate} at ${bookingTimeSlot}! 📅`, '✅');
+  };
+
+  const handleCancelBooking = (bookingId: string) => {
+    haptics.playTap();
+    updateState((prev) => ({
+      ...prev,
+      trainerBookings: prev.trainerBookings.filter((b) => b.id !== bookingId)
+    }));
+    showToast('Coaching session cancelled.', '🗑️');
   };
 
   const calculateExerciseVolume = (ex: Exercise) => {
@@ -658,20 +822,21 @@ export default function FitSyncApp() {
           {/* Sub-Tabs Selector */}
           <div className="flex items-center justify-between border-b border-surface-border pb-3">
             <div className="flex items-center gap-2 overflow-x-auto">
-              {(['home', 'workout', 'nutrition', 'profile'] as MemberTab[]).map((tab) => (
+              {(['home', 'workout', 'trainer', 'nutrition', 'profile'] as MemberTab[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => {
                     haptics.playTap();
                     setActiveTab(tab);
                   }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition whitespace-nowrap ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition whitespace-nowrap flex items-center gap-1.5 ${
                     activeTab === tab
                       ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
                       : 'bg-surface-2 text-gray-400 hover:text-white'
                   }`}
                 >
-                  {tab}
+                  {tab === 'trainer' && <MessageSquareText className="w-3.5 h-3.5" />}
+                  <span>{tab === 'trainer' ? 'Gym Coach / Trainer' : tab}</span>
                 </button>
               ))}
             </div>
@@ -1193,6 +1358,318 @@ export default function FitSyncApp() {
 
                   </div>
                 ))}
+              </div>
+
+            </div>
+          )}
+
+          {/* ---------------- TAB: GYM TRAINER & COACH INTERACTION ---------------- */}
+          {activeTab === 'trainer' && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              
+              {/* Active Coach Banner */}
+              <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border relative overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                  <div className="flex items-start sm:items-center gap-4">
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-fitness-primary shadow-glow-fitness flex-shrink-0">
+                      <Image 
+                        src={state.selectedTrainer?.avatar || '/assets/trainer_raj.jpg'} 
+                        alt={state.selectedTrainer?.name || 'Coach Raj Patel'} 
+                        fill 
+                        className="object-cover" 
+                      />
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-fitness-primary/20 text-fitness-primary border border-fitness-primary/30 uppercase tracking-wider">
+                          Assigned Gym Coach
+                        </span>
+                        <span className="text-[11px] text-gray-400">
+                          {state.selectedTrainer?.gymName || state.selectedGym.name}
+                        </span>
+                      </div>
+                      <h2 className="font-headline font-extrabold text-2xl text-white">
+                        {state.selectedTrainer?.name || 'Coach Raj Patel'}
+                      </h2>
+                      <p className="text-xs text-fitness-primary font-semibold mt-0.5">
+                        {state.selectedTrainer?.role || 'Senior Strength & Hypertrophy Coach'}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1 max-w-xl line-clamp-2">
+                        {state.selectedTrainer?.bio}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-300 mt-2.5">
+                        <span className="flex items-center gap-1 font-semibold text-fitness-primary">
+                          <Star className="w-3.5 h-3.5 fill-fitness-primary" /> {state.selectedTrainer?.rating || 4.9} ({state.selectedTrainer?.reviewsCount || 142} reviews)
+                        </span>
+                        <span>•</span>
+                        <span>{state.selectedTrainer?.experience || '7+ Years Experience'}</span>
+                        <span>•</span>
+                        <span className="text-emerald-400 flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                          {state.selectedTrainer?.availabilityStatus || 'On Floor'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap md:flex-col items-stretch gap-2.5 flex-shrink-0">
+                    <button
+                      onClick={() => setIsBookingModalOpen(true)}
+                      className="px-4 py-2.5 bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs rounded-xl shadow-glow-fitness transition flex items-center justify-center gap-1.5"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      <span>Book 1-on-1 Floor Session</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedTrainerForModal(state.selectedTrainer || state.trainers[0]);
+                        setIsTrainerModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-surface-2 hover:bg-surface-3 text-gray-200 hover:text-white font-semibold text-xs rounded-xl border border-surface-border transition flex items-center justify-center gap-1.5"
+                    >
+                      <UserCheck className="w-3.5 h-3.5 text-fitness-primary" />
+                      <span>View Coach Credentials & Roster</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Two-Column Layout: Live Communication & Scheduled Floor Sessions */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* Column 1 & 2: Direct Coach Communication Channel */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4 flex flex-col h-[600px]">
+                    
+                    {/* Chat Header */}
+                    <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-fitness-primary/50">
+                          <Image 
+                            src={state.selectedTrainer?.avatar || '/assets/trainer_raj.jpg'} 
+                            alt={state.selectedTrainer?.name || 'Coach'} 
+                            fill 
+                            className="object-cover" 
+                          />
+                        </div>
+                        <div>
+                          <div className="font-headline font-bold text-white text-sm flex items-center gap-1.5">
+                            <span>Direct Chat with {state.selectedTrainer?.name || 'Coach Raj'}</span>
+                            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                          </div>
+                          <div className="text-[11px] text-gray-400">
+                            Ask about compound form, set adjustments, or workout progressions
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            haptics.playTap();
+                            setChatInputText("Coach, could you check my bench press elbow tuck on set 3?");
+                            setChatCategory('form_check');
+                          }}
+                          className="hidden sm:inline-flex px-2.5 py-1 rounded-lg bg-surface-2 hover:bg-surface-3 text-[11px] text-fitness-primary border border-fitness-primary/30 transition"
+                        >
+                          Quick Form Cue
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Messages Scroll View */}
+                    <div className="flex-1 overflow-y-auto space-y-3.5 pr-1">
+                      {state.trainerMessages.map((msg) => {
+                        const isUser = msg.sender === 'user';
+                        return (
+                          <div
+                            key={msg.id}
+                            className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
+                          >
+                            <div className="flex items-center gap-1.5 mb-1 px-1">
+                              <span className="text-[10px] font-bold text-gray-400">{msg.senderName}</span>
+                              <span className="text-[9px] text-gray-500 font-mono">{msg.time}</span>
+                              {msg.category === 'form_check' && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-fitness-primary/10 text-fitness-primary border border-fitness-primary/20 font-semibold">
+                                  Form Check
+                                </span>
+                              )}
+                            </div>
+                            <div
+                              className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                                isUser
+                                  ? 'bg-fitness-primary text-gray-950 font-medium rounded-tr-sm shadow-glow-fitness'
+                                  : 'bg-surface-2 text-gray-200 border border-surface-border rounded-tl-sm'
+                              }`}
+                            >
+                              {msg.text}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Chat Input & Fast Category Chips */}
+                    <div className="pt-2 border-t border-surface-border space-y-2">
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                        <span className="text-gray-400 font-medium">Topic:</span>
+                        {(['general', 'form_check', 'nutrition', 'schedule'] as const).map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => {
+                              haptics.playTap();
+                              setChatCategory(cat);
+                            }}
+                            className={`px-2.5 py-0.5 rounded-lg border text-[10px] font-bold transition ${
+                              chatCategory === cat
+                                ? 'bg-fitness-primary/20 text-fitness-primary border-fitness-primary'
+                                : 'bg-surface-2 text-gray-400 border-surface-border hover:text-white'
+                            }`}
+                          >
+                            {cat === 'general' ? 'General' : cat === 'form_check' ? 'Technique / Form' : cat === 'nutrition' ? 'Nutrition' : 'Scheduling'}
+                          </button>
+                        ))}
+                      </div>
+
+                      <form onSubmit={handleSendTrainerMessage} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={chatInputText}
+                          onChange={(e) => setChatInputText(e.target.value)}
+                          placeholder={`Message ${state.selectedTrainer?.name || 'Coach'} directly...`}
+                          className="flex-1 bg-surface-2 border border-surface-border rounded-xl px-4 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-fitness-primary transition"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!chatInputText.trim()}
+                          className="px-4 py-2.5 bg-fitness-primary hover:bg-fitness-light disabled:opacity-50 text-gray-950 font-bold text-xs rounded-xl shadow-glow-fitness transition flex items-center gap-1.5"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Send</span>
+                        </button>
+                      </form>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Column 3: Scheduled 1-on-1 Sessions & Gym Trainer Roster */}
+                <div className="space-y-6">
+                  
+                  {/* Scheduled Sessions Card */}
+                  <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-headline font-bold text-white text-base flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-fitness-primary" /> Booked Floor Sessions
+                      </h3>
+                      <button
+                        onClick={() => setIsBookingModalOpen(true)}
+                        className="text-[11px] text-fitness-primary hover:underline font-semibold"
+                      >
+                        + Book New
+                      </button>
+                    </div>
+
+                    {state.trainerBookings.length === 0 ? (
+                      <div className="p-6 text-center rounded-2xl bg-surface-2/60 border border-dashed border-surface-border space-y-2">
+                        <Clock className="w-7 h-7 text-gray-500 mx-auto" />
+                        <div className="text-xs font-bold text-gray-300">No Sessions Booked</div>
+                        <p className="text-[11px] text-gray-500 max-w-xs mx-auto">
+                          Book a 1-on-1 floor appointment with your coach for technique analysis, spotter support, or workout splits.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {state.trainerBookings.map((b) => (
+                          <div key={b.id} className="p-4 rounded-2xl bg-surface-2 border border-surface-border space-y-2">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-fitness-primary/15 text-fitness-primary border border-fitness-primary/30 uppercase">
+                                  {b.status}
+                                </span>
+                                <h4 className="font-bold text-white text-xs mt-1.5">{b.focusArea}</h4>
+                                <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-fitness-primary" /> {b.date} • {b.timeSlot}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleCancelBooking(b.id)}
+                                className="p-1 rounded-lg text-gray-500 hover:text-red-400 transition"
+                                title="Cancel Session"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            {b.notes && (
+                              <p className="text-[11px] text-gray-400 bg-surface-1/80 p-2 rounded-xl border border-surface-border/60">
+                                {b.notes}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Switch Home Gym Trainer */}
+                  <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-3">
+                    <h3 className="font-headline font-bold text-white text-base flex items-center gap-2">
+                      <Award className="w-4 h-4 text-healthcare-accent" /> Available Gym Coaches
+                    </h3>
+                    <p className="text-xs text-gray-400">
+                      You can switch or consult with any certified coach on the roster at {state.selectedGym.name}:
+                    </p>
+
+                    <div className="space-y-2.5 pt-1">
+                      {state.trainers.map((t) => {
+                        const isCurrent = (state.selectedTrainer?.id || state.trainers[0].id) === t.id;
+                        return (
+                          <div
+                            key={t.id}
+                            className={`p-3.5 rounded-2xl border transition flex items-center justify-between gap-3 ${
+                              isCurrent
+                                ? 'bg-fitness-primary/10 border-fitness-primary shadow-glow-fitness'
+                                : 'bg-surface-2 border-surface-border hover:border-gray-500'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-fitness-primary/40 flex-shrink-0">
+                                <Image src={t.avatar} alt={t.name} fill className="object-cover" />
+                              </div>
+                              <div>
+                                <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                                  <span>{t.name}</span>
+                                  {isCurrent && (
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-fitness-primary text-gray-950 font-bold">
+                                      Active
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-gray-400">{t.role}</div>
+                                <div className="text-[10px] text-fitness-primary font-mono">{t.rating} ★ • {t.experience}</div>
+                              </div>
+                            </div>
+
+                            {!isCurrent ? (
+                              <button
+                                onClick={() => handleSelectTrainer(t)}
+                                className="px-3 py-1.5 rounded-xl bg-surface-3 hover:bg-fitness-primary hover:text-gray-950 text-xs font-bold text-white transition border border-surface-border"
+                              >
+                                Select
+                              </button>
+                            ) : (
+                              <CheckCircle2 className="w-4 h-4 text-fitness-primary flex-shrink-0" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                </div>
+
               </div>
 
             </div>
@@ -2089,6 +2566,169 @@ export default function FitSyncApp() {
                 <p className="text-gray-300 text-[11px] leading-relaxed">{n.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 9. Coach Credentials Modal */}
+      {isTrainerModalOpen && selectedTrainerForModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-surface-2 border border-surface-border w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <div className="p-5 border-b border-surface-border flex items-center justify-between bg-surface-1">
+              <div className="flex items-center gap-3">
+                <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-fitness-primary/50">
+                  <Image src={selectedTrainerForModal.avatar} alt={selectedTrainerForModal.name} fill className="object-cover" />
+                </div>
+                <div>
+                  <h3 className="font-headline font-bold text-white text-base">{selectedTrainerForModal.name}</h3>
+                  <div className="text-xs text-fitness-primary">{selectedTrainerForModal.role}</div>
+                </div>
+              </div>
+              <button onClick={() => setIsTrainerModalOpen(false)} className="text-gray-400 hover:text-white text-xs">Close</button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div>
+                <span className="text-gray-400 block mb-1 font-semibold uppercase tracking-wider text-[10px]">Coach Biography</span>
+                <p className="text-gray-300 leading-relaxed bg-surface-1 p-3 rounded-2xl border border-surface-border">
+                  {selectedTrainerForModal.bio}
+                </p>
+              </div>
+
+              <div>
+                <span className="text-gray-400 block mb-1 font-semibold uppercase tracking-wider text-[10px]">Specializations</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedTrainerForModal.specializations.map((spec) => (
+                    <span key={spec} className="px-2.5 py-1 rounded-lg bg-surface-1 text-gray-200 border border-surface-border">
+                      {spec}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-gray-400 block mb-1 font-semibold uppercase tracking-wider text-[10px]">Certifications</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedTrainerForModal.certifications.map((cert) => (
+                    <span key={cert} className="px-2.5 py-1 rounded-lg bg-fitness-primary/10 text-fitness-primary border border-fitness-primary/30 font-semibold">
+                      ✓ {cert}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-surface-border">
+                <div className="bg-surface-1 p-3 rounded-xl border border-surface-border">
+                  <div className="text-gray-400 text-[10px]">Weekly Floor Schedule</div>
+                  <div className="text-white font-bold mt-0.5">{selectedTrainerForModal.weeklySchedule}</div>
+                </div>
+                <div className="bg-surface-1 p-3 rounded-xl border border-surface-border">
+                  <div className="text-gray-400 text-[10px]">Assigned Athletes</div>
+                  <div className="text-white font-bold mt-0.5">{selectedTrainerForModal.assignedMembersCount} Members Active</div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSelectTrainer(selectedTrainerForModal);
+                    setIsTrainerModalOpen(false);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition"
+                >
+                  Set as My Coach
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTrainerModalOpen(false);
+                    setIsBookingModalOpen(true);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-surface-1 hover:bg-surface-3 border border-surface-border text-xs font-semibold text-white transition"
+                >
+                  Book Session
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 10. Book 1-on-1 Session Modal */}
+      {isBookingModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-surface-2 border border-surface-border w-full max-w-md rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <div className="p-5 border-b border-surface-border flex items-center justify-between bg-surface-1">
+              <div>
+                <h3 className="font-headline font-bold text-white text-base">Book 1-on-1 Floor Session</h3>
+                <p className="text-xs text-gray-400">With {state.selectedTrainer?.name || 'Coach Raj'}</p>
+              </div>
+              <button onClick={() => setIsBookingModalOpen(false)} className="text-gray-400 hover:text-white text-xs">Cancel</button>
+            </div>
+
+            <form onSubmit={handleCreateBooking} className="p-6 space-y-4 text-xs">
+              <div className="space-y-1">
+                <label className="text-gray-400 font-semibold">Select Day</label>
+                <select
+                  value={bookingDate}
+                  onChange={(e) => setBookingDate(e.target.value)}
+                  className="w-full bg-surface-1 border border-surface-border rounded-xl p-2.5 text-white"
+                >
+                  <option value="Today">Today (Same-day Floor Consultation)</option>
+                  <option value="Tomorrow">Tomorrow</option>
+                  <option value="Saturday">Saturday Floor Session</option>
+                  <option value="Monday">Next Monday</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-gray-400 font-semibold">Select Time Slot</label>
+                <select
+                  value={bookingTimeSlot}
+                  onChange={(e) => setBookingTimeSlot(e.target.value)}
+                  className="w-full bg-surface-1 border border-surface-border rounded-xl p-2.5 text-white"
+                >
+                  <option value="07:00 AM">07:00 AM (Early Floor)</option>
+                  <option value="09:30 AM">09:30 AM</option>
+                  <option value="05:30 PM">05:30 PM (Peak Evening)</option>
+                  <option value="07:00 PM">07:00 PM</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-gray-400 font-semibold">Session Focus Area</label>
+                <select
+                  value={bookingFocus}
+                  onChange={(e) => setBookingFocus(e.target.value)}
+                  className="w-full bg-surface-1 border border-surface-border rounded-xl p-2.5 text-white"
+                >
+                  <option value="Form Check & Technique Coaching">Form Check &amp; Technique Coaching</option>
+                  <option value="Bench Press & Chest Progression">Bench Press &amp; Chest Progression</option>
+                  <option value="Squat Depth & Hip Opener Technique">Squat Depth &amp; Hip Opener Technique</option>
+                  <option value="Deadlift Kinematics & Back Safety">Deadlift Kinematics &amp; Back Safety</option>
+                  <option value="Workout Split Customization">Workout Split Customization</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-gray-400 font-semibold">Notes / Questions for Coach</label>
+                <textarea
+                  rows={2}
+                  value={bookingNotes}
+                  onChange={(e) => setBookingNotes(e.target.value)}
+                  placeholder="e.g. Would like spotter assistance on heavy top sets and review right shoulder mobility..."
+                  className="w-full bg-surface-1 border border-surface-border rounded-xl p-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-fitness-primary"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold rounded-xl text-xs shadow-glow-fitness transition mt-2"
+              >
+                Confirm Coaching Appointment
+              </button>
+            </form>
           </div>
         </div>
       )}

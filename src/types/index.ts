@@ -38,6 +38,7 @@ export interface UserProfile {
   phone?: string;
   avatarUrl?: string;
   gymId?: string;
+  assignedTrainerId?: string;
   membershipTier?: string;
   streakDays: number;
   waterLoggedMl: number;
@@ -251,12 +252,53 @@ export interface TrainerIntervention {
   attendanceTrend: string;
 }
 
+export interface Trainer {
+  id: string;
+  name: string;
+  gymId: string;
+  gymName: string;
+  role: string;
+  avatar: string;
+  experience: string;
+  rating: number;
+  reviewsCount: number;
+  specializations: string[];
+  certifications: string[];
+  bio: string;
+  assignedMembersCount: number;
+  availabilityStatus: string;
+  weeklySchedule: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface TrainerMessage {
+  id: string;
+  sender: 'user' | 'trainer';
+  senderName: string;
+  text: string;
+  timestamp: string; // ISO or readable
+  time: string; // e.g. "10:30 AM"
+  category?: 'general' | 'form_check' | 'nutrition' | 'schedule';
+}
+
+export interface TrainerBooking {
+  id: string;
+  trainerId: string;
+  trainerName: string;
+  date: string;
+  timeSlot: string;
+  focusArea: string;
+  status: 'Confirmed' | 'Completed' | 'Cancelled';
+  notes?: string;
+}
+
 export interface NotificationItem {
   id: string;
   title: string;
   desc: string;
   time: string;
-  type: 'health' | 'workout' | 'nutrition' | 'gym';
+  type: 'health' | 'workout' | 'nutrition' | 'gym' | 'trainer';
   actionText: string;
   isRead?: boolean;
 }

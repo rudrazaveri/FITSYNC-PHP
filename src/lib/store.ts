@@ -9,7 +9,10 @@ import {
   WorkoutRoutine, 
   PredefinedDietPlan, 
   NotificationItem,
-  WeekDay
+  WeekDay,
+  Trainer,
+  TrainerMessage,
+  TrainerBooking
 } from '@/types';
 import { 
   INITIAL_GYMS, 
@@ -18,7 +21,10 @@ import {
   getTodayDayName,
   getWorkoutForDay,
   PREDEFINED_DIET_PLANS, 
-  INITIAL_NOTIFICATIONS 
+  INITIAL_NOTIFICATIONS,
+  INITIAL_TRAINERS,
+  INITIAL_TRAINER_MESSAGES,
+  INITIAL_TRAINER_BOOKINGS
 } from './initial-data';
 import { calculateHealthMetrics } from './assessment-calculator';
 
@@ -61,6 +67,10 @@ export interface AppState {
   }[];
   notifications: NotificationItem[];
   attendanceRecords: AttendanceRecord[];
+  trainers: Trainer[];
+  selectedTrainer: Trainer;
+  trainerMessages: TrainerMessage[];
+  trainerBookings: TrainerBooking[];
 }
 
 export interface RegisteredUserRecord {
@@ -177,7 +187,11 @@ export function createDemoState(): AppState {
     activeDietPlan: PREDEFINED_DIET_PLANS[0],
     loggedMeals: [...demoMeals],
     notifications: [...INITIAL_NOTIFICATIONS],
-    attendanceRecords: [...DEMO_ATTENDANCE]
+    attendanceRecords: [...DEMO_ATTENDANCE],
+    trainers: INITIAL_TRAINERS,
+    selectedTrainer: INITIAL_TRAINERS[0],
+    trainerMessages: [...INITIAL_TRAINER_MESSAGES],
+    trainerBookings: [...INITIAL_TRAINER_BOOKINGS]
   };
 }
 
@@ -281,7 +295,21 @@ export function createCleanUserState(params: NewUserRegistrationParams): AppStat
     activeDietPlan: matchingPlan,
     loggedMeals: [], // 100% EMPTY! NO PREDEFINED MEALS!
     notifications: freshNotifications,
-    attendanceRecords: [] // 100% EMPTY! NO PREDEFINED ATTENDANCE!
+    attendanceRecords: [], // 100% EMPTY! NO PREDEFINED ATTENDANCE!
+    trainers: INITIAL_TRAINERS,
+    selectedTrainer: INITIAL_TRAINERS[0],
+    trainerMessages: [
+      {
+        id: `msg_welcome_${Date.now()}`,
+        sender: 'trainer',
+        senderName: INITIAL_TRAINERS[0].name,
+        text: `Welcome to ${gym.name}! I'm Coach ${INITIAL_TRAINERS[0].name.replace('Coach ', '')}, your dedicated strength coach. Whenever you need form checks, workout adjustments, or coaching, send me a message right here!`,
+        timestamp: new Date().toISOString(),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        category: 'general'
+      }
+    ],
+    trainerBookings: []
   };
 }
 
@@ -353,7 +381,11 @@ export function getInitialState(): AppState {
         activeDietPlan: parsed.activeDietPlan || PREDEFINED_DIET_PLANS[0],
         loggedMeals: Array.isArray(parsed.loggedMeals) ? parsed.loggedMeals : [],
         notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
-        attendanceRecords: Array.isArray(parsed.attendanceRecords) ? parsed.attendanceRecords : []
+        attendanceRecords: Array.isArray(parsed.attendanceRecords) ? parsed.attendanceRecords : [],
+        trainers: Array.isArray(parsed.trainers) && parsed.trainers.length > 0 ? parsed.trainers : INITIAL_TRAINERS,
+        selectedTrainer: parsed.selectedTrainer || INITIAL_TRAINERS[0],
+        trainerMessages: Array.isArray(parsed.trainerMessages) ? parsed.trainerMessages : [...INITIAL_TRAINER_MESSAGES],
+        trainerBookings: Array.isArray(parsed.trainerBookings) ? parsed.trainerBookings : [...INITIAL_TRAINER_BOOKINGS]
       };
     }
   } catch (e) {

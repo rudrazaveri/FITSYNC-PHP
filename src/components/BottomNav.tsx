@@ -1,20 +1,22 @@
 'use client';
 
 import React from 'react';
-import { Home, Dumbbell, Utensils, User } from 'lucide-react';
+import { Home, Dumbbell, Utensils, User, MessageSquareText } from 'lucide-react';
 import { haptics } from '@/lib/audio-haptics';
 
-export type MemberTab = 'home' | 'workout' | 'nutrition' | 'profile';
+export type MemberTab = 'home' | 'workout' | 'nutrition' | 'trainer' | 'profile';
 
 interface BottomNavProps {
   activeTab: MemberTab;
   onTabChange: (tab: MemberTab) => void;
+  unreadTrainerCount?: number;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, unreadTrainerCount = 0 }) => {
   const tabs = [
     { id: 'home' as MemberTab, label: 'Home', icon: Home },
     { id: 'workout' as MemberTab, label: 'Workout', icon: Dumbbell },
+    { id: 'trainer' as MemberTab, label: 'Trainer', icon: MessageSquareText },
     { id: 'nutrition' as MemberTab, label: 'Nutrition', icon: Utensils },
     { id: 'profile' as MemberTab, label: 'Profile', icon: User },
   ];

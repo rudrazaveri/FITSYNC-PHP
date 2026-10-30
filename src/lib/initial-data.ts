@@ -10,7 +10,10 @@ import {
   TrainerIntervention, 
   NotificationItem,
   Exercise,
-  WeekDay
+  WeekDay,
+  Trainer,
+  TrainerMessage,
+  TrainerBooking
 } from '@/types';
 
 export const INITIAL_GYMS: Gym[] = [
@@ -1453,5 +1456,108 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     time: "Yesterday",
     type: "gym",
     actionText: "View Badge"
+  }
+];
+
+export const INITIAL_TRAINERS: Trainer[] = [
+  {
+    id: "tr_raj_patel",
+    name: "Coach Raj Patel",
+    gymId: "gym_fitzone_vadodara",
+    gymName: "FitZone Fitness Vadodara",
+    role: "Senior Strength & Hypertrophy Coach",
+    avatar: "/assets/trainer_raj.jpg",
+    experience: "7+ Years",
+    rating: 4.9,
+    reviewsCount: 142,
+    specializations: ["Hypertrophy & Muscle Gain", "Powerlifting Form", "Progressive Overload", "Injury Prevention"],
+    certifications: ["CSCS (NSCA)", "ACE Certified Personal Trainer", "Precision Nutrition L1"],
+    bio: "Dedicated to biomechanically sound lifting and real compound strength progression. Former state-level competitive powerlifter.",
+    assignedMembersCount: 24,
+    availabilityStatus: "On Gym Floor • Available for 1-on-1",
+    weeklySchedule: "Mon - Sat: 6:00 AM – 1:00 PM, 5:00 PM – 9:00 PM",
+    phone: "+91 98251 44321",
+    email: "coach.raj@fitsync.health"
+  },
+  {
+    id: "tr_priya_sharma",
+    name: "Coach Priya Sharma",
+    gymId: "gym_fitzone_vadodara",
+    gymName: "FitZone Fitness Vadodara",
+    role: "Functional Conditioning & Kinetic Coach",
+    avatar: "https://images.unsplash.com/photo-1594381898411-846e7d193883?w=500&auto=format&fit=crop&q=80",
+    experience: "5 Years",
+    rating: 4.8,
+    reviewsCount: 98,
+    specializations: ["Metabolic Conditioning", "Core Stability", "Female Athletic Development", "Zone 2 Cardio"],
+    certifications: ["CrossFit Level 2", "NASM-CPT", "Functional Range Conditioning"],
+    bio: "Passionate about building functional mobility, posture resilience, and high work capacity for everyday athletic humans.",
+    assignedMembersCount: 18,
+    availabilityStatus: "Available Tomorrow Morning",
+    weeklySchedule: "Tue - Sun: 7:00 AM – 2:00 PM",
+    phone: "+91 98252 88412",
+    email: "coach.priya@fitsync.health"
+  },
+  {
+    id: "tr_vikram_mehta",
+    name: "Coach Vikram Mehta",
+    gymId: "gym_powerhouse_ahmedabad",
+    gymName: "PowerHouse Gym Ahmedabad",
+    role: "Mobility & Athletic Rehabilitation Coach",
+    avatar: "https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=500&auto=format&fit=crop&q=80",
+    experience: "8 Years",
+    rating: 4.9,
+    reviewsCount: 165,
+    specializations: ["Mobility Restructuring", "Joint Kinematics", "Olympic Lifting Technique"],
+    certifications: ["FRCms Mobility Specialist", "EXOS Performance Specialist"],
+    bio: "Bridging the gap between athletic conditioning and heavy compound weight training with zero joint pain.",
+    assignedMembersCount: 15,
+    availabilityStatus: "Available Today • 3 Slots",
+    weeklySchedule: "Mon - Fri: 8:00 AM – 4:00 PM",
+    phone: "+91 98255 12093",
+    email: "coach.vikram@fitsync.health"
+  }
+];
+
+export const INITIAL_TRAINER_MESSAGES: TrainerMessage[] = [
+  {
+    id: "msg_01",
+    sender: "trainer",
+    senderName: "Coach Raj Patel",
+    text: "Hey! Welcome to FitZone Vadodara. I'm assigned as your strength coach. How did your chest & triceps session feel today?",
+    timestamp: "2026-10-30T09:15:00Z",
+    time: "09:15 AM",
+    category: "general"
+  },
+  {
+    id: "msg_02",
+    sender: "user",
+    senderName: "You",
+    text: "Hey Coach! The bench press felt solid, hit 82.5 kg on the top sets. Just felt a tiny pinch in my front deltoid on the last rep.",
+    timestamp: "2026-10-30T09:20:00Z",
+    time: "09:20 AM",
+    category: "form_check"
+  },
+  {
+    id: "msg_03",
+    sender: "trainer",
+    senderName: "Coach Raj Patel",
+    text: "Great weight moved! For the pinch, make sure you tuck your elbows 45 degrees rather than flaring them 90 degrees. Also remember to engage leg drive before unracking. Catch me on the gym floor today at 5 PM if you want me to spot your form!",
+    timestamp: "2026-10-30T09:25:00Z",
+    time: "09:25 AM",
+    category: "form_check"
+  }
+];
+
+export const INITIAL_TRAINER_BOOKINGS: TrainerBooking[] = [
+  {
+    id: "tb_01",
+    trainerId: "tr_raj_patel",
+    trainerName: "Coach Raj Patel",
+    date: "Tomorrow, Oct 31",
+    timeSlot: "05:30 PM",
+    focusArea: "Squat Depth & Thoracic Mobility Check",
+    status: "Confirmed",
+    notes: "Review bar path and warm-up hip opener drill on the platform."
   }
 ];
