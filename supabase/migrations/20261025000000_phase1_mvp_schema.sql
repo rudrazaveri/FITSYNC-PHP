@@ -223,20 +223,42 @@ ALTER TABLE public.hydration_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- Allow users to read and update their own data
+DROP POLICY IF EXISTS "Users read own profile" ON public.user_profiles;
 CREATE POLICY "Users read own profile" ON public.user_profiles FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users update own profile" ON public.user_profiles;
 CREATE POLICY "Users update own profile" ON public.user_profiles FOR UPDATE USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users read own health profile" ON public.member_health_profiles;
 CREATE POLICY "Users read own health profile" ON public.member_health_profiles FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users insert/update own health profile" ON public.member_health_profiles;
 CREATE POLICY "Users insert/update own health profile" ON public.member_health_profiles FOR ALL USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users read own attendance" ON public.gym_attendance;
 CREATE POLICY "Users read own attendance" ON public.gym_attendance FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users read own workouts" ON public.workout_sessions;
 CREATE POLICY "Users read own workouts" ON public.workout_sessions FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users read own meals" ON public.logged_meals;
 CREATE POLICY "Users read own meals" ON public.logged_meals FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users read own hydration" ON public.hydration_logs;
 CREATE POLICY "Users read own hydration" ON public.hydration_logs FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users read own notifications" ON public.notifications;
 CREATE POLICY "Users read own notifications" ON public.notifications FOR ALL USING (auth.uid() = user_id);
 
 -- Public read access for global catalog
+DROP POLICY IF EXISTS "Public read gyms" ON public.gyms;
 CREATE POLICY "Public read gyms" ON public.gyms FOR SELECT TO authenticated, anon USING (true);
+
+DROP POLICY IF EXISTS "Public read plans" ON public.membership_plans;
 CREATE POLICY "Public read plans" ON public.membership_plans FOR SELECT TO authenticated, anon USING (true);
+
+DROP POLICY IF EXISTS "Public read exercises" ON public.exercises;
 CREATE POLICY "Public read exercises" ON public.exercises FOR SELECT TO authenticated, anon USING (true);
+
+DROP POLICY IF EXISTS "Public read diet plans" ON public.predefined_diet_plans;
 CREATE POLICY "Public read diet plans" ON public.predefined_diet_plans FOR SELECT TO authenticated, anon USING (true);

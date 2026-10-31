@@ -16,8 +16,28 @@ import {
 } from '@/lib/initial-data';
 import { getInitialState, saveState, AppState } from '@/lib/store';
 
-export const CURRENT_TRAINER_ID = 'tr_raj_patel';
-export const CURRENT_GYM_ID = 'gym_fitzone_vadodara';
+export const CURRENT_TRAINER_ID = '44444444-4444-4444-4444-444444444401';
+export const CURRENT_GYM_ID = '11111111-1111-1111-1111-111111111101';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const ID_TO_UUID_MAP: Record<string, string> = {
+  'tr_raj_patel': '44444444-4444-4444-4444-444444444401',
+  'tr_vikram_mehta': '44444444-4444-4444-4444-444444444402',
+  'gym_fitzone_vadodara': '11111111-1111-1111-1111-111111111101',
+  'gym_powerhouse_ahmedabad': '11111111-1111-1111-1111-111111111102',
+  'gym_elite_surat': '11111111-1111-1111-1111-111111111103',
+  'ath_01': '55555555-5555-5555-5555-555555555501',
+  'ath_02': '55555555-5555-5555-5555-555555555502',
+  'ath_03': '55555555-5555-5555-5555-555555555503',
+  'ath_04': '55555555-5555-5555-5555-555555555504',
+  'usr_aarav_01': '55555555-5555-5555-5555-555555555501'
+};
+
+export function toValidUuid(id: string): string {
+  if (!id) return CURRENT_TRAINER_ID;
+  if (UUID_REGEX.test(id)) return id;
+  return ID_TO_UUID_MAP[id] || CURRENT_TRAINER_ID;
+}
 
 // Mock/Initial Detailed Members Database Seed
 const DETAILED_MEMBERS_SEED: DetailedMemberProfile[] = [
@@ -421,6 +441,7 @@ export const TrainerService = {
   async getTrainerProfile(trainerId: string = CURRENT_TRAINER_ID): Promise<Trainer> {
     const supabase = createClient();
     try {
+      const trainerUuid = toValidUuid(trainerId);
       const { data, error } = await supabase
         .from('trainers')
         .select(`
@@ -441,7 +462,7 @@ export const TrainerService = {
             name
           )
         `)
-        .eq('id', trainerId)
+        .eq('id', trainerUuid)
         .maybeSingle();
 
       if (data && !error) {
@@ -479,6 +500,7 @@ export const TrainerService = {
   async updateTrainerProfile(updated: Partial<Trainer>): Promise<Trainer> {
     const supabase = createClient();
     try {
+      const trainerUuid = toValidUuid(CURRENT_TRAINER_ID);
       await supabase
         .from('trainers')
         .update({
@@ -486,7 +508,7 @@ export const TrainerService = {
           specializations: updated.specializations,
           certifications: updated.certifications
         })
-        .eq('id', CURRENT_TRAINER_ID);
+        .eq('id', trainerUuid);
     } catch (e) {
       // offline fallback
     }
@@ -548,6 +570,44 @@ export const TrainerService = {
 
   // 6. Get Interventions / Insights (Rule-Based vs AI Insights)
   async getInterventions(statusFilter: 'all' | 'open' | 'resolved' = 'all'): Promise<TrainerInterventionInsight[]> {
+    const supabase = createClient();
+    try {
+      const trainerUuid = toValidUuid(CURRENT_TRAINER_ID);
+      let query = supabase
+        .from('trainer_interventions')
+        .select('*')
+        .eq('trainer_id', trainerUuid)
+        .order('created_at', { ascending: false });
+
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data, error } = await query;
+      if (data && data.length > 0 && !error) {
+        return data.map((d: any) => ({
+          id: d.id,
+          memberId: d.member_id,
+          memberName: d.member_id === '55555555-5555-5555-5555-555555555502' ? 'Rahul Verma' :
+                     d.member_id === '55555555-5555-5555-5555-555555555503' ? 'Priya Nair' :
+                     d.member_id === '55555555-5555-5555-5555-555555555504' ? 'Dev Patel' : 'Aarav Shah',
+          memberAvatar: d.member_id === '55555555-5555-5555-5555-555555555502' ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500' :
+                        d.member_id === '55555555-5555-5555-5555-555555555503' ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500' :
+                        d.member_id === '55555555-5555-5555-5555-555555555504' ? 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500' : '/assets/aarav.jpg',
+          sourceType: d.source_type || 'rule_based',
+          title: d.issue_description || 'Compliance Alert',
+          description: d.ai_recommendation_note || 'Review athlete training plan',
+          reason: d.reason || 'Telemetry anomaly',
+          dateDetected: d.date_detected || new Date().toLocaleDateString('en-CA'),
+          attentionStatus: d.attention_status === 'high_attention' ? 'High' : d.attention_status === 'needs_attention' ? 'Moderate' : 'Low',
+          status: d.status === 'open' ? 'Open' : 'Resolved',
+          metricCategory: 'workout'
+        }));
+      }
+    } catch (e) {
+      // fallback
+    }
+
     const runtime = getStoredRuntimeState();
     if (statusFilter === 'all') return runtime.interventions;
     if (statusFilter === 'open') return runtime.interventions.filter(i => i.status === 'Open' || i.status === 'In Progress');
@@ -556,6 +616,18 @@ export const TrainerService = {
 
   // 7. Resolve / Update Intervention
   async updateInterventionStatus(id: string, newStatus: 'Open' | 'Resolved' | 'In Progress') {
+    const supabase = createClient();
+    try {
+      if (UUID_REGEX.test(id)) {
+        await supabase
+          .from('trainer_interventions')
+          .update({ status: newStatus.toLowerCase() })
+          .eq('id', id);
+      }
+    } catch (e) {
+      // offline fallback
+    }
+
     const runtime = getStoredRuntimeState();
     runtime.interventions = runtime.interventions.map(i => {
       if (i.id === id) {
@@ -568,6 +640,42 @@ export const TrainerService = {
 
   // 8. Get Sessions (Floor + Online Video)
   async getSessions(trainerId: string = CURRENT_TRAINER_ID): Promise<TrainerSessionItem[]> {
+    const supabase = createClient();
+    try {
+      const trainerUuid = toValidUuid(trainerId);
+      const { data, error } = await supabase
+        .from('trainer_sessions')
+        .select('*')
+        .eq('trainer_id', trainerUuid)
+        .order('session_date', { ascending: true });
+
+      if (data && data.length > 0 && !error) {
+        return data.map((s: any) => ({
+          id: s.id,
+          trainerId: s.trainer_id,
+          trainerName: 'Coach Raj Patel',
+          memberId: s.member_id,
+          memberName: s.member_id === '55555555-5555-5555-5555-555555555502' ? 'Rahul Verma' :
+                      s.member_id === '55555555-5555-5555-5555-555555555503' ? 'Priya Nair' :
+                      s.member_id === '55555555-5555-5555-5555-555555555504' ? 'Dev Patel' : 'Aarav Shah',
+          memberAvatar: s.member_id === '55555555-5555-5555-5555-555555555502' ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500' :
+                        s.member_id === '55555555-5555-5555-5555-555555555503' ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500' :
+                        s.member_id === '55555555-5555-5555-5555-555555555504' ? 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500' : '/assets/aarav.jpg',
+          date: s.session_date,
+          timeSlot: s.start_time ? s.start_time.slice(0, 5) : '17:30 PM',
+          durationMinutes: s.duration_minutes || 45,
+          sessionType: s.session_type || 'floor_1on1',
+          status: s.status === 'completed' ? 'Completed' : s.status === 'cancelled' ? 'Cancelled' : 'Confirmed',
+          meetingLink: s.meeting_link,
+          telehealthRoomId: s.telehealth_room_id,
+          focusArea: s.focus_area,
+          notes: s.notes
+        }));
+      }
+    } catch (e) {
+      // fallback
+    }
+
     const runtime = getStoredRuntimeState();
     return runtime.sessions;
   },
@@ -578,6 +686,25 @@ export const TrainerService = {
       ...session,
       id: `sess_${Date.now()}`
     };
+
+    const supabase = createClient();
+    try {
+      await supabase.from('trainer_sessions').insert({
+        trainer_id: toValidUuid(session.trainerId),
+        member_id: toValidUuid(session.memberId),
+        gym_id: toValidUuid(CURRENT_GYM_ID),
+        session_date: session.date,
+        start_time: session.timeSlot.includes('PM') || session.timeSlot.includes('AM') ? '17:30:00' : session.timeSlot,
+        duration_minutes: session.durationMinutes,
+        session_type: session.sessionType,
+        status: session.status.toLowerCase(),
+        meeting_link: session.meetingLink,
+        focus_area: session.focusArea,
+        notes: session.notes
+      });
+    } catch (e) {
+      // offline fallback
+    }
 
     const runtime = getStoredRuntimeState();
     runtime.sessions = [newSession, ...runtime.sessions];
@@ -606,6 +733,18 @@ export const TrainerService = {
 
   // 10. Update Session Status
   async updateSessionStatus(sessionId: string, status: TrainerSessionItem['status']) {
+    const supabase = createClient();
+    try {
+      if (UUID_REGEX.test(sessionId)) {
+        await supabase
+          .from('trainer_sessions')
+          .update({ status: status.toLowerCase() })
+          .eq('id', sessionId);
+      }
+    } catch (e) {
+      // offline fallback
+    }
+
     const runtime = getStoredRuntimeState();
     runtime.sessions = runtime.sessions.map(s => {
       if (s.id === sessionId) {
@@ -644,6 +783,30 @@ export const TrainerService = {
 
   // 12. Persistent Messaging
   async getMessages(memberId?: string): Promise<TrainerMessage[]> {
+    const supabase = createClient();
+    try {
+      const trainerUuid = toValidUuid(CURRENT_TRAINER_ID);
+      const { data, error } = await supabase
+        .from('trainer_messages')
+        .select('*')
+        .eq('trainer_id', trainerUuid)
+        .order('created_at', { ascending: true });
+
+      if (data && data.length > 0 && !error) {
+        return data.map((m: any) => ({
+          id: m.id,
+          sender: m.sender_role === 'trainer' ? 'trainer' : 'user',
+          senderName: m.sender_name || (m.sender_role === 'trainer' ? 'Coach Raj Patel' : 'Athlete'),
+          text: m.message_text,
+          timestamp: m.created_at,
+          time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          category: m.category || 'general'
+        }));
+      }
+    } catch (e) {
+      // fallback
+    }
+
     try {
       const appState = getInitialState();
       if (appState.trainerMessages && appState.trainerMessages.length > 0) {
@@ -668,6 +831,23 @@ export const TrainerService = {
       time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       category
     };
+
+    const supabase = createClient();
+    try {
+      await supabase.from('trainer_messages').insert({
+        trainer_id: toValidUuid(CURRENT_TRAINER_ID),
+        member_id: toValidUuid('55555555-5555-5555-5555-555555555501'),
+        gym_id: toValidUuid(CURRENT_GYM_ID),
+        sender_role: sender === 'trainer' ? 'trainer' : 'member',
+        sender_id: toValidUuid(sender === 'trainer' ? CURRENT_TRAINER_ID : '55555555-5555-5555-5555-555555555501'),
+        sender_name: senderName,
+        message_text: text.trim(),
+        category: category,
+        is_read: sender === 'trainer'
+      });
+    } catch (e) {
+      // offline fallback
+    }
 
     // Save to AppState
     try {
