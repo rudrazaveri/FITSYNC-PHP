@@ -3,14 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {
-  UserProfile,
+import type {
   HealthAssessmentData,
-  ComputedMetrics,
   Exercise,
   ExerciseSet,
-  PredefinedDietPlan,
-  Gym,
   WeekDay,
   Trainer,
   TrainerMessage,
@@ -20,12 +16,12 @@ import {
 import {
   getInitialState,
   saveState,
-  AppState,
+  type AppState,
   createCleanUserState,
   createDemoState,
   saveRegisteredUserRecord,
   findRegisteredUser,
-  AttendanceRecord
+  type AttendanceRecord
 } from '@/lib/store';
 import {
   WEEK_DAYS,
@@ -36,15 +32,13 @@ import { calculateHealthMetrics } from '@/lib/assessment-calculator';
 import { haptics } from '@/lib/audio-haptics';
 import { useToast } from '@/components/Toast';
 import { Navbar } from '@/components/Navbar';
-import { BottomNav, MemberTab } from '@/components/BottomNav';
-import { AuthScreen, AuthUserCredentials } from '@/components/AuthScreen';
+import { BottomNav, type MemberTab } from '@/components/BottomNav';
+import { AuthScreen, type AuthUserCredentials } from '@/components/AuthScreen';
 import { ExerciseDetailModal } from '@/components/ExerciseDetailModal';
 import { RestTimerWidget } from '@/components/RestTimerWidget';
 import {
   Dumbbell,
   Utensils,
-  HeartPulse,
-  Sparkles,
   Droplet,
   Flame,
   CheckCircle2,
@@ -62,21 +56,14 @@ import {
   X,
   Calendar,
   RotateCcw,
-  Edit3,
   MessageSquareText,
   Send,
   Clock,
-  Phone,
-  Mail,
   Award,
-  Video,
   UserCheck,
-  Check,
   Star,
   Users,
-  ClipboardList,
-  AlertTriangle,
-  ArrowUpRight
+  ClipboardList
 } from 'lucide-react';
 
 export default function FitSyncApp() {
@@ -438,7 +425,7 @@ export default function FitSyncApp() {
 
   // ---------------- TRAINER INTERACTION HANDLERS ----------------
   // Real Human Coach Reply Generator (strictly human-like coaching advice, NO AI)
-  const getCoachHumanReply = (userText: string, category: string, coach: Trainer) => {
+  const getCoachHumanReply = (userText: string, _category: string, coach: Trainer) => {
     const lower = userText.toLowerCase();
     const coachFirstName = coach.name.replace('Coach ', '');
 
@@ -2545,7 +2532,6 @@ export default function FitSyncApp() {
 
                 const isViewingCurrentMonth = attendanceMonthOffset === 0;
                 const todayDayNumber = now.getDate();
-                const todayDateStr = now.toLocaleDateString('en-CA');
 
                 // Filter attendance records strictly for the active viewing month
                 const monthAttendanceRecords = (state.attendanceRecords || []).filter((r) => {
