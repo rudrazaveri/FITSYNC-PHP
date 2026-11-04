@@ -13,21 +13,17 @@ import {
   MessageSquareText, 
   User, 
   Bell, 
-  ArrowLeft, 
   LogOut, 
   ShieldCheck, 
-  Activity, 
-  Clock, 
-  Search,
-  CheckCircle2,
-  ChevronRight,
-  ExternalLink,
-  Flame
+  ShieldAlert,
+  Info,
+  Clock
 } from 'lucide-react';
 import { haptics } from '@/lib/audio-haptics';
 import { useToast } from '@/components/Toast';
 import { TrainerService } from '@/lib/supabase/trainer-service';
-import { Trainer } from '@/types';
+import { getInitialState, saveState } from '@/lib/store';
+import type { Trainer } from '@/types';
 
 export default function TrainerLayout({
   children,
@@ -38,13 +34,51 @@ export default function TrainerLayout({
   const router = useRouter();
   const { showToast } = useToast();
   const [trainer, setTrainer] = useState<Trainer | null>(null);
-  const [unreadNotifCount, setUnreadNotifCount] = useState(3);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [unreadNotifCount] = useState(3);
+
+  const [authState, setAuthState] = useState<{
+    isLoading: boolean;
+    isAuthenticated: boolean;
+    isTrainer: boolean;
+    userName?: string;
+  }>({
+    isLoading: true,
+    isAuthenticated: false,
+    isTrainer: false
+  });
 
   useEffect(() => {
-    TrainerService.getTrainerProfile().then((t) => setTrainer(t));
-  }, []);
+    const state = getInitialState();
+    if (!state.isAuthenticated) {
+      setAuthState({
+        isLoading: false,
+        isAuthenticated: false,
+        isTrainer: false
+      });
+      router.replace('/');
+      return;
+    }
+
+    const isTrainerRole = state.userProfile?.role === 'trainer';
+    setAuthState({
+      isLoading: false,
+      isAuthenticated: true,
+      isTrainer: isTrainerRole,
+      userName: state.userProfile?.fullName
+    });
+
+    if (isTrainerRole) {
+      TrainerService.getTrainerProfile().then((t) => setTrainer(t));
+    }
+  }, [router]);
+
+  const handleTrainerSignOut = () => {
+    haptics.playTap();
+    const cur = getInitialState();
+    saveState({ ...cur, isAuthenticated: false });
+    showToast('Signed out of Coach Portal', '👋');
+    router.replace('/');
+  };
 
   const navItems = [
     { href: '/trainer/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -56,6 +90,70 @@ export default function TrainerLayout({
     { href: '/trainer/profile', label: 'Profile', icon: User },
     { href: '/trainer/notifications', label: 'Alerts', icon: Bell, badge: unreadNotifCount > 0 ? `${unreadNotifCount}` : undefined },
   ];
+
+  if (authState.isLoading) {
+    return (
+      <div className="min-h-screen bg-canvas-base flex flex-col items-center justify-center gap-3">
+        <div className="w-9 h-9 rounded-full border-2 border-fitness-primary border-t-transparent animate-spin" />
+        <span className="text-xs text-gray-400 font-mono tracking-wider">Verifying Coach Credentials...</span>
+      </div>
+    );
+  }
+
+  if (!authState.isAuthenticated) {
+    return null;
+  }
+
+  // ATHLETE ROLE ACCESS RESTRICTION: Athletes cannot view coach management tools or assigned rosters!
+  if (!authState.isTrainer) {
+    return (
+      <div className="min-h-screen bg-canvas-base flex items-center justify-center p-4 selection:bg-amber-500 selection:text-gray-950">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-surface-1 border border-surface-border text-center space-y-6 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 shadow-glow-fitness">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              Access Restricted
+            </span>
+            <h2 className="font-headline font-black text-2xl text-white mt-3">
+              Trainer Authorization Required
+            </h2>
+            <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+              You are currently signed in as an Athlete (<strong className="text-white">{authState.userName || 'Member'}</strong>). 
+              Athlete accounts are not permitted to access Gym Trainer management tools, assigned member rosters, or coach intervention intelligence.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-surface-2 border border-surface-border text-left flex items-start gap-3">
+            <Info className="w-4 h-4 text-healthcare-accent flex-shrink-0 mt-0.5" />
+            <div className="text-[11px] text-gray-300">
+              To review assigned athletes and manage workout splits, please sign out and sign in with an authorized Gym Trainer ID.
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              onClick={() => {
+                haptics.playTap();
+                router.push('/');
+              }}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition"
+            >
+              Return to Athlete Dashboard
+            </button>
+            <button
+              onClick={handleTrainerSignOut}
+              className="px-4 py-2.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white text-xs border border-surface-border transition flex items-center justify-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-canvas-base text-gray-100 flex flex-col md:flex-row antialiased selection:bg-fitness-primary selection:text-gray-950">
@@ -143,30 +241,11 @@ export default function TrainerLayout({
           </nav>
         </div>
 
-        {/* Bottom Actions & Mode Switcher */}
+        {/* Bottom Actions: Clean Trainer Sign Out */}
         <div className="space-y-2 pt-4 border-t border-surface-border">
-          <Link
-            href="/"
-            onClick={() => {
-              haptics.playTap();
-              showToast('Switched to Athlete View', '🔄');
-            }}
-            className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-surface-2 transition"
-          >
-            <div className="flex items-center gap-2">
-              <ArrowLeft className="w-3.5 h-3.5 text-healthcare-accent" />
-              <span>Athlete Mode</span>
-            </div>
-            <ExternalLink className="w-3 h-3 text-gray-500" />
-          </Link>
-
           <button
-            onClick={() => {
-              haptics.playTap();
-              showToast('Logged out of Coach Portal', '👋');
-              router.push('/');
-            }}
-            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/10 transition"
+            onClick={handleTrainerSignOut}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/10 transition font-medium"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
@@ -201,12 +280,13 @@ export default function TrainerLayout({
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-fitness-primary" />
             )}
           </Link>
-          <Link 
-            href="/" 
-            className="px-2.5 py-1.5 rounded-xl bg-surface-2 text-[11px] font-bold text-healthcare-accent border border-healthcare-accent/30"
+          <button 
+            onClick={handleTrainerSignOut}
+            className="px-2.5 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-[11px] font-bold text-rose-400 border border-rose-500/30 flex items-center gap-1"
           >
-            Athlete View
-          </Link>
+            <LogOut className="w-3 h-3" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </header>
 

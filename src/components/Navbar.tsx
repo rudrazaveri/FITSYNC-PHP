@@ -97,29 +97,33 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden md:inline">Find Coaches</span>
             </button>
 
-            {/* Gym Admin Portal Modal Trigger */}
-            <button
-              onClick={() => {
-                haptics.playTap();
-                setIsGymAdminOpen(true);
-              }}
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-gray-300 hover:text-white transition border border-surface-border"
-              title="Gym Admin Section"
-            >
-              <Building2 className="w-3.5 h-3.5 text-healthcare-accent" />
-              <span>Gym Admin</span>
-            </button>
+            {/* Gym Admin Portal Modal Trigger — ONLY for Gym Admins */}
+            {userProfile?.role === 'gym_admin' && (
+              <button
+                onClick={() => {
+                  haptics.playTap();
+                  setIsGymAdminOpen(true);
+                }}
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-gray-300 hover:text-white transition border border-surface-border"
+                title="Gym Admin Section"
+              >
+                <Building2 className="w-3.5 h-3.5 text-healthcare-accent" />
+                <span>Gym Admin</span>
+              </button>
+            )}
 
-            {/* Quick Switch to Trainer Portal */}
-            <Link
-              href="/trainer/dashboard"
-              onClick={() => haptics.playTap()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 text-xs font-bold shadow-glow-fitness transition"
-              title="Open Coach Workspace"
-            >
-              <Dumbbell className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Coach Portal</span>
-            </Link>
+            {/* Quick Switch to Trainer Portal — ONLY for Trainers */}
+            {isTrainer && (
+              <Link
+                href="/trainer/dashboard"
+                onClick={() => haptics.playTap()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 text-xs font-bold shadow-glow-fitness transition"
+                title="Open Coach Workspace"
+              >
+                <Dumbbell className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Coach Portal</span>
+              </Link>
+            )}
 
             {/* Sound Toggle */}
             <button
