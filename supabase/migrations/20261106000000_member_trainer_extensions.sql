@@ -140,3 +140,4 @@ CREATE POLICY "Trainers view progress logs of assigned members"
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+
