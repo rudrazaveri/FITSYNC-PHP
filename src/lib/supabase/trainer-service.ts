@@ -863,6 +863,145 @@ export const TrainerService = {
     saveStoredRuntimeState(runtime);
 
     return newMsg;
+  },
+
+  // 7. Custom Workout Plans Queries (Section 5.3 & 5.4)
+  async getCustomWorkoutPlans(trainerId: string = CURRENT_TRAINER_ID): Promise<any[]> {
+    const supabase = createClient();
+    try {
+      const trainerUuid = toValidUuid(trainerId);
+      const { data, error } = await supabase
+        .from('custom_workout_plans')
+        .select('*')
+        .eq('trainer_id', trainerUuid)
+        .order('created_at', { ascending: false });
+
+      if (data && !error && data.length > 0) {
+        return data.map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          description: d.description,
+          assignedMemberId: d.assigned_member_id,
+          assignedMemberName: d.assigned_member_name,
+          assignedMemberAvatar: d.assigned_member_avatar,
+          workoutDays: d.workout_days,
+          startDate: d.start_date,
+          endDate: d.end_date,
+          status: d.status,
+          trainerNotes: d.trainer_notes,
+          exercises: d.exercises,
+          createdAt: d.created_at
+        }));
+      }
+    } catch (e) {
+      // offline fallback
+    }
+
+    const state = getInitialState();
+    return state.customWorkoutPlans || [];
+  },
+
+  async createCustomWorkoutPlan(plan: any): Promise<void> {
+    const supabase = createClient();
+    try {
+      await supabase.from('custom_workout_plans').insert({
+        id: plan.id && UUID_REGEX.test(plan.id) ? plan.id : undefined,
+        trainer_id: toValidUuid(CURRENT_TRAINER_ID),
+        trainer_name: 'Coach Raj Patel',
+        assigned_member_id: toValidUuid(plan.assignedMemberId || '55555555-5555-5555-5555-555555555501'),
+        assigned_member_name: plan.assignedMemberName || 'Aarav Shah',
+        assigned_member_avatar: plan.assignedMemberAvatar || '/assets/aarav.jpg',
+        name: plan.name,
+        description: plan.description,
+        workout_days: plan.workoutDays,
+        start_date: plan.startDate || new Date().toISOString().split('T')[0],
+        end_date: plan.endDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        status: plan.status || 'Active',
+        trainer_notes: plan.trainerNotes,
+        exercises: plan.exercises || []
+      });
+    } catch (e) {
+      // offline fallback
+    }
+  },
+
+  async updateCustomWorkoutPlan(planId: string, updates: any): Promise<void> {
+    const supabase = createClient();
+    try {
+      if (UUID_REGEX.test(planId)) {
+        await supabase
+          .from('custom_workout_plans')
+          .update({
+            name: updates.name,
+            description: updates.description,
+            workout_days: updates.workoutDays,
+            status: updates.status,
+            trainer_notes: updates.trainerNotes,
+            exercises: updates.exercises,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', planId);
+      }
+    } catch (e) {
+      // offline fallback
+    }
+  },
+
+  async deleteCustomWorkoutPlan(planId: string): Promise<void> {
+    const supabase = createClient();
+    try {
+      if (UUID_REGEX.test(planId)) {
+        await supabase.from('custom_workout_plans').delete().eq('id', planId);
+      }
+    } catch (e) {
+      // offline fallback
+    }
+  },
+
+  // 8. Member Progress Logs Queries (Section 3.11)
+  async getMemberProgressLogs(memberId: string): Promise<any[]> {
+    const supabase = createClient();
+    try {
+      const memberUuid = toValidUuid(memberId);
+      const { data, error } = await supabase
+        .from('member_progress_logs')
+        .select('*')
+        .eq('user_id', memberUuid)
+        .order('date', { ascending: false });
+
+      if (data && !error && data.length > 0) {
+        return data.map((d: any) => ({
+          date: d.date,
+          weightKg: Number(d.weight_kg),
+          waistCm: d.waist_cm ? Number(d.waist_cm) : undefined,
+          chestCm: d.chest_cm ? Number(d.chest_cm) : undefined,
+          bicepsCm: d.biceps_cm ? Number(d.biceps_cm) : undefined,
+          note: d.note
+        }));
+      }
+    } catch (e) {
+      // offline fallback
+    }
+
+    const state = getInitialState();
+    return state.progressLogs || [];
+  },
+
+  async createMemberProgressLog(userId: string, log: any): Promise<void> {
+    const supabase = createClient();
+    try {
+      await supabase.from('member_progress_logs').insert({
+        user_id: toValidUuid(userId),
+        date: log.date || new Date().toISOString().split('T')[0],
+        weight_kg: log.weightKg,
+        waist_cm: log.waistCm,
+        chest_cm: log.chestCm,
+        biceps_cm: log.bicepsCm,
+        note: log.note
+      });
+    } catch (e) {
+      // offline fallback
+    }
   }
 };
 

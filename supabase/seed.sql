@@ -277,3 +277,85 @@ VALUES
   NOW() - INTERVAL '2 hours 30 minutes'
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- 11. SEED CUSTOM WORKOUT PLANS (SECTION 5.3 & 5.4)
+INSERT INTO public.custom_workout_plans (
+  id, trainer_id, trainer_name, assigned_member_id, assigned_member_name, assigned_member_avatar,
+  name, description, workout_days, start_date, end_date, status, trainer_notes, exercises
+)
+VALUES
+(
+  '99999999-9999-9999-9999-999999999901',
+  '44444444-4444-4444-4444-444444444401',
+  'Coach Raj Patel',
+  '55555555-5555-5555-5555-555555555501',
+  'Aarav Shah',
+  '/assets/aarav.jpg',
+  'Aarav - Push/Pull Hypertrophy Cycle',
+  'Targeted progressive overload program focusing on upper chest, posterior chain, and delta hypertrophy.',
+  ARRAY['Monday', 'Wednesday', 'Friday', 'Saturday'],
+  CURRENT_DATE,
+  CURRENT_DATE + INTERVAL '45 days',
+  'Active',
+  'Ensure 2 min rest between top barbell sets. Keep RPE at 8.5.',
+  '[
+    {"id": "pe_1", "name": "Incline Barbell Bench Press", "muscle": "Chest", "equipment": "Barbell", "sets": 4, "reps": "8-10", "targetWeight": "72.5 kg", "restSeconds": 90, "instructions": "Drive smoothly through concentric, keep shoulder blades retracted."},
+    {"id": "pe_2", "name": "Chest-Supported T-Bar Row", "muscle": "Back", "equipment": "Machine", "sets": 4, "reps": "10-12", "targetWeight": "55.0 kg", "restSeconds": 75, "instructions": "Pull elbows back past torso and pause for 1 second."},
+    {"id": "pe_3", "name": "Barbell Back Squat", "muscle": "Legs", "equipment": "Barbell", "sets": 4, "reps": "6-8", "targetWeight": "105.0 kg", "restSeconds": 120, "instructions": "Hit parallel depth with knees tracking toes."}
+  ]'::JSONB
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- 12. SEED MEMBERSHIP REQUESTS (SECTION 3.2)
+INSERT INTO public.membership_requests (
+  id, user_id, gym_id, gym_name, plan_name, price, status, requested_at
+)
+VALUES
+(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '55555555-5555-5555-5555-555555555501',
+  '11111111-1111-1111-1111-111111111101',
+  'FitZone Fitness',
+  'Gold All-Access Pass',
+  '₹3,999/mo',
+  'Active',
+  NOW() - INTERVAL '14 days'
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- 13. SEED MEMBER PROGRESS LOGS (SECTION 3.11)
+INSERT INTO public.member_progress_logs (
+  id, user_id, date, weight_kg, waist_cm, chest_cm, biceps_cm, note
+)
+VALUES
+(
+  'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb01',
+  '55555555-5555-5555-5555-555555555501',
+  CURRENT_DATE - INTERVAL '14 days',
+  71.20,
+  82.00,
+  97.00,
+  35.50,
+  'Baseline check at program start'
+),
+(
+  'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb02',
+  '55555555-5555-5555-5555-555555555501',
+  CURRENT_DATE - INTERVAL '7 days',
+  71.80,
+  81.50,
+  97.50,
+  36.00,
+  'Week 1 check-in, feeling leaner and stronger'
+),
+(
+  'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb03',
+  '55555555-5555-5555-5555-555555555501',
+  CURRENT_DATE,
+  72.40,
+  81.00,
+  98.00,
+  36.50,
+  'New personal record on incline bench and squats'
+)
+ON CONFLICT (id) DO NOTHING;

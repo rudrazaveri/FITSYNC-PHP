@@ -416,3 +416,4 @@ export const GymDiscoveryModal: React.FC<GymDiscoveryModalProps> = ({
     </div>
   );
 };
+
