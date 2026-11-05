@@ -36,13 +36,24 @@ export interface UserProfile {
   fullName: string;
   email: string;
   phone?: string;
+  mobile?: string;
   avatarUrl?: string;
   gymId?: string;
   assignedTrainerId?: string;
   membershipTier?: string;
+  membershipStatus?: 'Active' | 'Pending Approval' | 'Expired';
+  membershipStartDate?: string;
+  membershipPlanName?: string;
+  trainerConnectionStatus?: 'Connected' | 'Pending Request' | 'None';
   streakDays: number;
   waterLoggedMl: number;
   waterTargetMl: number;
+  notificationPreferences?: {
+    workoutReminders: boolean;
+    trainerMessages: boolean;
+    attendanceAlerts: boolean;
+    nutritionLogging: boolean;
+  };
 }
 
 export interface HealthAssessmentData {
@@ -398,6 +409,56 @@ export interface NotificationItem {
   type: 'health' | 'workout' | 'nutrition' | 'gym' | 'trainer';
   actionText: string;
   isRead?: boolean;
+}
+
+export interface MembershipRequestItem {
+  id: string;
+  gymId: string;
+  gymName: string;
+  gymLocation: string;
+  planName: string;
+  price: string;
+  status: 'Pending Approval' | 'Approved' | 'Active' | 'Rejected';
+  requestedAt: string;
+}
+
+export interface TrainerConnectionRequestItem {
+  id: string;
+  trainerId: string;
+  trainerName: string;
+  trainerAvatar: string;
+  trainerSpecialization: string;
+  gymName: string;
+  status: 'Pending Approval' | 'Connected' | 'Rejected';
+  requestedAt: string;
+}
+
+export interface CustomWorkoutPlan {
+  id: string;
+  name: string;
+  description: string;
+  assignedMemberId: string;
+  assignedMemberName: string;
+  assignedMemberAvatar?: string;
+  workoutDays: WeekDay[];
+  startDate: string;
+  endDate: string;
+  status: 'Active' | 'Draft' | 'Completed';
+  trainerNotes?: string;
+  exercises: {
+    id: string;
+    exerciseId: string;
+    name: string;
+    muscle: string;
+    equipment: string;
+    sets: number;
+    reps: string;
+    targetWeight: string;
+    restSeconds: number;
+    instructions?: string;
+    trainerNotes?: string;
+  }[];
+  createdAt: string;
 }
 
 export type PlatformMode = 'standard' | 'enterprise';

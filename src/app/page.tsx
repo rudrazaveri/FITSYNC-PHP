@@ -10,13 +10,15 @@ import type {
   WeekDay,
   Trainer,
   TrainerMessage,
-  TrainerBooking
+  TrainerBooking,
+  Gym
 } from '@/types';
 import {
   getInitialState,
   saveState,
   type AppState,
   createCleanUserState,
+  createCleanTrainerState,
   createDemoState,
   saveRegisteredUserRecord,
   findRegisteredUser,
@@ -35,6 +37,8 @@ import { BottomNav, type MemberTab } from '@/components/BottomNav';
 import { AuthScreen, type AuthUserCredentials } from '@/components/AuthScreen';
 import { ExerciseDetailModal } from '@/components/ExerciseDetailModal';
 import { RestTimerWidget } from '@/components/RestTimerWidget';
+import { GymDiscoveryModal } from '@/components/GymDiscoveryModal';
+import { TrainerSearchModal } from '@/components/TrainerSearchModal';
 import {
   Dumbbell,
   Utensils,
@@ -59,7 +63,15 @@ import {
   Clock,
   Award,
   UserCheck,
-  Star
+  Star,
+  Search,
+  Filter,
+  Lock,
+  Bell,
+  TrendingUp,
+  ShieldCheck,
+  ClipboardList,
+  Edit3
 } from 'lucide-react';
 
 export default function FitSyncApp() {
@@ -75,6 +87,29 @@ export default function FitSyncApp() {
   const [selectedExerciseForModal, setSelectedExerciseForModal] = useState<Exercise | null>(null);
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
   const [isNotificationsDrawerOpen, setIsNotificationsDrawerOpen] = useState(false);
+  const [isGymDiscoveryOpen, setIsGymDiscoveryOpen] = useState(false);
+  const [isTrainerSearchOpen, setIsTrainerSearchOpen] = useState(false);
+
+  // Workout Subtab & Library Filtering
+  const [workoutSubTab, setWorkoutSubTab] = useState<'session' | 'library' | 'history'>('session');
+  const [libSearchQuery, setLibSearchQuery] = useState('');
+  const [libMuscleFilter, setLibMuscleFilter] = useState('all');
+  const [libEquipmentFilter, setLibEquipmentFilter] = useState('all');
+
+  // Account Settings & Password Edit State
+  const [editProfileName, setEditProfileName] = useState('');
+  const [editProfileMobile, setEditProfileMobile] = useState('');
+  const [editProfileAvatar, setEditProfileAvatar] = useState('');
+  const [pwdCurrent, setPwdCurrent] = useState('');
+  const [pwdNew, setPwdNew] = useState('');
+  const [pwdConfirm, setPwdConfirm] = useState('');
+
+  // Body Measurement Progress Log Draft State
+  const [progWeight, setProgWeight] = useState('');
+  const [progWaist, setProgWaist] = useState('');
+  const [progChest, setProgChest] = useState('');
+  const [progBiceps, setProgBiceps] = useState('');
+  const [progNotes, setProgNotes] = useState('');
 
   // Assessment Wizard Draft State
   const [draftAssessment, setDraftAssessment] = useState<HealthAssessmentData>(state.assessmentData);
@@ -179,9 +214,12 @@ export default function FitSyncApp() {
       <AuthScreen
         gyms={state.gyms}
         onAuthenticate={(credentials: AuthUserCredentials) => {
-          // A) BRAND NEW REGISTRATION: Create 100% clean state with ZERO predefined meals, 0 hydration, 0 volume
+          // A) BRAND NEW REGISTRATION: Create 100% clean state
           if (credentials.isNewRegistration && credentials.registrationParams) {
-            const cleanState = createCleanUserState(credentials.registrationParams);
+            const isTrainer = credentials.role === 'trainer';
+            const cleanState = isTrainer
+              ? createCleanTrainerState(credentials.registrationParams)
+              : createCleanUserState(credentials.registrationParams);
             saveRegisteredUserRecord({
               email: credentials.email.toLowerCase(),
               name: credentials.name || credentials.registrationParams.fullName,
@@ -193,6 +231,9 @@ export default function FitSyncApp() {
             setState(cleanState);
             saveState(cleanState);
             showToast(`Welcome to FitSync AI, ${credentials.name}! Your account is ready. 🎉`, '🎉');
+            if (isTrainer) {
+              router.push('/trainer/dashboard');
+            }
             return;
           }
 
@@ -525,6 +566,129 @@ export default function FitSyncApp() {
       }
     }));
     showToast(`Assigned ${trainer.name} as your primary gym coach!`, '🏋️');
+  };
+
+  const handleSelectGym = (gym: Gym) => {
+    haptics.playSuccess();
+    updateState((prev) => ({
+      ...prev,
+      selectedGym: gym,
+      userProfile: {
+        ...prev.userProfile,
+        gymId: gym.id
+      }
+    }));
+    showToast(`Switched active home gym to ${gym.name}! 🏢`, '✅');
+  };
+
+  const handleRequestMembership = (gym: Gym, planName: string, price: string) => {
+    haptics.playSuccess();
+    const newReq: any = {
+      id: `mreq_${Date.now()}`,
+      gymId: gym.id,
+      gymName: gym.name,
+      gymLocation: gym.location,
+      planName,
+      price,
+      status: 'Pending Approval',
+      requestedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    };
+
+    updateState((prev) => ({
+      ...prev,
+      membershipRequests: [newReq, ...(prev.membershipRequests || [])]
+    }));
+    showToast(`Membership request submitted for ${gym.name} (${planName})! 📨`, '✅');
+  };
+
+  const handleSaveAccountProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    haptics.playSuccess();
+    updateState((prev) => ({
+      ...prev,
+      userProfile: {
+        ...prev.userProfile,
+        fullName: editProfileName.trim() || prev.userProfile.fullName,
+        phone: editProfileMobile.trim() || prev.userProfile.phone,
+        mobile: editProfileMobile.trim() || prev.userProfile.mobile,
+        avatarUrl: editProfileAvatar.trim() || prev.userProfile.avatarUrl
+      }
+    }));
+    showToast('Profile information updated successfully! ✅', '✅');
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pwdNew || pwdNew.length < 6) {
+      showToast('New password must be at least 6 characters long.', '⚠️');
+      return;
+    }
+    if (pwdNew !== pwdConfirm) {
+      showToast('New passwords do not match. Please verify.', '⚠️');
+      return;
+    }
+    haptics.playSuccess();
+    setPwdCurrent('');
+    setPwdNew('');
+    setPwdConfirm('');
+    showToast('Account password updated successfully! 🔒', '✅');
+  };
+
+  const handleToggleNotificationPref = (key: string) => {
+    haptics.playTap();
+    updateState((prev) => {
+      const currentPrefs: any = prev.userProfile.notificationPreferences || {
+        workoutReminders: true,
+        nutritionAlerts: true,
+        coachMessages: true,
+        gymAnnouncements: true
+      };
+      return {
+        ...prev,
+        userProfile: {
+          ...prev.userProfile,
+          notificationPreferences: {
+            ...currentPrefs,
+            [key]: !currentPrefs[key]
+          }
+        }
+      };
+    });
+    showToast('Notification preferences updated.', '🔔');
+  };
+
+  const handleAddProgressLog = (e: React.FormEvent) => {
+    e.preventDefault();
+    const w = parseFloat(progWeight) || state.assessmentData.weightKg || 70;
+    const waist = parseFloat(progWaist) || undefined;
+    const chest = parseFloat(progChest) || undefined;
+    const biceps = parseFloat(progBiceps) || undefined;
+
+    haptics.playSuccess();
+    const newLog = {
+      date: new Date().toLocaleDateString('en-CA'),
+      weightKg: w,
+      waistCm: waist,
+      chestCm: chest,
+      bicepsCm: biceps,
+      note: progNotes.trim() || 'Body metrics log recorded'
+    };
+
+    updateState((prev) => ({
+      ...prev,
+      progressLogs: [newLog, ...(prev.progressLogs || [])],
+      assessmentData: {
+        ...prev.assessmentData,
+        weightKg: w
+      }
+    }));
+
+    setProgWeight('');
+    setProgWaist('');
+    setProgChest('');
+    setProgBiceps('');
+    setProgNotes('');
+    showToast('Progress record added to your body timeline! 📈', '✅');
   };
 
   const handleCreateBooking = (e: React.FormEvent) => {
@@ -899,7 +1063,7 @@ export default function FitSyncApp() {
           {activeTab === 'home' && (
             <div className="space-y-6 animate-in fade-in duration-200">
 
-              {/* Daily Reset Status & Quick Action Banner */}
+              {/* 1. Daily Reset Status & Quick Action Banner */}
               <div className="p-3.5 rounded-2xl bg-surface-1 border border-surface-border flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2.5">
                   <span className="p-1.5 rounded-xl bg-fitness-primary/10 text-fitness-primary border border-fitness-primary/30">
@@ -910,7 +1074,7 @@ export default function FitSyncApp() {
                       {todayDayName}, {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                     <span className="text-gray-400 text-[11px] ml-2">
-                      • Daily trackers reset automatically for today
+                      • Daily biometrics and session trackers active
                     </span>
                   </div>
                 </div>
@@ -927,22 +1091,40 @@ export default function FitSyncApp() {
                 </div>
               </div>
 
-              {/* Hero Greeting Card */}
+              {/* 2. Welcome Section: Display member name and profile picture */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border relative overflow-hidden">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-fitness-primary/20 text-fitness-primary border border-fitness-primary/30">
-                        {state.selectedGym.name}
-                      </span>
-                      <span className="text-xs text-gray-400">{state.userProfile.membershipTier || 'Member'}</span>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden relative border-2 border-fitness-primary shadow-glow-fitness flex-shrink-0 flex items-center justify-center bg-surface-2">
+                      {state.userProfile.avatarUrl ? (
+                        <Image
+                          src={state.userProfile.avatarUrl}
+                          alt={state.userProfile.fullName}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-tr from-fitness-primary to-healthcare-accent flex items-center justify-center text-gray-950 font-extrabold text-xl font-headline select-none">
+                          {state.userProfile.fullName ? state.userProfile.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'A'}
+                        </div>
+                      )}
                     </div>
-                    <h1 className="font-headline font-extrabold text-2xl sm:text-3xl text-white">
-                      Good Morning, {state.userProfile.fullName.split(' ')[0]}
-                    </h1>
-                    <p className="text-xs text-gray-400 mt-1 max-w-lg">
-                      Goal: <span className="text-white font-semibold">{state.assessmentData.goal}</span> • Daily Target: <span className="text-fitness-primary font-bold">{state.computedMetrics.calorieTarget} kcal</span> ({state.computedMetrics.recommendation})
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-fitness-primary/20 text-fitness-primary border border-fitness-primary/30">
+                          {state.selectedGym.name}
+                        </span>
+                        <span className="text-xs text-gray-400 font-medium">
+                          {state.userProfile.membershipTier || 'Active Athlete'}
+                        </span>
+                      </div>
+                      <h1 className="font-headline font-extrabold text-2xl sm:text-3xl text-white">
+                        Good Morning, {state.userProfile.fullName.split(' ')[0]}
+                      </h1>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Goal: <span className="text-white font-semibold">{state.assessmentData.goal}</span> • Daily Target: <span className="text-fitness-primary font-bold">{state.computedMetrics.calorieTarget} kcal</span>
+                      </p>
+                    </div>
                   </div>
 
                   {/* Streak & Score Widget */}
@@ -965,10 +1147,255 @@ export default function FitSyncApp() {
                 </div>
               </div>
 
-              {/* Daily Telemetry Grid */}
+              {/* 3. Member Dashboard 10 Quick Actions */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-gray-400 px-1">
+                  <span className="font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-fitness-primary" /> Member Quick Actions
+                  </span>
+                  <span>10 Core Hub Operations</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setIsGymDiscoveryOpen(true);
+                    }}
+                    className="p-3 rounded-2xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 text-left transition group"
+                  >
+                    <Building2 className="w-5 h-5 text-fitness-primary mb-1.5 group-hover:scale-110 transition" />
+                    <div className="text-xs font-bold text-white">Find a Gym</div>
+                    <div className="text-[10px] text-gray-400">Discover branches &amp; plans</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setActiveTab('workout');
+                    }}
+                    className="p-3 rounded-2xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 text-left transition group"
+                  >
+                    <ClipboardList className="w-5 h-5 text-healthcare-accent mb-1.5 group-hover:scale-110 transition" />
+                    <div className="text-xs font-bold text-white">View Workout Plan</div>
+                    <div className="text-[10px] text-gray-400">7-day schedule &amp; sets</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setActiveTab('workout');
+                    }}
+                    className="p-3 rounded-2xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 text-left transition group"
+                  >
+                    <Dumbbell className="w-5 h-5 text-fitness-primary mb-1.5 group-hover:scale-110 transition" />
+                    <div className="text-xs font-bold text-white">Log Workout</div>
+                    <div className="text-[10px] text-gray-400">Sets, reps &amp; weights</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleCheckInToday();
+                    }}
+                    className="p-3 rounded-2xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 text-left transition group"
+                  >
+                    <CheckCircle2 className="w-5 h-5 text-fitness-primary mb-1.5 group-hover:scale-110 transition" />
+                    <div className="text-xs font-bold text-white">Check Attendance</div>
+                    <div className="text-[10px] text-gray-400">Record check-in streak</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setDraftAssessment(state.assessmentData);
+                      setIsAssessmentModalOpen(true);
+                    }}
+                    className="p-3 rounded-2xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 text-left transition group"
+                  >
+                    <Activity className="w-5 h-5 text-healthcare-accent mb-1.5 group-hover:scale-110 transition" />
+                    <div className="text-xs font-bold text-white">Calculate Metrics</div>
+                    <div className="text-[10px] text-gray-400">BMI, BMR &amp; TDEE engine</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setActiveTab('nutrition');
+                    }}
+                    className="p-3 rounded-2xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 text-left transition group"
+                  >
+                    <Utensils className="w-5 h-5 text-amber-400 mb-1.5 group-hover:scale-110 transition" />
+                    <div className="text-xs font-bold text-white">Log Food</div>
+                    <div className="text-[10px] text-gray-400">Calories &amp; macronutrients</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleLogHydration();
+                    }}
+                    className="p-3 rounded-2xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 text-left transition group"
+                  >
+                    <Droplet className="w-5 h-5 text-cyan-400 mb-1.5 group-hover:scale-110 transition" />
+                    <div className="text-xs font-bold text-white">Track Water</div>
+                    <div className="text-[10px] text-gray-400">+250ml quick hydration</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setActiveTab('profile');
+                    }}
+                    className="p-3 rounded-2xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 text-left transition group"
+                  >
+                    <TrendingUp className="w-5 h-5 text-purple-400 mb-1.5 group-hover:scale-110 transition" />
+                    <div className="text-xs font-bold text-white">View Progress</div>
+                    <div className="text-[10px] text-gray-400">Weight &amp; body timeline</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setIsTrainerSearchOpen(true);
+                    }}
+                    className="p-3 rounded-2xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 text-left transition group"
+                  >
+                    <UserCheck className="w-5 h-5 text-fitness-primary mb-1.5 group-hover:scale-110 transition" />
+                    <div className="text-xs font-bold text-white">Find Trainer</div>
+                    <div className="text-[10px] text-gray-400">Certified strength coaches</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setIsBookingModalOpen(true);
+                    }}
+                    className="p-3 rounded-2xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 text-left transition group"
+                  >
+                    <Clock className="w-5 h-5 text-healthcare-accent mb-1.5 group-hover:scale-110 transition" />
+                    <div className="text-xs font-bold text-white">Book Session</div>
+                    <div className="text-[10px] text-gray-400">1-on-1 coaching floor time</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Gym Membership & Assigned Trainer Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Component 2: Gym Membership */}
+                <div className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-4 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-fitness-primary uppercase tracking-wider">
+                        <Building2 className="w-4 h-4" /> Gym Membership
+                      </span>
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-fitness-primary/20 text-fitness-primary border border-fitness-primary/40 font-bold uppercase">
+                        {state.userProfile.membershipStatus || 'Active Membership'}
+                      </span>
+                    </div>
+                    <h3 className="font-headline font-bold text-lg text-white mt-2">
+                      {state.selectedGym.name}
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {state.selectedGym.location} • {state.selectedGym.city}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-surface-border text-xs">
+                      <div>
+                        <div className="text-[11px] text-gray-400">Plan Tier</div>
+                        <div className="font-bold text-white">{state.userProfile.membershipTier || 'Platinum Elite Pass'}</div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-gray-400">Branch Capacity</div>
+                        <div className="font-bold text-fitness-primary">{state.selectedGym.attendanceRate} Attendance</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setIsGymDiscoveryOpen(true);
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white text-xs font-bold border border-surface-border transition flex items-center justify-center gap-1.5"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-fitness-primary" />
+                    <span>Search Gyms &amp; Membership Plans</span>
+                  </button>
+                </div>
+
+                {/* Component 3: Assigned Trainer */}
+                <div className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-4 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-healthcare-accent uppercase tracking-wider">
+                        <ShieldCheck className="w-4 h-4" /> Assigned Gym Coach
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-healthcare-accent/20 text-healthcare-accent border border-healthcare-accent/40 font-bold">
+                        {state.selectedTrainer?.availabilityStatus || 'On Floor'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3.5 mt-3">
+                      <div className="w-14 h-14 rounded-2xl overflow-hidden relative border border-fitness-primary/40 flex-shrink-0">
+                        <Image
+                          src={state.selectedTrainer?.avatar || '/assets/trainer_raj.jpg'}
+                          alt={state.selectedTrainer?.name || 'Coach Raj Patel'}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h4 className="font-headline font-bold text-base text-white">
+                          {state.selectedTrainer?.name || 'Coach Raj Patel'}
+                        </h4>
+                        <div className="text-xs text-fitness-primary font-semibold">
+                          {state.selectedTrainer?.role || 'Senior Head Coach'}
+                        </div>
+                        <div className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
+                          <Star className="w-3 h-3 fill-fitness-primary text-fitness-primary" />
+                          <span>{state.selectedTrainer?.rating || 4.9} ({state.selectedTrainer?.reviewsCount || 142} athletes coached)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        haptics.playTap();
+                        setActiveTab('trainer');
+                      }}
+                      className="flex-1 py-2 rounded-xl bg-fitness-primary text-gray-950 font-bold text-xs shadow-glow-fitness transition flex items-center justify-center gap-1"
+                    >
+                      <MessageSquareText className="w-3.5 h-3.5" />
+                      <span>Message Coach</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        haptics.playTap();
+                        setIsBookingModalOpen(true);
+                      }}
+                      className="flex-1 py-2 rounded-xl bg-surface-2 hover:bg-surface-3 text-white font-semibold text-xs border border-surface-border transition flex items-center justify-center gap-1"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-healthcare-accent" />
+                      <span>Book Session</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        haptics.playTap();
+                        setIsTrainerSearchOpen(true);
+                      }}
+                      className="p-2 rounded-xl bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white border border-surface-border transition"
+                      title="Find other trainers"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* 5. Daily Telemetry Grid (Energy, Protein, Hydration, Attendance) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-                {/* Calories Progress Card */}
+                {/* Component 8: Nutrition Summary (Energy) */}
                 <div className="p-5 rounded-2xl bg-surface-1 border border-surface-border space-y-3">
                   <div className="flex justify-between items-center text-xs text-gray-400">
                     <span className="flex items-center gap-1.5 font-semibold text-gray-300">
@@ -1008,11 +1435,11 @@ export default function FitSyncApp() {
                   </div>
                 </div>
 
-                {/* Interactive Hydration Logger */}
+                {/* Component 9: Water Intake */}
                 <div className="p-5 rounded-2xl bg-surface-1 border border-surface-border space-y-3">
                   <div className="flex justify-between items-center text-xs text-gray-400">
                     <span className="flex items-center gap-1.5 font-semibold text-gray-300">
-                      <Droplet className="w-4 h-4 text-cyan-400" /> Hydration
+                      <Droplet className="w-4 h-4 text-cyan-400" /> Water Intake
                     </span>
                     <span className="font-mono">{state.userProfile.waterTargetMl} ml</span>
                   </div>
@@ -1030,28 +1457,35 @@ export default function FitSyncApp() {
                   </button>
                 </div>
 
-                {/* Active Goal & Branch Card */}
+                {/* Component 6: Attendance Summary */}
                 <div className="p-5 rounded-2xl bg-surface-1 border border-surface-border flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-fitness-primary mb-2">
-                      <Building2 className="w-4 h-4" /> Home Branch Active
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-fitness-primary">
+                        <CheckCircle2 className="w-4 h-4" /> Gym Attendance
+                      </span>
+                      <span className="text-[10px] text-status-warning font-bold font-mono">
+                        {state.userProfile.streakDays} Day Streak 🔥
+                      </span>
                     </div>
-                    <div className="text-xs text-gray-300">
-                      Gym: <span className="font-bold text-white">{state.selectedGym.name}</span>
+                    <div className="text-2xl font-headline font-extrabold text-white">
+                      {(state.attendanceRecords || []).length} <span className="text-xs font-normal text-gray-400">Total Visits</span>
                     </div>
                     <div className="text-[11px] text-gray-400 mt-1">
-                      {state.selectedGym.location}
+                      Check-in recorded at {state.selectedGym.name}
                     </div>
                   </div>
-                  <div className="pt-3 border-t border-surface-border flex items-center justify-between text-[11px] text-gray-400">
-                    <span>Attendance Rate</span>
-                    <span className="text-fitness-primary font-bold">{state.selectedGym.attendanceRate}</span>
-                  </div>
+                  <button
+                    onClick={handleCheckInToday}
+                    className="w-full py-1.5 rounded-xl bg-fitness-primary/15 hover:bg-fitness-primary/25 border border-fitness-primary/30 text-fitness-primary text-xs font-bold transition flex items-center justify-center gap-1 mt-2"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Check In Today
+                  </button>
                 </div>
 
               </div>
 
-              {/* Hero Workout Card */}
+              {/* 6. Component 4: Today's Workout Routine Card */}
               <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1105,6 +1539,178 @@ export default function FitSyncApp() {
                 </div>
               </div>
 
+              {/* 7. Bottom 3 Cards: Component 5 (Workout Summary), Component 7 (Fitness Overview), Component 10 (Goals) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {/* Component 5: Workout Summary */}
+                <div className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-fitness-primary uppercase tracking-wider flex items-center gap-1.5">
+                      <TrendingUp className="w-4 h-4" /> Workout Summary
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-mono">This Session</span>
+                  </div>
+                  <div className="space-y-2 pt-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-400">Total Volume Moved</span>
+                      <span className="font-bold font-mono text-white">{totalWorkoutVolume.toLocaleString()} kg</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-400">Sets Completed</span>
+                      <span className="font-bold font-mono text-fitness-primary">{totalCompletedSets} / {totalSetsCount}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-400">Estimated Burn</span>
+                      <span className="font-bold font-mono text-amber-400">{Math.round(totalCompletedSets * 32)} kcal</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Component 7: Fitness Overview */}
+                <div className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-healthcare-accent uppercase tracking-wider flex items-center gap-1.5">
+                      <Scale className="w-4 h-4" /> Fitness Overview
+                    </span>
+                    <button
+                      onClick={() => {
+                        setDraftAssessment(state.assessmentData);
+                        setIsAssessmentModalOpen(true);
+                      }}
+                      className="text-[10px] text-healthcare-accent hover:underline"
+                    >
+                      Re-calculate
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-center text-xs pt-1">
+                    <div className="p-2 rounded-xl bg-surface-2 border border-surface-border">
+                      <div className="text-[10px] text-gray-400">BMI</div>
+                      <div className="font-bold text-white text-sm mt-0.5">{state.computedMetrics.bmi}</div>
+                      <div className="text-[9px] text-fitness-primary">{state.computedMetrics.bmiCategory}</div>
+                    </div>
+                    <div className="p-2 rounded-xl bg-surface-2 border border-surface-border">
+                      <div className="text-[10px] text-gray-400">Weight</div>
+                      <div className="font-bold text-white text-sm mt-0.5">{state.assessmentData.weightKg} kg</div>
+                      <div className="text-[9px] text-gray-400">{state.assessmentData.heightCm} cm</div>
+                    </div>
+                    <div className="p-2 rounded-xl bg-surface-2 border border-surface-border">
+                      <div className="text-[10px] text-gray-400">BMR</div>
+                      <div className="font-bold text-white text-sm mt-0.5">{state.computedMetrics.bmr}</div>
+                      <div className="text-[9px] text-gray-400">kcal/day</div>
+                    </div>
+                    <div className="p-2 rounded-xl bg-surface-2 border border-surface-border">
+                      <div className="text-[10px] text-gray-400">TDEE</div>
+                      <div className="font-bold text-healthcare-accent text-sm mt-0.5">{state.computedMetrics.tdee}</div>
+                      <div className="text-[9px] text-gray-400">burn target</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Component 10: Fitness Goals */}
+                <div className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Award className="w-4 h-4" /> Fitness Goals
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-semibold">
+                      On Track
+                    </span>
+                  </div>
+                  <div className="space-y-2 pt-1">
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-300 font-semibold">{state.assessmentData.goal}</span>
+                        <span className="text-fitness-primary font-bold">75% Target</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-fitness-primary to-healthcare-accent rounded-full" style={{ width: '75%' }} />
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-gray-400 pt-1">
+                      Target Frequency: <strong className="text-white">{state.assessmentData.frequency || '4-5 days/week'}</strong>. Consistent progressive overload maintained.
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* 8. Component 11 (Upcoming Appointments) & Component 12 (Notifications) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {/* Component 11: Upcoming Appointments */}
+                <div className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-healthcare-accent" /> Upcoming Appointments
+                    </span>
+                    <button
+                      onClick={() => setIsBookingModalOpen(true)}
+                      className="text-[11px] text-fitness-primary hover:underline font-semibold"
+                    >
+                      + Book Session
+                    </button>
+                  </div>
+                  {state.trainerBookings.length > 0 ? (
+                    <div className="space-y-2">
+                      {state.trainerBookings.slice(0, 2).map((booking) => (
+                        <div key={booking.id} className="p-3 rounded-2xl bg-surface-2 border border-surface-border flex items-center justify-between">
+                          <div>
+                            <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                              <span>{booking.focusArea}</span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-fitness-primary/20 text-fitness-primary font-bold">
+                                {booking.status}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-gray-400 mt-0.5">
+                              {booking.trainerName} • {booking.date} at {booking.timeSlot}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleCancelBooking(booking.id)}
+                            className="text-[11px] text-red-400 hover:text-red-300 p-1"
+                            title="Cancel booking"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border/60 text-center text-xs text-gray-400">
+                      No upcoming sessions scheduled. Click &quot;+ Book Session&quot; to reserve floor time with {state.selectedTrainer?.name}.
+                    </div>
+                  )}
+                </div>
+
+                {/* Component 12: Notifications */}
+                <div className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <Bell className="w-4 h-4 text-fitness-primary" /> Notifications
+                    </span>
+                    <button
+                      onClick={() => setIsNotificationsDrawerOpen(true)}
+                      className="text-[11px] text-fitness-primary hover:underline font-semibold"
+                    >
+                      View All ({state.notifications.length})
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {state.notifications.slice(0, 2).map((notif) => (
+                      <div key={notif.id} className="p-3 rounded-2xl bg-surface-2 border border-surface-border flex items-start gap-2.5">
+                        <div className="w-2 h-2 rounded-full bg-fitness-primary flex-shrink-0 mt-1.5" />
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-white truncate">{notif.title}</div>
+                          <div className="text-[11px] text-gray-400 line-clamp-1">{notif.desc}</div>
+                          <div className="text-[10px] text-gray-500 font-mono mt-0.5">{notif.time}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           )}
 
@@ -1112,298 +1718,555 @@ export default function FitSyncApp() {
           {activeTab === 'workout' && (
             <div className="space-y-6 animate-in fade-in duration-200">
 
-              {/* Workout Top Bar */}
-              <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
-
-                {/* 7-Day Workout Schedule Split Selector */}
-                <div className="space-y-2 pb-3 border-b border-surface-border">
-                  <div className="flex items-center justify-between text-xs text-gray-400">
-                    <span className="flex items-center gap-1.5 font-bold text-white">
-                      <Calendar className="w-3.5 h-3.5 text-fitness-primary" /> Daily Workout Split (7 Days)
-                    </span>
-                    <span className="text-[11px] text-fitness-primary font-mono">
-                      Today: <strong className="text-white">{todayDayName}</strong>
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                    {WEEK_DAYS.map((day) => {
-                      const isSelected = (state.selectedWorkoutDay || todayDayName) === day;
-                      const isToday = day === todayDayName;
-                      return (
-                        <button
-                          key={day}
-                          onClick={() => handleSelectWorkoutDay(day)}
-                          className={`py-2 px-1 rounded-xl text-center transition flex flex-col items-center justify-center border ${isSelected
-                            ? 'bg-fitness-primary text-gray-950 font-bold border-fitness-primary shadow-glow-fitness'
-                            : isToday
-                              ? 'bg-surface-2 text-white border-fitness-primary/50'
-                              : 'bg-surface-2/60 text-gray-400 border-surface-border hover:text-white hover:border-gray-500'
-                            }`}
-                        >
-                          <span className="text-[10px] sm:text-xs font-semibold">{day.slice(0, 3)}</span>
-                          {isToday && (
-                            <span className={`text-[8px] sm:text-[9px] px-1 rounded-full uppercase tracking-wider font-extrabold ${isSelected ? 'bg-gray-950 text-fitness-primary' : 'bg-fitness-primary/20 text-fitness-primary'
-                              }`}>
-                              Today
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+              {/* Workout Navigation Sub-Tabs */}
+              <div className="p-2 rounded-2xl bg-surface-1 border border-surface-border flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setWorkoutSubTab('session');
+                    }}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      workoutSubTab === 'session'
+                        ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Dumbbell className="w-3.5 h-3.5" />
+                    <span>Today&apos;s Routine</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setWorkoutSubTab('library');
+                    }}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      workoutSubTab === 'library'
+                        ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                    <span>Exercise Library</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      haptics.playTap();
+                      setWorkoutSubTab('history');
+                    }}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      workoutSubTab === 'history'
+                        ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Workout History</span>
+                  </button>
                 </div>
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-fitness-primary uppercase tracking-wider">
-                        {state.selectedWorkoutDay || todayDayName}&apos;s Routine
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-fitness-primary/10 text-fitness-primary border border-fitness-primary/25 font-semibold">
-                        {state.selectedWorkoutDay === todayDayName ? 'Today Scheduled' : 'Daily Routine Preview'}
-                      </span>
-                    </div>
-                    <h2 className="font-headline font-extrabold text-2xl text-white mt-1">
-                      {state.activeWorkout.title}
-                    </h2>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {state.activeWorkout.focus} • {state.activeWorkout.difficulty}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center flex-wrap gap-2.5">
-                    <button
-                      onClick={handleResetWorkoutSets}
-                      className="px-3 py-2 bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white font-semibold text-xs rounded-xl border border-surface-border transition flex items-center gap-1.5"
-                      title="Reset completed sets to pending for today"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5 text-fitness-primary" />
-                      <span>Reset Sets</span>
-                    </button>
-                    <button
-                      onClick={() => setIsAddExerciseModalOpen(true)}
-                      className="px-4 py-2 bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs rounded-xl shadow-glow-fitness transition flex items-center gap-1.5"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Exercise</span>
-                    </button>
-                    <RestTimerWidget initialSeconds={90} />
-                  </div>
-                </div>
-
-                {/* Session Telemetry & Progress Strip */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                  <div className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border">
-                    <div className="text-[11px] text-gray-400">Total Volume Moved</div>
-                    <div className="text-xl font-headline font-extrabold text-fitness-primary mt-0.5">
-                      {totalWorkoutVolume.toLocaleString()} <span className="text-xs font-normal text-gray-400">kg</span>
-                    </div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">Sum of completed sets × reps × weight</div>
-                  </div>
-
-                  <div className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border">
-                    <div className="text-[11px] text-gray-400">Sets Completed</div>
-                    <div className="text-xl font-headline font-extrabold text-white mt-0.5">
-                      {totalCompletedSets} <span className="text-xs font-normal text-gray-400">/ {totalSetsCount} sets</span>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-surface-1 mt-1.5 overflow-hidden">
-                      <div
-                        className="h-full bg-fitness-primary rounded-full transition-all duration-300"
-                        style={{ width: `${totalSetsCount > 0 ? (totalCompletedSets / totalSetsCount) * 100 : 0}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border">
-                    <div className="text-[11px] text-gray-400">Target Routine</div>
-                    <div className="text-xl font-headline font-extrabold text-white mt-0.5">
-                      {state.activeWorkout.exercises.length} <span className="text-xs font-normal text-gray-400">Exercises</span>
-                    </div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">Estimated Duration: {state.activeWorkout.duration}</div>
-                  </div>
+                <div className="text-[11px] text-gray-400 font-mono hidden sm:block pr-2">
+                  {workoutSubTab === 'session' && `${state.activeWorkout.exercises.length} Exercises Scheduled`}
+                  {workoutSubTab === 'library' && 'Multi-muscle & Equipment Database'}
+                  {workoutSubTab === 'history' && 'Completed Sessions Log'}
                 </div>
               </div>
 
-              {/* Exercises List & Set Logger */}
-              <div className="space-y-4">
-                {state.activeWorkout.exercises.map((ex) => (
-                  <div key={ex.id} className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+              {/* SUBVIEW 1: TODAY'S WORKOUT SESSION */}
+              {workoutSubTab === 'session' && (
+                <div className="space-y-6">
+                  {/* Workout Top Bar */}
+                  <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
 
-                    {/* Exercise Header */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-14 h-14 rounded-2xl overflow-hidden relative border border-white/10 flex-shrink-0">
-                          <Image src={ex.thumbnail} alt={ex.name} fill className="object-cover" />
-                        </div>
-                        <div>
-                          <h3 className="font-headline font-bold text-white text-base">{ex.name}</h3>
-                          <div className="text-xs text-gray-400">{ex.muscle} • {ex.equipment}</div>
-                          <div className="text-[11px] text-fitness-primary font-semibold mt-0.5">
-                            Target: {ex.targetSets} sets × {ex.targetReps} reps @ {ex.targetWeight}
-                          </div>
-                        </div>
+                    {/* 7-Day Workout Schedule Split Selector */}
+                    <div className="space-y-2 pb-3 border-b border-surface-border">
+                      <div className="flex items-center justify-between text-xs text-gray-400">
+                        <span className="flex items-center gap-1.5 font-bold text-white">
+                          <Calendar className="w-3.5 h-3.5 text-fitness-primary" /> Daily Workout Split (7 Days)
+                        </span>
+                        <span className="text-[11px] text-fitness-primary font-mono">
+                          Today: <strong className="text-white">{todayDayName}</strong>
+                        </span>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleAskTrainerForExercise(ex)}
-                          className="px-3 py-1.5 rounded-xl bg-fitness-primary/15 hover:bg-fitness-primary/25 text-fitness-primary border border-fitness-primary/30 text-xs font-bold transition flex items-center gap-1"
-                          title="Ask assigned gym coach for guidance"
-                        >
-                          <MessageSquareText className="w-3.5 h-3.5" />
-                          <span>Ask Trainer</span>
-                        </button>
-                        <button
-                          onClick={() => setSelectedExerciseForModal(ex)}
-                          className="px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-gray-300 border border-surface-border transition flex items-center gap-1"
-                        >
-                          <Info className="w-3.5 h-3.5 text-fitness-primary" />
-                          <span>Exercise Guide</span>
-                        </button>
-                        {state.activeWorkout.exercises.length > 1 && (
-                          <button
-                            onClick={() => handleDeleteExercise(ex.id)}
-                            className="p-1.5 rounded-xl bg-surface-2 hover:bg-red-500/15 text-gray-400 hover:text-red-400 border border-surface-border transition"
-                            title="Remove exercise from today's workout"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                        {WEEK_DAYS.map((day) => {
+                          const isSelected = (state.selectedWorkoutDay || todayDayName) === day;
+                          const isToday = day === todayDayName;
+                          return (
+                            <button
+                              key={day}
+                              onClick={() => handleSelectWorkoutDay(day)}
+                              className={`py-2 px-1 rounded-xl text-center transition flex flex-col items-center justify-center border ${isSelected
+                                ? 'bg-fitness-primary text-gray-950 font-bold border-fitness-primary shadow-glow-fitness'
+                                : isToday
+                                  ? 'bg-surface-2 text-white border-fitness-primary/50'
+                                  : 'bg-surface-2/60 text-gray-400 border-surface-border hover:text-white hover:border-gray-500'
+                                }`}
+                            >
+                              <span className="text-[10px] sm:text-xs font-semibold">{day.slice(0, 3)}</span>
+                              {isToday && (
+                                <span className={`text-[8px] sm:text-[9px] px-1 rounded-full uppercase tracking-wider font-extrabold ${isSelected ? 'bg-gray-950 text-fitness-primary' : 'bg-fitness-primary/20 text-fitness-primary'
+                                  }`}>
+                                  Today
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
-                    {/* Set-by-Set Logging Table */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-fitness-primary uppercase tracking-wider">
+                            {state.selectedWorkoutDay || todayDayName}&apos;s Routine
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-fitness-primary/10 text-fitness-primary border border-fitness-primary/25 font-semibold">
+                            {state.selectedWorkoutDay === todayDayName ? 'Today Scheduled' : 'Daily Routine Preview'}
+                          </span>
+                        </div>
+                        <h2 className="font-headline font-extrabold text-2xl text-white mt-1">
+                          {state.activeWorkout.title}
+                        </h2>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {state.activeWorkout.focus} • {state.activeWorkout.difficulty}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center flex-wrap gap-2.5">
+                        <button
+                          onClick={handleResetWorkoutSets}
+                          className="px-3 py-2 bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white font-semibold text-xs rounded-xl border border-surface-border transition flex items-center gap-1.5"
+                          title="Reset completed sets to pending for today"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-fitness-primary" />
+                          <span>Reset Sets</span>
+                        </button>
+                        <button
+                          onClick={() => setIsAddExerciseModalOpen(true)}
+                          className="px-4 py-2 bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs rounded-xl shadow-glow-fitness transition flex items-center gap-1.5"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Add Exercise</span>
+                        </button>
+                        <RestTimerWidget initialSeconds={90} />
+                      </div>
+                    </div>
+
+                    {/* Session Telemetry & Progress Strip */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                      <div className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border">
+                        <div className="text-[11px] text-gray-400">Total Volume Moved</div>
+                        <div className="text-xl font-headline font-extrabold text-fitness-primary mt-0.5">
+                          {totalWorkoutVolume.toLocaleString()} <span className="text-xs font-normal text-gray-400">kg</span>
+                        </div>
+                        <div className="text-[10px] text-gray-400 mt-0.5">Sum of completed sets × reps × weight</div>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border">
+                        <div className="text-[11px] text-gray-400">Sets Completed</div>
+                        <div className="text-xl font-headline font-extrabold text-white mt-0.5">
+                          {totalCompletedSets} <span className="text-xs font-normal text-gray-400">/ {totalSetsCount} sets</span>
+                        </div>
+                        <div className="w-full h-1.5 rounded-full bg-surface-1 mt-1.5 overflow-hidden">
+                          <div
+                            className="h-full bg-fitness-primary rounded-full transition-all duration-300"
+                            style={{ width: `${totalSetsCount > 0 ? (totalCompletedSets / totalSetsCount) * 100 : 0}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border">
+                        <div className="text-[11px] text-gray-400">Target Routine</div>
+                        <div className="text-xl font-headline font-extrabold text-white mt-0.5">
+                          {state.activeWorkout.exercises.length} <span className="text-xs font-normal text-gray-400">Exercises</span>
+                        </div>
+                        <div className="text-[10px] text-gray-400 mt-0.5">Estimated Duration: {state.activeWorkout.duration}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Exercises List & Set Logger */}
+                  <div className="space-y-4">
+                    {state.activeWorkout.exercises.map((ex) => (
+                      <div key={ex.id} className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+
+                        {/* Exercise Header */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-14 h-14 rounded-2xl overflow-hidden relative border border-white/10 flex-shrink-0">
+                              <Image src={ex.thumbnail} alt={ex.name} fill className="object-cover" />
+                            </div>
+                            <div>
+                              <h3 className="font-headline font-bold text-white text-base">{ex.name}</h3>
+                              <div className="text-xs text-gray-400">{ex.muscle} • {ex.equipment}</div>
+                              <div className="text-[11px] text-fitness-primary font-semibold mt-0.5">
+                                Target: {ex.targetSets} sets × {ex.targetReps} reps @ {ex.targetWeight}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleAskTrainerForExercise(ex)}
+                              className="px-3 py-1.5 rounded-xl bg-fitness-primary/15 hover:bg-fitness-primary/25 text-fitness-primary border border-fitness-primary/30 text-xs font-bold transition flex items-center gap-1"
+                              title="Ask assigned gym coach for guidance"
+                            >
+                              <MessageSquareText className="w-3.5 h-3.5" />
+                              <span>Ask Trainer</span>
+                            </button>
+                            <button
+                              onClick={() => setSelectedExerciseForModal(ex)}
+                              className="px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-gray-300 border border-surface-border transition flex items-center gap-1"
+                            >
+                              <Info className="w-3.5 h-3.5 text-fitness-primary" />
+                              <span>Exercise Guide</span>
+                            </button>
+                            {state.activeWorkout.exercises.length > 1 && (
+                              <button
+                                onClick={() => handleDeleteExercise(ex.id)}
+                                className="p-1.5 rounded-xl bg-surface-2 hover:bg-red-500/15 text-gray-400 hover:text-red-400 border border-surface-border transition"
+                                title="Remove exercise from today's workout"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Set-by-Set Logging Table */}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs min-w-[500px]">
+                            <thead>
+                              <tr className="border-b border-surface-border text-gray-400 font-medium">
+                                <th className="pb-2 pl-2 w-20">Set</th>
+                                <th className="pb-2 w-44">Reps</th>
+                                <th className="pb-2 w-48">Weight</th>
+                                <th className="pb-2 text-right pr-2">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-surface-border">
+                              {ex.completedSets.map((s) => (
+                                <tr key={s.set} className="hover:bg-white/[0.02] transition">
+
+                                  {/* Set Label */}
+                                  <td className="py-2.5 pl-2 font-mono font-bold text-white">
+                                    <span className="inline-block px-2.5 py-1 rounded-lg bg-surface-2 border border-surface-border text-xs">
+                                      Set {s.set}
+                                    </span>
+                                  </td>
+
+                                  {/* Reps Stepper */}
+                                  <td className="py-2.5">
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateSet(ex.id, s.set, 'reps', Math.max(1, s.reps - 1))}
+                                        className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95"
+                                        title="Decrease Reps"
+                                      >
+                                        <Minus className="w-3 h-3" />
+                                      </button>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        max="200"
+                                        value={s.reps}
+                                        onChange={(e) => handleUpdateSet(ex.id, s.set, 'reps', parseInt(e.target.value) || 0)}
+                                        className="w-16 px-2 py-1 text-center font-mono font-bold text-xs bg-surface-2 border border-surface-border rounded-lg text-white focus:outline-none focus:border-fitness-primary transition"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateSet(ex.id, s.set, 'reps', s.reps + 1)}
+                                        className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95"
+                                        title="Increase Reps"
+                                      >
+                                        <Plus className="w-3 h-3" />
+                                      </button>
+                                      <span className="text-[11px] text-gray-400">reps</span>
+                                    </div>
+                                  </td>
+
+                                  {/* Weight Stepper */}
+                                  <td className="py-2.5">
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStepWeight(ex.id, s.set, -2.5)}
+                                        className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95 text-xs font-bold"
+                                        title="Decrease Weight (-2.5 kg)"
+                                      >
+                                        -
+                                      </button>
+                                      <input
+                                        type="text"
+                                        value={s.weight}
+                                        onChange={(e) => handleUpdateSet(ex.id, s.set, 'weight', e.target.value)}
+                                        className="w-24 px-2 py-1 text-center font-mono font-bold text-xs bg-surface-2 border border-surface-border rounded-lg text-fitness-primary focus:outline-none focus:border-fitness-primary transition"
+                                        placeholder="0 kg"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStepWeight(ex.id, s.set, 2.5)}
+                                        className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95 text-xs font-bold"
+                                        title="Increase Weight (+2.5 kg)"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </td>
+
+                                  {/* Action Button */}
+                                  <td className="py-2.5 text-right pr-2">
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button
+                                        onClick={() => handleToggleSetCompletion(ex.id, s.set)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${s.status === 'completed'
+                                          ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
+                                          : 'bg-surface-2 text-gray-400 hover:text-white border border-surface-border'
+                                          }`}
+                                      >
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        <span>{s.status === 'completed' ? 'Done' : 'Mark Done'}</span>
+                                      </button>
+                                      {ex.completedSets.length > 1 && (
+                                        <button
+                                          onClick={() => handleRemoveSet(ex.id, s.set)}
+                                          className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                                          title="Remove this set"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Exercise Card Footer */}
+                        <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-surface-border/60">
+                          <button
+                            onClick={() => handleAddSet(ex.id)}
+                            className="px-3.5 py-1.5 rounded-xl border border-dashed border-fitness-primary/50 text-fitness-primary hover:bg-fitness-primary/10 text-xs font-semibold flex items-center gap-1.5 transition self-start"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add Set {ex.completedSets.length + 1}</span>
+                          </button>
+                          <div className="flex items-center gap-4 text-xs text-gray-400">
+                            <span>Sets: <strong className="text-white">{ex.completedSets.filter(s => s.status === 'completed').length} / {ex.completedSets.length}</strong></span>
+                            <span>Volume: <strong className="font-mono text-fitness-primary">{calculateExerciseVolume(ex).toLocaleString()} kg</strong></span>
+                          </div>
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* SUBVIEW 2: EXERCISE LIBRARY (3.5) */}
+              {workoutSubTab === 'library' && (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  <div className="p-5 rounded-3xl bg-surface-1 border border-surface-border space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <h3 className="font-headline font-bold text-white text-lg">Exercise Library &amp; Form Guide</h3>
+                        <p className="text-xs text-gray-400">Search exercises, target muscle groups, instructions, and video demos</p>
+                      </div>
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                        <input
+                          type="text"
+                          value={libSearchQuery}
+                          onChange={(e) => setLibSearchQuery(e.target.value)}
+                          placeholder="Search exercises by name..."
+                          className="bg-surface-2 border border-surface-border rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-fitness-primary w-full sm:w-64"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Filter Pills */}
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-surface-border">
+                      <span className="text-[11px] font-semibold text-gray-400">Muscle:</span>
+                      {['all', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'].map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => setLibMuscleFilter(m)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                            libMuscleFilter === m
+                              ? 'bg-fitness-primary text-gray-950 font-bold'
+                              : 'bg-surface-2 text-gray-300 hover:text-white'
+                          }`}
+                        >
+                          {m === 'all' ? 'All Muscles' : m}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <span className="text-[11px] font-semibold text-gray-400">Equipment:</span>
+                      {['all', 'Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight'].map((eq) => (
+                        <button
+                          key={eq}
+                          onClick={() => setLibEquipmentFilter(eq)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                            libEquipmentFilter === eq
+                              ? 'bg-healthcare-accent text-white font-bold'
+                              : 'bg-surface-2 text-gray-300 hover:text-white'
+                          }`}
+                        >
+                          {eq === 'all' ? 'All Equipment' : eq}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Exercise Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {WEEK_DAYS.flatMap(d => getWorkoutForDay(d).exercises)
+                      .filter((ex, idx, self) => self.findIndex(t => t.name === ex.name) === idx)
+                      .filter((ex) => {
+                        const q = libSearchQuery.toLowerCase();
+                        const matchesQ = !q || ex.name.toLowerCase().includes(q) || ex.muscle.toLowerCase().includes(q);
+                        const matchesM = libMuscleFilter === 'all' || ex.muscle.toLowerCase().includes(libMuscleFilter.toLowerCase());
+                        const matchesE = libEquipmentFilter === 'all' || ex.equipment.toLowerCase().includes(libEquipmentFilter.toLowerCase());
+                        return matchesQ && matchesM && matchesE;
+                      })
+                      .map((ex) => (
+                        <div
+                          key={ex.name}
+                          className="p-5 rounded-3xl bg-surface-1 border border-surface-border hover:border-fitness-primary/50 transition flex flex-col justify-between space-y-3"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3">
+                              <div className="w-14 h-14 rounded-2xl overflow-hidden relative border border-white/10 flex-shrink-0">
+                                <Image src={ex.thumbnail} alt={ex.name} fill className="object-cover" />
+                              </div>
+                              <div>
+                                <h4 className="font-headline font-bold text-white text-sm">{ex.name}</h4>
+                                <div className="text-[11px] text-gray-400">{ex.muscle} • {ex.equipment}</div>
+                                <div className="text-[10px] text-fitness-primary font-mono mt-0.5">
+                                  Default: {ex.targetSets} sets × {ex.targetReps} reps
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-[11px] text-gray-400 line-clamp-2">
+                              {ex.instructions?.[0] || 'Execute with controlled form and full range of motion.'}
+                            </p>
+                          </div>
+
+                          <div className="pt-2 border-t border-surface-border flex gap-2">
+                            <button
+                              onClick={() => setSelectedExerciseForModal(ex)}
+                              className="flex-1 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white text-xs font-semibold border border-surface-border transition flex items-center justify-center gap-1"
+                            >
+                              <Info className="w-3.5 h-3.5 text-fitness-primary" />
+                              <span>View Form Guide</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                haptics.playSuccess();
+                                updateState((prev) => ({
+                                  ...prev,
+                                  activeWorkout: {
+                                    ...prev.activeWorkout,
+                                    exercises: [
+                                      ...prev.activeWorkout.exercises,
+                                      {
+                                        ...ex,
+                                        id: `ex_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`
+                                      }
+                                    ]
+                                  }
+                                }));
+                                showToast(`Added ${ex.name} to today's workout!`, '🏋️');
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-fitness-primary text-gray-950 font-bold text-xs shadow-glow-fitness transition"
+                              title="Add to today's workout"
+                            >
+                              + Add
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* SUBVIEW 3: WORKOUT HISTORY (3.6) */}
+              {workoutSubTab === 'history' && (
+                <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+                    <div>
+                      <h3 className="font-headline font-bold text-white text-lg">Workout History &amp; Consistency</h3>
+                      <p className="text-xs text-gray-400">Review completed athletic sessions, progressive overload, and volume</p>
+                    </div>
+                    <span className="text-xs font-mono font-bold text-fitness-primary px-3 py-1 rounded-xl bg-fitness-primary/10 border border-fitness-primary/30">
+                      Streak: {state.userProfile.streakDays} Days
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border">
+                      <div className="text-xs text-gray-400">This Session Volume</div>
+                      <div className="text-xl font-bold font-mono text-white mt-1">{totalWorkoutVolume.toLocaleString()} kg</div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border">
+                      <div className="text-xs text-gray-400">Sets Completed</div>
+                      <div className="text-xl font-bold font-mono text-fitness-primary mt-1">{totalCompletedSets} / {totalSetsCount}</div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border">
+                      <div className="text-xs text-gray-400">Total Check-Ins</div>
+                      <div className="text-xl font-bold font-mono text-healthcare-accent mt-1">{(state.attendanceRecords || []).length} Visits</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    <div className="text-xs font-bold text-gray-300 uppercase tracking-wider">Exercise Performance Logs</div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs min-w-[500px]">
                         <thead>
-                          <tr className="border-b border-surface-border text-gray-400 font-medium">
-                            <th className="pb-2 pl-2 w-20">Set</th>
-                            <th className="pb-2 w-44">Reps</th>
-                            <th className="pb-2 w-48">Weight</th>
-                            <th className="pb-2 text-right pr-2">Action</th>
+                          <tr className="border-b border-surface-border text-gray-400">
+                            <th className="pb-2">Exercise</th>
+                            <th className="pb-2">Target</th>
+                            <th className="pb-2">Sets Done</th>
+                            <th className="pb-2">Volume Lifted</th>
+                            <th className="pb-2 text-right">Status</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-surface-border">
-                          {ex.completedSets.map((s) => (
-                            <tr key={s.set} className="hover:bg-white/[0.02] transition">
-
-                              {/* Set Label */}
-                              <td className="py-2.5 pl-2 font-mono font-bold text-white">
-                                <span className="inline-block px-2.5 py-1 rounded-lg bg-surface-2 border border-surface-border text-xs">
-                                  Set {s.set}
-                                </span>
-                              </td>
-
-                              {/* Reps Stepper */}
-                              <td className="py-2.5">
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUpdateSet(ex.id, s.set, 'reps', Math.max(1, s.reps - 1))}
-                                    className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95"
-                                    title="Decrease Reps"
-                                  >
-                                    <Minus className="w-3 h-3" />
-                                  </button>
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max="200"
-                                    value={s.reps}
-                                    onChange={(e) => handleUpdateSet(ex.id, s.set, 'reps', parseInt(e.target.value) || 0)}
-                                    className="w-16 px-2 py-1 text-center font-mono font-bold text-xs bg-surface-2 border border-surface-border rounded-lg text-white focus:outline-none focus:border-fitness-primary transition"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUpdateSet(ex.id, s.set, 'reps', s.reps + 1)}
-                                    className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95"
-                                    title="Increase Reps"
-                                  >
-                                    <Plus className="w-3 h-3" />
-                                  </button>
-                                  <span className="text-[11px] text-gray-400">reps</span>
-                                </div>
-                              </td>
-
-                              {/* Weight Stepper */}
-                              <td className="py-2.5">
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleStepWeight(ex.id, s.set, -2.5)}
-                                    className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95 text-xs font-bold"
-                                    title="Decrease Weight (-2.5 kg)"
-                                  >
-                                    -
-                                  </button>
-                                  <input
-                                    type="text"
-                                    value={s.weight}
-                                    onChange={(e) => handleUpdateSet(ex.id, s.set, 'weight', e.target.value)}
-                                    className="w-24 px-2 py-1 text-center font-mono font-bold text-xs bg-surface-2 border border-surface-border rounded-lg text-fitness-primary focus:outline-none focus:border-fitness-primary transition"
-                                    placeholder="0 kg"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => handleStepWeight(ex.id, s.set, 2.5)}
-                                    className="w-7 h-7 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-300 hover:text-white flex items-center justify-center border border-surface-border transition active:scale-95 text-xs font-bold"
-                                    title="Increase Weight (+2.5 kg)"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </td>
-
-                              {/* Action Button */}
-                              <td className="py-2.5 text-right pr-2">
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    onClick={() => handleToggleSetCompletion(ex.id, s.set)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${s.status === 'completed'
-                                      ? 'bg-fitness-primary text-gray-950 shadow-glow-fitness'
-                                      : 'bg-surface-2 text-gray-400 hover:text-white border border-surface-border'
-                                      }`}
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>{s.status === 'completed' ? 'Done' : 'Mark Done'}</span>
-                                  </button>
-                                  {ex.completedSets.length > 1 && (
-                                    <button
-                                      onClick={() => handleRemoveSet(ex.id, s.set)}
-                                      className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition"
-                                      title="Remove this set"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-
-                            </tr>
-                          ))}
+                          {state.activeWorkout.exercises.map((ex) => {
+                            const completedCount = ex.completedSets.filter(s => s.status === 'completed').length;
+                            const vol = calculateExerciseVolume(ex);
+                            return (
+                              <tr key={ex.id} className="hover:bg-white/[0.02]">
+                                <td className="py-2.5 font-bold text-white">{ex.name}</td>
+                                <td className="py-2.5 text-gray-400">{ex.targetSets} × {ex.targetReps} @ {ex.targetWeight}</td>
+                                <td className="py-2.5 font-mono text-white">{completedCount} / {ex.completedSets.length}</td>
+                                <td className="py-2.5 font-mono text-fitness-primary font-bold">{vol.toLocaleString()} kg</td>
+                                <td className="py-2.5 text-right">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    completedCount === ex.completedSets.length
+                                      ? 'bg-fitness-primary/20 text-fitness-primary'
+                                      : 'bg-surface-2 text-gray-400'
+                                  }`}>
+                                    {completedCount === ex.completedSets.length ? 'Completed' : 'In Progress'}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
-
-                    {/* Exercise Card Footer */}
-                    <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-surface-border/60">
-                      <button
-                        onClick={() => handleAddSet(ex.id)}
-                        className="px-3.5 py-1.5 rounded-xl border border-dashed border-fitness-primary/50 text-fitness-primary hover:bg-fitness-primary/10 text-xs font-semibold flex items-center gap-1.5 transition self-start"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add Set {ex.completedSets.length + 1}</span>
-                      </button>
-                      <div className="flex items-center gap-4 text-xs text-gray-400">
-                        <span>Sets: <strong className="text-white">{ex.completedSets.filter(s => s.status === 'completed').length} / {ex.completedSets.length}</strong></span>
-                        <span>Volume: <strong className="font-mono text-fitness-primary">{calculateExerciseVolume(ex).toLocaleString()} kg</strong></span>
-                      </div>
-                    </div>
-
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
 
             </div>
           )}
@@ -2337,6 +3200,316 @@ export default function FitSyncApp() {
                 );
               })()}
 
+              {/* Fitness Progress Tracking (Section 3.11) */}
+              <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-headline font-bold text-white text-lg flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-fitness-primary" /> Fitness Progress Tracking &amp; Body Measurements
+                    </h3>
+                    <p className="text-xs text-gray-400">Log body weight, waist, chest, and biceps measurements to track physical transformation</p>
+                  </div>
+                  <span className="text-[11px] font-mono px-2.5 py-1 rounded-xl bg-surface-2 text-fitness-primary border border-surface-border font-bold">
+                    {(state.progressLogs || []).length} Recorded Entries
+                  </span>
+                </div>
+
+                {/* Log New Measurement Form */}
+                <form onSubmit={handleAddProgressLog} className="p-4 rounded-2xl bg-surface-2 border border-surface-border space-y-3">
+                  <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Plus className="w-3.5 h-3.5 text-fitness-primary" /> Record New Body Milestone Entry
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-semibold block mb-1">Weight (kg) *</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        required
+                        value={progWeight}
+                        onChange={(e) => setProgWeight(e.target.value)}
+                        placeholder={`${state.assessmentData.weightKg} kg`}
+                        className="w-full bg-surface-1 border border-surface-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-fitness-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-semibold block mb-1">Waist (cm)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={progWaist}
+                        onChange={(e) => setProgWaist(e.target.value)}
+                        placeholder="e.g. 80"
+                        className="w-full bg-surface-1 border border-surface-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-fitness-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-semibold block mb-1">Chest (cm)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={progChest}
+                        onChange={(e) => setProgChest(e.target.value)}
+                        placeholder="e.g. 98"
+                        className="w-full bg-surface-1 border border-surface-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-fitness-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-semibold block mb-1">Biceps (cm)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={progBiceps}
+                        onChange={(e) => setProgBiceps(e.target.value)}
+                        placeholder="e.g. 36"
+                        className="w-full bg-surface-1 border border-surface-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-fitness-primary"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <input
+                      type="text"
+                      value={progNotes}
+                      onChange={(e) => setProgNotes(e.target.value)}
+                      placeholder="Optional notes: e.g. Post-workout weigh in, pump check..."
+                      className="flex-1 bg-surface-1 border border-surface-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-fitness-primary"
+                    />
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition flex items-center justify-center gap-1.5 whitespace-nowrap"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Save Progress Entry</span>
+                    </button>
+                  </div>
+                </form>
+
+                {/* Progress History Table */}
+                {(state.progressLogs || []).length > 0 && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs min-w-[500px]">
+                      <thead>
+                        <tr className="border-b border-surface-border text-gray-400 font-medium">
+                          <th className="pb-2">Date Recorded</th>
+                          <th className="pb-2">Body Weight</th>
+                          <th className="pb-2">Waist</th>
+                          <th className="pb-2">Chest</th>
+                          <th className="pb-2">Biceps</th>
+                          <th className="pb-2 text-right">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-surface-border">
+                        {(state.progressLogs || []).map((entry, idx) => (
+                          <tr key={idx} className="hover:bg-white/[0.02] transition">
+                            <td className="py-2.5 font-mono text-gray-300">{entry.date}</td>
+                            <td className="py-2.5 font-bold font-mono text-white">{entry.weightKg} kg</td>
+                            <td className="py-2.5 font-mono text-gray-400">{entry.waistCm ? `${entry.waistCm} cm` : '—'}</td>
+                            <td className="py-2.5 font-mono text-gray-400">{entry.chestCm ? `${entry.chestCm} cm` : '—'}</td>
+                            <td className="py-2.5 font-mono text-gray-400">{entry.bicepsCm ? `${entry.bicepsCm} cm` : '—'}</td>
+                            <td className="py-2.5 text-right text-[11px] text-gray-400">{entry.note || 'Milestone logged'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Account Management & Security (Section 1.3 & 3.1) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* 1. Edit Profile Form */}
+                <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                  <div>
+                    <h3 className="font-headline font-bold text-white text-lg flex items-center gap-2">
+                      <Edit3 className="w-4 h-4 text-fitness-primary" /> Edit Profile Details
+                    </h3>
+                    <p className="text-xs text-gray-400">Update personal display name, contact phone, and avatar photo</p>
+                  </div>
+
+                  <form onSubmit={handleSaveAccountProfile} className="space-y-3 text-xs">
+                    <div className="space-y-1">
+                      <label className="text-gray-300 font-semibold">Full Name</label>
+                      <input
+                        type="text"
+                        value={editProfileName}
+                        onChange={(e) => setEditProfileName(e.target.value)}
+                        placeholder={state.userProfile.fullName}
+                        className="w-full bg-surface-2 border border-surface-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-fitness-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-gray-300 font-semibold">Mobile Number</label>
+                      <input
+                        type="tel"
+                        value={editProfileMobile}
+                        onChange={(e) => setEditProfileMobile(e.target.value)}
+                        placeholder={state.userProfile.phone || state.userProfile.mobile || '+91 98765 43210'}
+                        className="w-full bg-surface-2 border border-surface-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-fitness-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-gray-300 font-semibold">Profile Photo URL</label>
+                      <input
+                        type="text"
+                        value={editProfileAvatar}
+                        onChange={(e) => setEditProfileAvatar(e.target.value)}
+                        placeholder={state.userProfile.avatarUrl || 'https://...'}
+                        className="w-full bg-surface-2 border border-surface-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-fitness-primary"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 rounded-xl bg-fitness-primary hover:bg-fitness-light text-gray-950 font-bold text-xs shadow-glow-fitness transition mt-2"
+                    >
+                      Save Profile Changes
+                    </button>
+                  </form>
+                </div>
+
+                {/* 2. Change Password Form */}
+                <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                  <div>
+                    <h3 className="font-headline font-bold text-white text-lg flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-healthcare-accent" /> Security &amp; Password
+                    </h3>
+                    <p className="text-xs text-gray-400">Update your account credentials to keep your profile secure</p>
+                  </div>
+
+                  <form onSubmit={handleChangePassword} className="space-y-3 text-xs">
+                    <div className="space-y-1">
+                      <label className="text-gray-300 font-semibold">Current Password</label>
+                      <input
+                        type="password"
+                        value={pwdCurrent}
+                        onChange={(e) => setPwdCurrent(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-surface-2 border border-surface-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-fitness-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-gray-300 font-semibold">New Password</label>
+                      <input
+                        type="password"
+                        value={pwdNew}
+                        onChange={(e) => setPwdNew(e.target.value)}
+                        placeholder="At least 6 characters"
+                        className="w-full bg-surface-2 border border-surface-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-fitness-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-gray-300 font-semibold">Confirm New Password</label>
+                      <input
+                        type="password"
+                        value={pwdConfirm}
+                        onChange={(e) => setPwdConfirm(e.target.value)}
+                        placeholder="Repeat new password"
+                        className="w-full bg-surface-2 border border-surface-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-fitness-primary"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white border border-surface-border font-bold text-xs transition mt-2"
+                    >
+                      Update Password
+                    </button>
+                  </form>
+                </div>
+
+              </div>
+
+              {/* Notification Preferences & Account Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* 3. Notification Preferences */}
+                <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4">
+                  <div>
+                    <h3 className="font-headline font-bold text-white text-lg flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-fitness-primary" /> Notification Preferences
+                    </h3>
+                    <p className="text-xs text-gray-400">Configure alert channels for coaching and workout schedules</p>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs">
+                    {[
+                      { key: 'workoutReminders', label: 'Workout Reminders (Daily 07:00 AM)', desc: 'Notification before scheduled morning routine' },
+                      { key: 'nutritionAlerts', label: 'Nutrition & Hydration Alerts', desc: 'Prompts to record lunch and water goals' },
+                      { key: 'coachMessages', label: 'Coach Messages & Form Check Replies', desc: 'Direct alerts when trainer responds' },
+                      { key: 'gymAnnouncements', label: 'Gym Branch Floor Announcements', desc: 'Facility closures and maintenance alerts' }
+                    ].map((item) => {
+                      const prefs: any = state.userProfile.notificationPreferences || {
+                        workoutReminders: true,
+                        nutritionAlerts: true,
+                        coachMessages: true,
+                        gymAnnouncements: true
+                      };
+                      const isEnabled = prefs[item.key] ?? true;
+
+                      return (
+                        <div
+                          key={item.key}
+                          onClick={() => handleToggleNotificationPref(item.key)}
+                          className="p-3 rounded-2xl bg-surface-2 border border-surface-border flex items-center justify-between cursor-pointer hover:border-fitness-primary/40 transition"
+                        >
+                          <div>
+                            <div className="font-bold text-white">{item.label}</div>
+                            <div className="text-[11px] text-gray-400">{item.desc}</div>
+                          </div>
+                          <div className={`w-10 h-6 rounded-full transition flex items-center p-0.5 ${
+                            isEnabled ? 'bg-fitness-primary justify-end' : 'bg-surface-3 justify-start'
+                          }`}>
+                            <div className="w-5 h-5 rounded-full bg-gray-950 shadow-md" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 4. Account Information */}
+                <div className="p-6 rounded-3xl bg-surface-1 border border-surface-border space-y-4 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-headline font-bold text-white text-lg flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-fitness-primary" /> Account Details &amp; Gym Membership
+                    </h3>
+                    <p className="text-xs text-gray-400">Authorized platform role and gym branch association</p>
+
+                    <div className="space-y-2.5 pt-3 text-xs">
+                      <div className="flex justify-between py-1.5 border-b border-surface-border">
+                        <span className="text-gray-400">User Role</span>
+                        <span className="font-bold text-fitness-primary uppercase font-mono">Gym Member (Athlete)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-surface-border">
+                        <span className="text-gray-400">Email Address</span>
+                        <span className="font-mono text-white">{state.userProfile.email}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-surface-border">
+                        <span className="text-gray-400">Home Gym Association</span>
+                        <span className="font-bold text-white">{state.selectedGym.name}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-surface-border">
+                        <span className="text-gray-400">Membership Tier</span>
+                        <span className="font-bold text-white">{state.userProfile.membershipTier || 'Platinum Elite Pass'}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5">
+                        <span className="text-gray-400">Assigned Gym Coach</span>
+                        <span className="font-bold text-healthcare-accent">{state.selectedTrainer?.name || 'Coach Raj Patel'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-surface-border flex gap-2">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 transition flex items-center justify-center gap-1.5"
+                    >
+                      <span>Sign Out from FitSync</span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           )}
 
@@ -2771,6 +3944,36 @@ export default function FitSyncApp() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* 11. Gym Discovery & Membership Modal */}
+      {isGymDiscoveryOpen && (
+        <GymDiscoveryModal
+          gyms={state.gyms}
+          selectedGym={state.selectedGym}
+          currentTier={state.userProfile.membershipTier}
+          membershipRequests={state.membershipRequests || []}
+          onSelectGym={handleSelectGym}
+          onRequestMembership={handleRequestMembership}
+          onClose={() => setIsGymDiscoveryOpen(false)}
+        />
+      )}
+
+      {/* 12. Trainer Search & Directory Modal */}
+      {isTrainerSearchOpen && (
+        <TrainerSearchModal
+          isOpen={isTrainerSearchOpen}
+          onClose={() => setIsTrainerSearchOpen(false)}
+          onSelectTrainer={(trainer) => {
+            handleSelectTrainer(trainer);
+            setIsTrainerSearchOpen(false);
+          }}
+          onViewTrainerDetails={(trainer) => {
+            setSelectedTrainerForModal(trainer);
+            setIsTrainerModalOpen(true);
+            setIsTrainerSearchOpen(false);
+          }}
+        />
       )}
 
     </div>

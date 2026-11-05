@@ -13,7 +13,11 @@ import {
   Trainer,
   TrainerMessage,
   TrainerBooking,
-  TrainerClientAthlete
+  TrainerClientAthlete,
+  UserRole,
+  MembershipRequestItem,
+  TrainerConnectionRequestItem,
+  CustomWorkoutPlan
 } from '@/types';
 import { 
   INITIAL_GYMS, 
@@ -74,22 +78,39 @@ export interface AppState {
   trainerMessages: TrainerMessage[];
   trainerBookings: TrainerBooking[];
   trainerClients: TrainerClientAthlete[];
+  membershipRequests?: MembershipRequestItem[];
+  trainerRequests?: TrainerConnectionRequestItem[];
+  customWorkoutPlans?: CustomWorkoutPlan[];
+  progressLogs?: {
+    date: string;
+    weightKg: number;
+    waistCm?: number;
+    chestCm?: number;
+    bicepsCm?: number;
+    note?: string;
+  }[];
 }
 
 export interface RegisteredUserRecord {
   email: string;
   name: string;
   password?: string;
+  role?: UserRole;
   gymId: string;
   registeredAt: string;
   state: AppState;
 }
 
 export interface NewUserRegistrationParams {
+  role?: UserRole;
   fullName: string;
   email: string;
+  phone?: string;
+  mobile?: string;
   password?: string;
+  avatarUrl?: string;
   gym: Gym;
+  // Member specifics:
   goal?: 'Build Muscle' | 'Lose Weight' | 'Increase Strength' | 'Improve Endurance' | 'General Fitness';
   gender?: 'Male' | 'Female' | 'Other';
   age?: number;
@@ -97,6 +118,12 @@ export interface NewUserRegistrationParams {
   weightKg?: number;
   activity?: 'Sedentary' | 'Lightly Active' | 'Moderately Active' | 'Very Active' | 'Extremely Active';
   diet?: 'Non-Vegetarian' | 'Vegetarian' | 'Eggetarian' | 'Vegan';
+  // Trainer specifics:
+  specialization?: string[];
+  experienceYears?: number;
+  qualifications?: string[];
+  certifications?: string[];
+  bio?: string;
 }
 
 // ---------------- DEMO USER (AARAV SHAH) DEFAULTS ----------------
@@ -314,7 +341,108 @@ export function createCleanUserState(params: NewUserRegistrationParams): AppStat
       }
     ],
     trainerBookings: [],
-    trainerClients: [...INITIAL_TRAINER_CLIENTS]
+    trainerClients: [...INITIAL_TRAINER_CLIENTS],
+    membershipRequests: [
+      {
+        id: `mreq_${Date.now()}`,
+        gymId: gym.id,
+        gymName: gym.name,
+        gymLocation: gym.location,
+        planName: `${gym.name} Member`,
+        price: '₹3,499/mo',
+        status: 'Active',
+        requestedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      }
+    ],
+    trainerRequests: [],
+    customWorkoutPlans: [],
+    progressLogs: [
+      {
+        date: todayDateStr,
+        weightKg,
+        waistCm: 80,
+        chestCm: 98,
+        bicepsCm: 36,
+        note: 'Baseline body measurements recorded'
+      }
+    ]
+  };
+}
+
+export function createCleanTrainerState(params: NewUserRegistrationParams): AppState {
+  const todayDateStr = new Date().toLocaleDateString('en-CA');
+  const todayDayName = getTodayDayName();
+  const gym = params.gym || INITIAL_GYMS[0];
+  const newTrainerId = `tr_${Date.now()}`;
+
+  const trainerProfile: Trainer = {
+    id: newTrainerId,
+    name: params.fullName.startsWith('Coach ') ? params.fullName : `Coach ${params.fullName}`,
+    role: params.specialization && params.specialization[0] ? `${params.specialization[0]} Specialist` : 'Certified Gym Coach',
+    gymId: gym.id,
+    gymName: gym.name,
+    experience: `${params.experienceYears || 5}+ Years`,
+    rating: 5.0,
+    reviewsCount: 1,
+    avatar: params.avatarUrl || '/assets/trainer_raj.jpg',
+    specializations: params.specialization && params.specialization.length > 0 
+      ? params.specialization 
+      : ['Strength & Conditioning', 'Biomechanics & Form Coaching'],
+    certifications: params.certifications && params.certifications.length > 0 
+      ? params.certifications 
+      : ['ACE Certified Personal Trainer', 'CPR/AED First Aid Certified'],
+    bio: params.bio || `${params.fullName} is an authorized fitness trainer at ${gym.name} guiding athletes to hit their strength and body composition goals.`,
+    weeklySchedule: 'Mon - Sat (06:00 AM - 08:30 PM)',
+    availabilityStatus: 'On Floor',
+    assignedMembersCount: INITIAL_TRAINER_CLIENTS.length
+  };
+
+  const trainerNotifications: NotificationItem[] = [
+    {
+      id: `notif_tr_${Date.now()}`,
+      title: `Welcome to ${gym.name} Staff!`,
+      desc: `Coach ${params.fullName.split(' ')[0]}, your trainer portal is initialized. You can now monitor assigned athletes, create custom workout splits, and review attendance.`,
+      time: 'Just now',
+      type: 'trainer',
+      actionText: 'Open Dashboard',
+      isRead: false
+    }
+  ];
+
+  return {
+    isAuthenticated: true,
+    isDemoUser: false,
+    lastActiveDate: todayDateStr,
+    selectedWorkoutDay: todayDayName,
+    userProfile: {
+      id: `usr_coach_${Date.now()}`,
+      role: 'trainer',
+      fullName: trainerProfile.name,
+      email: params.email.trim().toLowerCase(),
+      phone: params.mobile || params.phone || '+91 98251 00000',
+      avatarUrl: trainerProfile.avatar,
+      gymId: gym.id,
+      membershipTier: `${gym.name} Staff Coach`,
+      streakDays: 1,
+      waterLoggedMl: 0,
+      waterTargetMl: 3500
+    },
+    assessmentData: { ...DEFAULT_ASSESSMENT },
+    computedMetrics: { ...DEFAULT_METRICS },
+    gyms: INITIAL_GYMS,
+    selectedGym: gym,
+    activeWorkout: JSON.parse(JSON.stringify(getWorkoutForDay(todayDayName))),
+    predefinedDietPlans: PREDEFINED_DIET_PLANS,
+    activeDietPlan: PREDEFINED_DIET_PLANS[0],
+    loggedMeals: [],
+    notifications: trainerNotifications,
+    attendanceRecords: [],
+    trainers: [trainerProfile, ...INITIAL_TRAINERS],
+    selectedTrainer: trainerProfile,
+    trainerMessages: [...INITIAL_TRAINER_MESSAGES],
+    trainerBookings: [...INITIAL_TRAINER_BOOKINGS],
+    trainerClients: [...INITIAL_TRAINER_CLIENTS],
+    customWorkoutPlans: []
   };
 }
 
@@ -391,7 +519,42 @@ export function getInitialState(): AppState {
         selectedTrainer: parsed.selectedTrainer || INITIAL_TRAINERS[0],
         trainerMessages: Array.isArray(parsed.trainerMessages) ? parsed.trainerMessages : [...INITIAL_TRAINER_MESSAGES],
         trainerBookings: Array.isArray(parsed.trainerBookings) ? parsed.trainerBookings : [...INITIAL_TRAINER_BOOKINGS],
-        trainerClients: Array.isArray(parsed.trainerClients) ? parsed.trainerClients : [...INITIAL_TRAINER_CLIENTS]
+        trainerClients: Array.isArray(parsed.trainerClients) ? parsed.trainerClients : [...INITIAL_TRAINER_CLIENTS],
+        membershipRequests: Array.isArray(parsed.membershipRequests) ? parsed.membershipRequests : [
+          {
+            id: 'mreq_demo_01',
+            gymId: 'gym_fitzone_vadodara',
+            gymName: 'FitZone Fitness',
+            gymLocation: 'Alkapuri, Vadodara',
+            planName: 'Platinum Elite All-Access',
+            price: '₹5,499/mo',
+            status: 'Active',
+            requestedAt: 'Oct 01, 2026'
+          }
+        ],
+        trainerRequests: Array.isArray(parsed.trainerRequests) ? parsed.trainerRequests : [
+          {
+            id: 'treq_demo_01',
+            trainerId: 'tr_raj_patel',
+            trainerName: 'Coach Raj Patel',
+            trainerAvatar: '/assets/trainer_raj.jpg',
+            trainerSpecialization: 'Strength & Hypertrophy',
+            gymName: 'FitZone Fitness',
+            status: 'Connected',
+            requestedAt: 'Oct 02, 2026'
+          }
+        ],
+        customWorkoutPlans: Array.isArray(parsed.customWorkoutPlans) ? parsed.customWorkoutPlans : [],
+        progressLogs: Array.isArray(parsed.progressLogs) ? parsed.progressLogs : [
+          {
+            date: todayDateStr,
+            weightKg: (parsed.assessmentData?.weightKg || 72.4),
+            waistCm: 81,
+            chestCm: 102,
+            bicepsCm: 38,
+            note: 'Consistent progression on heavy compounds'
+          }
+        ]
       };
     }
   } catch (e) {

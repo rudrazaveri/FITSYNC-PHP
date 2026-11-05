@@ -24,12 +24,14 @@ interface TrainerSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectTrainer?: (trainer: Trainer) => void;
+  onViewTrainerDetails?: (trainer: Trainer) => void;
 }
 
 export const TrainerSearchModal: React.FC<TrainerSearchModalProps> = ({
   isOpen,
   onClose,
-  onSelectTrainer
+  onSelectTrainer,
+  onViewTrainerDetails
 }) => {
   const { showToast } = useToast();
   const [query, setQuery] = useState('');
@@ -159,16 +161,21 @@ export const TrainerSearchModal: React.FC<TrainerSearchModalProps> = ({
                   >
                     Connect
                   </button>
-                  <Link
-                    href="/trainer/profile"
+                  <button
                     onClick={() => {
                       haptics.playTap();
+                      if (onViewTrainerDetails) {
+                        onViewTrainerDetails(tr);
+                      } else if (onSelectTrainer) {
+                        onSelectTrainer(tr);
+                        showToast(`Selected ${tr.name} as your gym coach!`, '🏋️');
+                      }
                       onClose();
                     }}
                     className="px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-white font-semibold border border-surface-border transition"
                   >
-                    Profile
-                  </Link>
+                    View Details
+                  </button>
                 </div>
               </div>
             ))
