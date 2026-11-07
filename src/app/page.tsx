@@ -40,6 +40,7 @@ import { ExerciseDetailModal } from '@/components/ExerciseDetailModal';
 import { RestTimerWidget } from '@/components/RestTimerWidget';
 import { GymDiscoveryModal } from '@/components/GymDiscoveryModal';
 import { TrainerSearchModal } from '@/components/TrainerSearchModal';
+import { MemberService } from '@/lib/supabase/member-service';
 import {
   Dumbbell,
   Utensils,
@@ -231,6 +232,7 @@ export default function FitSyncApp() {
             });
             setState(cleanState);
             saveState(cleanState);
+            MemberService.syncRegistration(credentials.registrationParams, cleanState.userProfile.id);
             showToast(`Welcome to FitSync AI, ${credentials.name}! Your account is ready. 🎉`, '🎉');
             if (isTrainer) {
               router.push('/trainer/dashboard');
@@ -408,6 +410,7 @@ export default function FitSyncApp() {
 
   const handleLogHydration = () => {
     haptics.playTap();
+    MemberService.syncHydration(state.userProfile.id, 250);
     updateState((prev) => ({
       ...prev,
       userProfile: {
@@ -599,6 +602,7 @@ export default function FitSyncApp() {
       ...prev,
       membershipRequests: [newReq, ...(prev.membershipRequests || [])]
     }));
+    MemberService.syncMembershipRequest(state.userProfile.id, gym.id, gym.name, planName, price);
     showToast(`Membership request submitted for ${gym.name} (${planName})! 📨`, '✅');
   };
 
@@ -683,6 +687,7 @@ export default function FitSyncApp() {
         weightKg: w
       }
     }));
+    MemberService.syncProgressLog(state.userProfile.id, newLog);
 
     setProgWeight('');
     setProgWaist('');
@@ -988,6 +993,7 @@ export default function FitSyncApp() {
       ...prev,
       loggedMeals: [meal, ...prev.loggedMeals]
     }));
+    MemberService.syncLoggedMeal(state.userProfile.id, meal);
     showToast(`Logged ${meal.title} successfully!`, '🍽️');
     setNewMealTitle('');
     setNewMealIngredients('');
