@@ -13,6 +13,9 @@ export const MemberService = {
       const isTrainer = params.role === 'trainer';
 
       // Insert or upsert user_profile
+      const gymId = toValidUuid(params.gym?.id || '11111111-1111-1111-1111-111111111101');
+      const gymName = params.gym?.name || 'FitZone Fitness';
+
       const { error: profileError } = await supabase
         .from('user_profiles')
         .upsert({
@@ -22,12 +25,47 @@ export const MemberService = {
           role: params.role || 'member',
           phone: params.mobile || params.phone || '',
           mobile: params.mobile || params.phone || '',
-          avatar_url: params.avatarUrl || '',
-          membership_tier: `${params.gym?.name || 'FitZone'} Member`
+          avatar_url: params.avatarUrl || (isTrainer ? '/assets/trainer_raj.jpg' : ''),
+          gym_id: gymId,
+          gym_name: gymName,
+          membership_tier: isTrainer ? `${gymName} Staff Coach` : `${gymName} Member`,
+          specializations: isTrainer && params.specialization ? params.specialization : [],
+          certifications: isTrainer && params.certifications ? params.certifications : [],
+          qualifications: isTrainer && params.qualifications ? params.qualifications : [],
+          experience_years: isTrainer ? (params.experienceYears || 5) : 0,
+          bio: params.bio || (isTrainer ? `${params.fullName} is an authorized gym trainer at ${gymName}.` : null)
         }, { onConflict: 'id' });
 
       if (profileError) {
         console.warn('Supabase user_profile sync notice:', profileError.message);
+      }
+
+      // If trainer, also insert/upsert into trainers table with full coach details
+      if (isTrainer) {
+        const { error: trainerError } = await supabase
+          .from('trainers')
+          .upsert({
+            id: validUserId,
+            full_name: params.fullName.trim(),
+            email: params.email.trim().toLowerCase(),
+            phone: params.mobile || params.phone || '+91 98250 88910',
+            avatar_url: params.avatarUrl || '/assets/trainer_raj.jpg',
+            gym_id: gymId,
+            gym_name: gymName,
+            role_title: params.specialization && params.specialization[0] ? `${params.specialization[0]} Specialist` : 'Certified Gym Coach',
+            specializations: params.specialization && params.specialization.length > 0 ? params.specialization : ['Strength & Conditioning'],
+            certifications: params.certifications && params.certifications.length > 0 ? params.certifications : ['ACE Certified Personal Trainer'],
+            qualifications: params.qualifications && params.qualifications.length > 0 ? params.qualifications : ['B.Sc Sports & Exercise Science'],
+            experience_years: params.experienceYears || 5,
+            rating: 5.0,
+            bio: params.bio || `${params.fullName} is a certified gym trainer at ${gymName}.`,
+            availability_status: 'On Floor',
+            weekly_schedule: { schedule: 'Mon - Sat: 06:00 AM - 08:30 PM' }
+          }, { onConflict: 'id' });
+
+        if (trainerError) {
+          console.warn('Supabase trainers table sync notice:', trainerError.message);
+        }
       }
 
       // If member, insert health profile
@@ -219,3 +257,4 @@ export const MemberService = {
     }
   }
 };
+

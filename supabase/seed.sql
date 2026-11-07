@@ -39,45 +39,175 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 
 -- 4. USER PROFILES
-INSERT INTO public.user_profiles (id, full_name, email, role, phone, avatar_url)
+INSERT INTO public.user_profiles (
+  id, full_name, email, role, phone, avatar_url, gym_id, gym_name, 
+  membership_tier, specializations, certifications, qualifications, experience_years, bio
+)
 VALUES
-('44444444-4444-4444-4444-444444444401', 'Coach Raj Patel', 'coach.raj@fitsync.health', 'trainer', '+91 98250 88910', '/assets/trainer_raj.jpg'),
-('44444444-4444-4444-4444-444444444402', 'Coach Vikram Mehta', 'coach.vikram@fitsync.health', 'trainer', '+91 98255 12093', 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=500'),
-('55555555-5555-5555-5555-555555555501', 'Aarav Shah', 'aarav.shah@fitsync.health', 'member', '+91 98250 12345', '/assets/aarav.jpg'),
-('55555555-5555-5555-5555-555555555502', 'Rahul Verma', 'rahul.verma@example.com', 'member', '+91 98251 67890', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500'),
-('55555555-5555-5555-5555-555555555503', 'Priya Nair', 'priya.nair@example.com', 'member', '+91 98252 34567', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500'),
-('55555555-5555-5555-5555-555555555504', 'Dev Patel', 'dev.patel@example.com', 'member', '+91 98253 90123', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500')
+(
+  '44444444-4444-4444-4444-444444444401', 
+  'Coach Raj Patel', 
+  'coach.raj@fitsync.health', 
+  'trainer', 
+  '+91 98250 88910', 
+  '/assets/trainer_raj.jpg',
+  '11111111-1111-1111-1111-111111111101',
+  'FitZone Fitness',
+  'Head Strength Coach',
+  ARRAY['Powerlifting', 'Hypertrophy Mechanics', 'Injury Prevention'],
+  ARRAY['CSCS', 'NSCA-CPT', 'Precision Nutrition L1'],
+  ARRAY['B.Sc Sports & Exercise Science'],
+  9,
+  '9+ years specializing in biomechanically sound strength progressions, compound lifts (Squat, Bench, Deadlift), and muscle hypertrophy.'
+),
+(
+  '44444444-4444-4444-4444-444444444402', 
+  'Coach Vikram Mehta', 
+  'coach.vikram@fitsync.health', 
+  'trainer', 
+  '+91 98255 12093', 
+  'https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=500',
+  '11111111-1111-1111-1111-111111111102',
+  'PowerHouse Gym',
+  'Senior Performance Coach',
+  ARRAY['Mobility Restructuring', 'Joint Kinematics', 'Olympic Lifting Technique'],
+  ARRAY['FRCms Mobility Specialist', 'EXOS Performance Specialist'],
+  ARRAY['M.Sc Kinesiology & Biomechanics'],
+  8,
+  'Bridging the gap between athletic conditioning and heavy compound weight training with zero joint pain.'
+),
+(
+  '55555555-5555-5555-5555-555555555501', 
+  'Aarav Shah', 
+  'aarav.shah@fitsync.health', 
+  'member', 
+  '+91 98250 12345', 
+  '/assets/aarav.jpg',
+  '11111111-1111-1111-1111-111111111101',
+  'FitZone Fitness',
+  'FitZone Platinum Elite',
+  ARRAY[]::TEXT[],
+  ARRAY[]::TEXT[],
+  ARRAY[]::TEXT[],
+  0,
+  NULL
+),
+(
+  '55555555-5555-5555-5555-555555555502', 
+  'Rahul Verma', 
+  'rahul.verma@example.com', 
+  'member', 
+  '+91 98251 67890', 
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500',
+  '11111111-1111-1111-1111-111111111101',
+  'FitZone Fitness',
+  'FitZone Gold All-Access',
+  ARRAY[]::TEXT[],
+  ARRAY[]::TEXT[],
+  ARRAY[]::TEXT[],
+  0,
+  NULL
+),
+(
+  '55555555-5555-5555-5555-555555555503', 
+  'Priya Nair', 
+  'priya.nair@example.com', 
+  'member', 
+  '+91 98252 34567', 
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500',
+  '11111111-1111-1111-1111-111111111101',
+  'FitZone Fitness',
+  'FitZone Gold All-Access',
+  ARRAY[]::TEXT[],
+  ARRAY[]::TEXT[],
+  ARRAY[]::TEXT[],
+  0,
+  NULL
+),
+(
+  '55555555-5555-5555-5555-555555555504', 
+  'Dev Patel', 
+  'dev.patel@example.com', 
+  'member', 
+  '+91 98253 90123', 
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500',
+  '11111111-1111-1111-1111-111111111101',
+  'FitZone Fitness',
+  'FitZone Gold All-Access',
+  ARRAY[]::TEXT[],
+  ARRAY[]::TEXT[],
+  ARRAY[]::TEXT[],
+  0,
+  NULL
+)
 ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   role = EXCLUDED.role,
-  avatar_url = EXCLUDED.avatar_url;
+  avatar_url = EXCLUDED.avatar_url,
+  gym_id = EXCLUDED.gym_id,
+  gym_name = EXCLUDED.gym_name,
+  membership_tier = EXCLUDED.membership_tier,
+  specializations = EXCLUDED.specializations,
+  certifications = EXCLUDED.certifications,
+  experience_years = EXCLUDED.experience_years,
+  bio = EXCLUDED.bio;
 
 -- 5. TRAINERS (COACH RAJ PATEL & COACH VIKRAM MEHTA)
-INSERT INTO public.trainers (id, gym_id, specializations, certifications, experience_years, rating, bio, weekly_schedule)
+INSERT INTO public.trainers (
+  id, full_name, email, phone, avatar_url, gym_id, gym_name, role_title,
+  specializations, certifications, qualifications, experience_years, rating, bio, weekly_schedule, availability_status
+)
 VALUES
 (
   '44444444-4444-4444-4444-444444444401',
+  'Coach Raj Patel',
+  'coach.raj@fitsync.health',
+  '+91 98250 88910',
+  '/assets/trainer_raj.jpg',
   '11111111-1111-1111-1111-111111111101',
+  'FitZone Fitness',
+  'Head Strength Coach',
   ARRAY['Powerlifting', 'Hypertrophy Mechanics', 'Injury Prevention'],
   ARRAY['CSCS', 'NSCA-CPT', 'Precision Nutrition L1'],
+  ARRAY['B.Sc Sports & Exercise Science'],
   9,
   4.90,
   '9+ years specializing in biomechanically sound strength progressions, compound lifts (Squat, Bench, Deadlift), and muscle hypertrophy.',
-  '{"schedule": "Mon - Sat: 6:00 AM – 1:00 PM | 4:30 PM – 9:00 PM"}'::jsonb
+  '{"schedule": "Mon - Sat: 6:00 AM – 1:00 PM | 4:30 PM – 9:00 PM"}'::jsonb,
+  'On Floor'
 ),
 (
   '44444444-4444-4444-4444-444444444402',
+  'Coach Vikram Mehta',
+  'coach.vikram@fitsync.health',
+  '+91 98255 12093',
+  'https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=500',
   '11111111-1111-1111-1111-111111111102',
+  'PowerHouse Gym',
+  'Senior Performance Coach',
   ARRAY['Mobility Restructuring', 'Joint Kinematics', 'Olympic Lifting Technique'],
   ARRAY['FRCms Mobility Specialist', 'EXOS Performance Specialist'],
+  ARRAY['M.Sc Kinesiology & Biomechanics'],
   8,
   4.90,
   'Bridging the gap between athletic conditioning and heavy compound weight training with zero joint pain.',
-  '{"schedule": "Mon - Fri: 8:00 AM – 4:00 PM"}'::jsonb
+  '{"schedule": "Mon - Fri: 8:00 AM – 4:00 PM"}'::jsonb,
+  'On Floor'
 )
 ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  email = EXCLUDED.email,
+  phone = EXCLUDED.phone,
+  avatar_url = EXCLUDED.avatar_url,
+  gym_name = EXCLUDED.gym_name,
+  role_title = EXCLUDED.role_title,
+  specializations = EXCLUDED.specializations,
+  certifications = EXCLUDED.certifications,
+  qualifications = EXCLUDED.qualifications,
+  experience_years = EXCLUDED.experience_years,
   bio = EXCLUDED.bio,
-  rating = EXCLUDED.rating;
+  rating = EXCLUDED.rating,
+  availability_status = EXCLUDED.availability_status;
 
 -- 6. TRAINER MEMBER ASSIGNMENTS
 INSERT INTO public.trainer_member_assignments (trainer_id, member_id, status)

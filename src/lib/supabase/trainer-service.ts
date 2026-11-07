@@ -554,12 +554,17 @@ export const TrainerService = {
         .from('trainers')
         .select(`
           id,
+          full_name,
+          email,
+          phone,
+          avatar_url,
+          gym_name,
+          gym_id,
           experience_years,
           rating,
           bio,
           specializations,
           certifications,
-          gym_id,
           user_profiles (
             full_name,
             email,
@@ -578,11 +583,11 @@ export const TrainerService = {
         const gm = data.gyms as any;
         return {
           id: data.id,
-          name: up?.full_name || 'Coach Raj Patel',
+          name: data.full_name || up?.full_name || 'Coach Raj Patel',
           gymId: data.gym_id || CURRENT_GYM_ID,
-          gymName: gm?.name || 'FitZone Fitness',
+          gymName: data.gym_name || gm?.name || 'FitZone Fitness',
           role: 'Head Strength Coach',
-          avatar: up?.avatar_url || '/assets/trainer_raj.jpg',
+          avatar: data.avatar_url || up?.avatar_url || '/assets/trainer_raj.jpg',
           experience: `${data.experience_years || 9} Years`,
           rating: Number(data.rating) || 4.9,
           reviewsCount: 310,
@@ -592,8 +597,8 @@ export const TrainerService = {
           assignedMembersCount: 24,
           availabilityStatus: 'Available Today • 4 Floor Slots',
           weeklySchedule: 'Mon - Sat: 6:00 AM – 1:00 PM | 4:30 PM – 9:00 PM',
-          phone: up?.phone || '+91 98250 88910',
-          email: up?.email || 'coach.raj@fitsync.health'
+          phone: data.phone || up?.phone || '+91 98250 88910',
+          email: data.email || up?.email || 'coach.raj@fitsync.health'
         };
       }
     } catch (e) {
@@ -609,14 +614,24 @@ export const TrainerService = {
     const supabase = createClient();
     try {
       const trainerUuid = toValidUuid(CURRENT_TRAINER_ID);
-      await supabase
-        .from('trainers')
-        .update({
-          bio: updated.bio,
-          specializations: updated.specializations,
-          certifications: updated.certifications
-        })
-        .eq('id', trainerUuid);
+      await Promise.allSettled([
+        supabase
+          .from('trainers')
+          .update({
+            bio: updated.bio,
+            specializations: updated.specializations,
+            certifications: updated.certifications
+          })
+          .eq('id', trainerUuid),
+        supabase
+          .from('user_profiles')
+          .update({
+            bio: updated.bio,
+            specializations: updated.specializations,
+            certifications: updated.certifications
+          })
+          .eq('id', trainerUuid)
+      ]);
     } catch (e) {
       // offline fallback
     }
