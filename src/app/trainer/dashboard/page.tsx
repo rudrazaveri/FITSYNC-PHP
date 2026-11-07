@@ -19,6 +19,7 @@ import {
   Video, 
   ChevronRight,
   ShieldAlert,
+  ShieldCheck,
   Flame,
   Award
 } from 'lucide-react';
@@ -237,64 +238,72 @@ export default function TrainerDashboardPage() {
               </Link>
             </div>
 
-            <div className="space-y-3">
-              {sessions.map((sess) => (
-                <div 
-                  key={sess.id}
-                  className="p-4 rounded-2xl bg-surface-2 border border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-gray-500 transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-fitness-primary/30 flex-shrink-0">
-                      <Image src={sess.memberAvatar} alt={sess.memberName} fill className="object-cover" />
+            {sessions.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-surface-border rounded-2xl">
+                <Clock className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-gray-300">No scheduled sessions for today</p>
+                <p className="text-xs text-gray-500 mt-1">Bookings from athletes will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sessions.map((sess) => (
+                  <div 
+                    key={sess.id}
+                    className="p-4 rounded-2xl bg-surface-2 border border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-gray-500 transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-fitness-primary/30 flex-shrink-0">
+                        <Image src={sess.memberAvatar} alt={sess.memberName} fill className="object-cover" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white text-sm">{sess.memberName}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            sess.sessionType === 'online_video' 
+                              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                              : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          }`}>
+                            {sess.sessionType === 'online_video' ? 'Online Video' : 'Gym Floor 1-on-1'}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-300 font-semibold mt-0.5">
+                          {sess.focusArea}
+                        </div>
+                        <div className="text-[11px] text-gray-400 flex items-center gap-2 mt-0.5">
+                          <span className="text-healthcare-accent font-mono font-bold">{sess.timeSlot}</span>
+                          <span>•</span>
+                          <span>{sess.durationMinutes} mins</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm">{sess.memberName}</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                          sess.sessionType === 'online_video' 
-                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
-                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        }`}>
-                          {sess.sessionType === 'online_video' ? 'Online Video' : 'Gym Floor 1-on-1'}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-300 font-semibold mt-0.5">
-                        {sess.focusArea}
-                      </div>
-                      <div className="text-[11px] text-gray-400 flex items-center gap-2 mt-0.5">
-                        <span className="text-healthcare-accent font-mono font-bold">{sess.timeSlot}</span>
-                        <span>•</span>
-                        <span>{sess.durationMinutes} mins</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 self-end sm:self-auto">
-                    <Link
-                      href={`/trainer/members/${sess.memberId}`}
-                      onClick={() => haptics.playTap()}
-                      className="px-3 py-1.5 rounded-xl bg-surface-3 hover:bg-surface-border text-gray-200 text-xs font-semibold transition"
-                    >
-                      Member Profile
-                    </Link>
-                    {sess.sessionType === 'online_video' ? (
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
                       <Link
-                        href="/trainer/sessions"
+                        href={`/trainer/members/${sess.memberId}`}
                         onClick={() => haptics.playTap()}
-                        className="px-3.5 py-1.5 rounded-xl bg-healthcare-primary hover:bg-healthcare-accent text-white font-bold text-xs shadow-glow-healthcare transition flex items-center gap-1"
+                        className="px-3 py-1.5 rounded-xl bg-surface-3 hover:bg-surface-border text-gray-200 text-xs font-semibold transition"
                       >
-                        <Video className="w-3.5 h-3.5" />
-                        <span>Join Room</span>
+                        Member Profile
                       </Link>
-                    ) : (
-                      <span className="px-3 py-1.5 rounded-xl bg-fitness-primary/20 text-fitness-primary font-bold text-xs">
-                        Floor Reserved
-                      </span>
-                    )}
+                      {sess.sessionType === 'online_video' ? (
+                        <Link
+                          href="/trainer/sessions"
+                          onClick={() => haptics.playTap()}
+                          className="px-3.5 py-1.5 rounded-xl bg-healthcare-primary hover:bg-healthcare-accent text-white font-bold text-xs shadow-glow-healthcare transition flex items-center gap-1"
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>Join Room</span>
+                        </Link>
+                      ) : (
+                        <span className="px-3 py-1.5 rounded-xl bg-fitness-primary/20 text-fitness-primary font-bold text-xs">
+                          Floor Reserved
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Assigned Members Quick Glance */}
@@ -315,43 +324,51 @@ export default function TrainerDashboardPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {members.map((mem) => (
-                <Link
-                  key={mem.id}
-                  href={`/trainer/members/${mem.id}`}
-                  onClick={() => haptics.playTap()}
-                  className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border hover:border-fitness-primary/60 transition group flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-surface-border flex-shrink-0">
-                      <Image src={mem.avatar} alt={mem.name} fill className="object-cover" />
+            {members.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-surface-border rounded-2xl">
+                <Users className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-gray-300">No assigned members yet</p>
+                <p className="text-xs text-gray-500 mt-1">When athletes register or request coaching from this gym, their profiles will appear here.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {members.map((mem) => (
+                  <Link
+                    key={mem.id}
+                    href={`/trainer/members/${mem.id}`}
+                    onClick={() => haptics.playTap()}
+                    className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border hover:border-fitness-primary/60 transition group flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-surface-border flex-shrink-0">
+                        <Image src={mem.avatar} alt={mem.name} fill className="object-cover" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-white truncate group-hover:text-fitness-primary transition">
+                          {mem.name} ({mem.age}y)
+                        </div>
+                        <div className="text-[11px] text-gray-400 truncate mt-0.5">
+                          {mem.goal}
+                        </div>
+                        <div className="text-[10px] text-emerald-400 font-mono mt-0.5">
+                          {mem.attendance.monthlyRate} consistency
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-bold text-white truncate group-hover:text-fitness-primary transition">
-                        {mem.name} ({mem.age}y)
-                      </div>
-                      <div className="text-[11px] text-gray-400 truncate mt-0.5">
-                        {mem.goal}
-                      </div>
-                      <div className="text-[10px] text-emerald-400 font-mono mt-0.5">
-                        {mem.attendance.monthlyRate} consistency
-                      </div>
-                    </div>
-                  </div>
 
-                  <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase flex-shrink-0 ${
-                    mem.statusLevel === 'On Track'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : mem.statusLevel === 'Needs Attention'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                      : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                  }`}>
-                    {mem.statusLevel}
-                  </span>
-                </Link>
-              ))}
-            </div>
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase flex-shrink-0 ${
+                      mem.statusLevel === 'On Track'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : mem.statusLevel === 'Needs Attention'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                    }`}>
+                      {mem.statusLevel}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
@@ -376,45 +393,53 @@ export default function TrainerDashboardPage() {
               </Link>
             </div>
 
-            <div className="space-y-3">
-              {interventions.map((item) => (
-                <div 
-                  key={item.id}
-                  className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">{item.memberName}</span>
-                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                      item.sourceType === 'ai_insight' 
-                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                    }`}>
-                      {item.sourceType === 'ai_insight' ? 'AI Insight' : 'Rule Alert'}
-                    </span>
-                  </div>
+            {interventions.length === 0 ? (
+              <div className="p-6 text-center border border-dashed border-surface-border rounded-2xl">
+                <ShieldCheck className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-white">All Members On Track</p>
+                <p className="text-xs text-gray-500 mt-1">No pending fatigue flags or missed workout alerts.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {interventions.map((item) => (
+                  <div 
+                    key={item.id}
+                    className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white text-xs">{item.memberName}</span>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                        item.sourceType === 'ai_insight' 
+                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      }`}>
+                        {item.sourceType === 'ai_insight' ? 'AI Insight' : 'Rule Alert'}
+                      </span>
+                    </div>
 
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    {item.title}
-                  </p>
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                      {item.title}
+                    </p>
 
-                  <div className="text-[10px] text-gray-400 italic">
-                    {item.reason}
-                  </div>
+                    <div className="text-[10px] text-gray-400 italic">
+                      {item.reason}
+                    </div>
 
-                  <div className="pt-1 flex items-center justify-between border-t border-surface-border/60">
-                    <span className="text-[10px] text-gray-500 font-mono">{item.dateDetected}</span>
-                    <Link
-                      href={`/trainer/members/${item.memberId}`}
-                      onClick={() => haptics.playTap()}
-                      className="text-[11px] text-fitness-primary font-bold hover:underline flex items-center gap-1"
-                    >
-                      <span>View Member</span>
-                      <ChevronRight className="w-3 h-3" />
-                    </Link>
+                    <div className="pt-1 flex items-center justify-between border-t border-surface-border/60">
+                      <span className="text-[10px] text-gray-500 font-mono">{item.dateDetected}</span>
+                      <Link
+                        href={`/trainer/members/${item.memberId}`}
+                        onClick={() => haptics.playTap()}
+                        className="text-[11px] text-fitness-primary font-bold hover:underline flex items-center gap-1"
+                      >
+                        <span>View Member</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Recent Member Activity */}

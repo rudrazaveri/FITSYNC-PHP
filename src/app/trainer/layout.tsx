@@ -17,12 +17,13 @@ import {
   ShieldCheck, 
   ShieldAlert,
   Info,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 import { haptics } from '@/lib/audio-haptics';
 import { useToast } from '@/components/Toast';
 import { TrainerService } from '@/lib/supabase/trainer-service';
-import { getInitialState, saveState } from '@/lib/store';
+import { getInitialState, saveState, resetAllLocalData } from '@/lib/store';
 import type { Trainer } from '@/types';
 
 export default function TrainerLayout({
@@ -77,6 +78,13 @@ export default function TrainerLayout({
     const cur = getInitialState();
     saveState({ ...cur, isAuthenticated: false });
     showToast('Signed out of Coach Portal', '👋');
+    router.replace('/');
+  };
+
+  const handleResetCleanSlate = () => {
+    haptics.playTap();
+    resetAllLocalData();
+    showToast('Clean Slate Active. All data wiped.', '🧹');
     router.replace('/');
   };
 
@@ -242,13 +250,20 @@ export default function TrainerLayout({
         </div>
 
         {/* Bottom Actions: Clean Trainer Sign Out */}
-        <div className="space-y-2 pt-4 border-t border-surface-border">
+        <div className="space-y-1.5 pt-4 border-t border-surface-border">
           <button
             onClick={handleTrainerSignOut}
             className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/10 transition font-medium"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
+          </button>
+          <button
+            onClick={handleResetCleanSlate}
+            className="flex items-center gap-2 w-full px-3 py-1.5 rounded-xl text-[11px] text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition font-medium"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-red-400/80" />
+            <span>🧹 Reset Database</span>
           </button>
         </div>
       </aside>

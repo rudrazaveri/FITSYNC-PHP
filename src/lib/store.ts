@@ -36,6 +36,42 @@ import { calculateHealthMetrics } from './assessment-calculator';
 
 export const STORAGE_KEY = 'fitsync_ai_state_v2';
 export const REGISTERED_USERS_KEY = 'fitsync_ai_registered_users_v2';
+export const CLEAN_SLATE_KEY = 'fitsync_clean_slate_active';
+
+export function isCleanSlateActive(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(CLEAN_SLATE_KEY) === 'true';
+  } catch (e) {
+    return false;
+  }
+}
+
+export function setCleanSlateActive(active: boolean) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (active) {
+      localStorage.setItem(CLEAN_SLATE_KEY, 'true');
+    } else {
+      localStorage.removeItem(CLEAN_SLATE_KEY);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export function resetAllLocalData() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(REGISTERED_USERS_KEY);
+    localStorage.removeItem('fitsync_trainer_runtime_v1');
+    localStorage.setItem(CLEAN_SLATE_KEY, 'true');
+    sessionStorage.clear();
+  } catch (e) {
+    console.error('Failed to reset local data', e);
+  }
+}
 
 export interface AttendanceRecord {
   id: string;
@@ -294,7 +330,7 @@ export function createCleanUserState(params: NewUserRegistrationParams): AppStat
     avatarUrl: '', // Clean empty avatar triggers dynamic initial avatar
     gymId: gym.id,
     membershipTier: `${gym.name} Member`,
-    streakDays: 1, // Fresh Day 1
+    streakDays: 0, // Fresh clean start: 0 days
     waterLoggedMl: 0, // Clean start: 0 ml
     waterTargetMl: waterTarget
   };
@@ -341,7 +377,7 @@ export function createCleanUserState(params: NewUserRegistrationParams): AppStat
       }
     ],
     trainerBookings: [],
-    trainerClients: [...INITIAL_TRAINER_CLIENTS],
+    trainerClients: [],
     membershipRequests: [
       {
         id: `mreq_${Date.now()}`,
@@ -394,7 +430,7 @@ export function createCleanTrainerState(params: NewUserRegistrationParams): AppS
     bio: params.bio || `${params.fullName} is an authorized fitness trainer at ${gym.name} guiding athletes to hit their strength and body composition goals.`,
     weeklySchedule: 'Mon - Sat (06:00 AM - 08:30 PM)',
     availabilityStatus: 'On Floor',
-    assignedMembersCount: INITIAL_TRAINER_CLIENTS.length
+    assignedMembersCount: 0
   };
 
   const trainerNotifications: NotificationItem[] = [
@@ -423,7 +459,7 @@ export function createCleanTrainerState(params: NewUserRegistrationParams): AppS
       avatarUrl: trainerProfile.avatar,
       gymId: gym.id,
       membershipTier: `${gym.name} Staff Coach`,
-      streakDays: 1,
+      streakDays: 0,
       waterLoggedMl: 0,
       waterTargetMl: 3500
     },
@@ -439,9 +475,9 @@ export function createCleanTrainerState(params: NewUserRegistrationParams): AppS
     attendanceRecords: [],
     trainers: [trainerProfile, ...INITIAL_TRAINERS],
     selectedTrainer: trainerProfile,
-    trainerMessages: [...INITIAL_TRAINER_MESSAGES],
-    trainerBookings: [...INITIAL_TRAINER_BOOKINGS],
-    trainerClients: [...INITIAL_TRAINER_CLIENTS],
+    trainerMessages: [],
+    trainerBookings: [],
+    trainerClients: [],
     customWorkoutPlans: []
   };
 }
@@ -559,6 +595,15 @@ export function getInitialState(): AppState {
     }
   } catch (e) {
     console.error('Failed to load state from storage', e);
+  }
+
+  if (isCleanSlateActive()) {
+    const cleanUser = createCleanUserState({
+      fullName: '',
+      email: '',
+      gym: INITIAL_GYMS[0]
+    });
+    return { ...cleanUser, isAuthenticated: false };
   }
 
   const demo = createDemoState();

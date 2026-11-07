@@ -7,7 +7,10 @@ import { haptics } from '@/lib/audio-haptics';
 import {
   NewUserRegistrationParams,
   findRegisteredUser,
-  getRegisteredUsers
+  getRegisteredUsers,
+  resetAllLocalData,
+  isCleanSlateActive,
+  setCleanSlateActive
 } from '@/lib/store';
 import {
   Dumbbell,
@@ -28,7 +31,10 @@ import {
   AlertCircle,
   HelpCircle,
   Check,
-  X
+  X,
+  Trash2,
+  Database,
+  ExternalLink
 } from 'lucide-react';
 
 export interface AuthUserCredentials {
@@ -90,6 +96,35 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
   const [trainerQualifications, setTrainerQualifications] = useState<string>('B.Sc Sports & Exercise Science');
   const [trainerCertifications, setTrainerCertifications] = useState<string>('ACE Certified Personal Trainer, CPR/AED Certified');
   const [trainerBio, setTrainerBio] = useState<string>('');
+
+  // Clean Slate & Storage Info Dialogs
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showStorageModal, setShowStorageModal] = useState(false);
+  const [cleanSlateBanner, setCleanSlateBanner] = useState(false);
+
+  useEffect(() => {
+    // Check if clean slate mode is currently active
+    if (isCleanSlateActive()) {
+      setCleanSlateBanner(true);
+      setActiveTab('register');
+    }
+  }, []);
+
+  const handleResetDatabase = () => {
+    haptics.playSuccess();
+    resetAllLocalData();
+    setRegisteredAccounts([]);
+    setLoginEmail('');
+    setLoginPassword('');
+    setRegName('');
+    setRegEmail('');
+    setRegPhone('');
+    setRegPassword('');
+    setRegConfirmPassword('');
+    setActiveTab('register');
+    setShowResetConfirm(false);
+    setCleanSlateBanner(true);
+  };
 
   useEffect(() => {
     // Check locally registered accounts on this device
@@ -227,6 +262,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
       bio: trainerBio.trim() || `${regName.trim()} is a certified gym trainer at ${gymObj.name}.`
     };
 
+    setCleanSlateActive(true);
     onAuthenticate({
       email: regEmail.trim().toLowerCase(),
       role: regRole,
@@ -241,6 +277,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
 
   const handleQuickDemo = (role: UserRole, email: string, name: string) => {
     haptics.playTap();
+    setCleanSlateActive(false);
     onAuthenticate({
       email,
       role,
@@ -864,76 +901,187 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ gyms, onAuthenticate }) 
               </div>
             </div>
           )}
+
+          {/* Clean Slate Active Feedback Banner */}
+          {cleanSlateBanner && (
+            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 flex items-center justify-between gap-3 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                <div>
+                  <span className="font-bold text-white block">Clean Database Mode Active</span>
+                  <span className="text-[11px] text-gray-300">All pre-defined demo data has been wiped. Register a real Athlete or Coach below to start from scratch.</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCleanSlateBanner(false)}
+                className="w-6 h-6 rounded-lg bg-surface-2 hover:bg-surface-3 text-gray-400 hover:text-white flex items-center justify-center flex-shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Database Reset & Storage Info Toolbar */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs border-t border-surface-border/60">
+            <button
+              type="button"
+              onClick={() => {
+                haptics.playTap();
+                setShowResetConfirm(true);
+              }}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold transition flex items-center justify-center gap-2 group cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition" />
+              <span>🧹 Reset Database (Start from Scratch)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                haptics.playTap();
+                setShowStorageModal(true);
+              }}
+              className="text-gray-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer py-1"
+            >
+              <Database className="w-3.5 h-3.5 text-fitness-primary" />
+              <span>Where &amp; How is Data Stored?</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Forgot Password Modal Dialog */}
-      {showForgotPassword && (
+      {/* Reset Database Confirmation Modal Dialog */}
+      {showResetConfirm && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-surface-1 border border-surface-border rounded-3xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-2 border-b border-surface-border">
-              <div className="flex items-center gap-2 text-white font-bold text-sm">
-                <HelpCircle className="w-4 h-4 text-fitness-primary" />
-                <span>Reset FitSync Password</span>
+            <div className="flex items-center gap-3 text-red-400 font-bold text-base">
+              <div className="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <span>Reset Database to Clean Slate?</span>
+            </div>
+            
+            <p className="text-xs text-gray-300 leading-relaxed">
+              This will clear all browser-stored data: demo accounts, registered athlete profiles, coach assignments, meal logs, hydration logs, and attendance streaks.
+            </p>
+
+            <div className="p-3.5 rounded-2xl bg-surface-2 border border-surface-border text-[11px] text-gray-300 space-y-1.5 font-mono">
+              <div className="text-fitness-primary font-bold">Wipes following local storage records:</div>
+              <div className="text-gray-400">• fitsync_ai_state_v2 (Session &amp; telemetry)</div>
+              <div className="text-gray-400">• fitsync_ai_registered_users_v2 (User registry)</div>
+              <div className="text-gray-400">• fitsync_trainer_runtime_v1 (Coach cache)</div>
+              <div className="text-emerald-400 pt-1">Result: 100% clean blank database for live demo.</div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                className="flex-1 py-2.5 bg-surface-2 hover:bg-surface-3 text-gray-300 text-xs font-semibold rounded-xl border border-surface-border transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleResetDatabase}
+                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl shadow-lg transition"
+              >
+                Yes, Wipe &amp; Start Fresh
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Database Storage & Architecture Info Modal */}
+      {showStorageModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-xl max-h-[85vh] overflow-y-auto bg-surface-1 border border-surface-border rounded-3xl p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+              <div className="flex items-center gap-2.5 text-white font-bold text-sm">
+                <Database className="w-4 h-4 text-fitness-primary" />
+                <span>FitSync AI — Database Storage Architecture</span>
               </div>
               <button
-                onClick={() => setShowForgotPassword(false)}
+                onClick={() => setShowStorageModal(false)}
                 className="w-7 h-7 rounded-lg bg-surface-2 flex items-center justify-center text-gray-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {forgotSent ? (
-              <div className="space-y-4 py-2">
-                <div className="p-4 rounded-2xl bg-fitness-primary/10 border border-fitness-primary/30 text-center space-y-2">
-                  <CheckCircle2 className="w-8 h-8 text-fitness-primary mx-auto" />
-                  <div className="text-xs font-bold text-white">Password Reset Link Dispatched!</div>
-                  <p className="text-[11px] text-gray-300">
-                    We sent a secure password reset link to <span className="text-fitness-primary font-mono">{forgotEmail}</span>. Follow the link to choose your new password.
-                  </p>
+            <div className="space-y-4 text-xs text-gray-300 leading-relaxed">
+              <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border space-y-2">
+                <div className="flex items-center gap-2 text-white font-bold text-xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span>1. Cloud PostgreSQL Database (Supabase)</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowForgotPassword(false)}
-                  className="w-full py-2.5 bg-surface-2 hover:bg-surface-3 text-white text-xs font-bold rounded-xl border border-surface-border transition"
-                >
-                  Return to Sign In
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
-                <p className="text-xs text-gray-400">
-                  Enter your registered FitSync email address and we will dispatch a secure reset link to recover your account credentials.
+                <p className="text-[11px] text-gray-400">
+                  All relational entities are stored in your Supabase project in the <code className="text-fitness-primary font-mono">public</code> PostgreSQL schema.
                 </p>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-300">Account Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder="e.g. member@fitsync.health"
-                    className="w-full bg-surface-2 border border-surface-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-fitness-primary transition"
-                  />
+                <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-gray-300 pt-1">
+                  <div className="p-2 rounded-lg bg-surface-1 border border-surface-border">
+                    <span className="text-fitness-primary font-bold">user_profiles</span>: Athletes &amp; Trainers
+                  </div>
+                  <div className="p-2 rounded-lg bg-surface-1 border border-surface-border">
+                    <span className="text-fitness-primary font-bold">trainers</span>: Bios, certifications, ratings
+                  </div>
+                  <div className="p-2 rounded-lg bg-surface-1 border border-surface-border">
+                    <span className="text-fitness-primary font-bold">gyms</span>: Partner gyms &amp; locations
+                  </div>
+                  <div className="p-2 rounded-lg bg-surface-1 border border-surface-border">
+                    <span className="text-fitness-primary font-bold">workout_sessions</span>: Logged sets &amp; reps
+                  </div>
+                  <div className="p-2 rounded-lg bg-surface-1 border border-surface-border">
+                    <span className="text-fitness-primary font-bold">custom_workout_plans</span>: Coach splits
+                  </div>
+                  <div className="p-2 rounded-lg bg-surface-1 border border-surface-border">
+                    <span className="text-fitness-primary font-bold">trainer_interventions</span>: Attention alerts
+                  </div>
                 </div>
-                <div className="flex gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotPassword(false)}
-                    className="flex-1 py-2.5 bg-surface-2 hover:bg-surface-3 text-gray-300 text-xs font-semibold rounded-xl border border-surface-border transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 bg-fitness-primary hover:bg-fitness-light text-gray-950 text-xs font-bold rounded-xl shadow-glow-fitness transition"
-                  >
-                    Send Reset Link
-                  </button>
+                <div className="pt-2 text-[11px] text-gray-400">
+                  <strong className="text-white">How to view in Supabase:</strong> Open your Supabase Dashboard → click <strong>Table Editor</strong> (grid icon in left menu) to view and edit tables like an Excel spreadsheet.
                 </div>
-              </form>
-            )}
+              </div>
+
+              <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border space-y-2">
+                <div className="flex items-center gap-2 text-white font-bold text-xs">
+                  <span className="w-2 h-2 rounded-full bg-blue-400" />
+                  <span>2. Local Browser Engine Storage (localStorage)</span>
+                </div>
+                <p className="text-[11px] text-gray-400">
+                  Client sessions, offline state cache, telemetry, and newly registered profiles are persisted in your browser under <code className="text-blue-400 font-mono">http://localhost:3000</code>.
+                </p>
+                <div className="text-[11px] text-gray-400 space-y-1 font-mono">
+                  <div>• <span className="text-gray-200">fitsync_ai_state_v2</span>: Active session, meals, water, streak</div>
+                  <div>• <span className="text-gray-200">fitsync_ai_registered_users_v2</span>: Registered accounts registry</div>
+                </div>
+                <div className="pt-2 text-[11px] text-gray-400">
+                  <strong className="text-white">How to view in Browser:</strong> Press <kbd className="px-1.5 py-0.5 rounded bg-surface-1 border border-surface-border font-mono text-[10px]">F12</kbd> → click <strong>Application</strong> tab → expand <strong>Local Storage</strong> → <code className="text-white">http://localhost:3000</code>.
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-surface-2 border border-surface-border space-y-1.5">
+                <div className="flex items-center gap-2 text-white font-bold text-xs">
+                  <span className="w-2 h-2 rounded-full bg-purple-400" />
+                  <span>3. Connecting Local Next.js to Your Supabase Cloud</span>
+                </div>
+                <p className="text-[11px] text-gray-400">
+                  In your project root, open <code className="text-purple-300 font-mono">.env.local</code> and paste your Supabase Project URL &amp; Anon Key from Supabase Dashboard → <strong>Project Settings → API</strong>.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-surface-border flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowStorageModal(false)}
+                className="px-5 py-2.5 bg-surface-2 hover:bg-surface-3 text-white text-xs font-bold rounded-xl border border-surface-border transition"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

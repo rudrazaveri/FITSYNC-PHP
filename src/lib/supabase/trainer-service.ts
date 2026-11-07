@@ -14,7 +14,14 @@ import {
   WEEKLY_WORKOUT_ROUTINES,
   getWorkoutForDay
 } from '@/lib/initial-data';
-import { getInitialState, saveState, AppState } from '@/lib/store';
+import { 
+  getInitialState, 
+  saveState, 
+  AppState,
+  isCleanSlateActive,
+  getRegisteredUsers,
+  RegisteredUserRecord
+} from '@/lib/store';
 
 export const CURRENT_TRAINER_ID = '44444444-4444-4444-4444-444444444401';
 export const CURRENT_GYM_ID = '11111111-1111-1111-1111-111111111101';
@@ -385,7 +392,99 @@ interface TrainerRuntimeState {
   trainerProfile: Trainer;
 }
 
+export function mapRegisteredUserToMemberProfile(reg: RegisteredUserRecord): DetailedMemberProfile {
+  const st = reg.state;
+  const prof = st.userProfile;
+  const assess = st.assessmentData;
+  const weight = assess?.weightKg || 70;
+  const goal = assess?.goal || 'Build Muscle';
+  const attendanceRecords = st.attendanceRecords || [];
+  const loggedMeals = st.loggedMeals || [];
+
+  const workoutHistory = (st.progressLogs || []).map((pl, i) => ({
+    id: `wh_${prof.id || reg.email}_${i}`,
+    date: pl.date,
+    routineTitle: st.activeWorkout?.title || 'Daily Workout',
+    volumeKg: 0,
+    durationMins: 45,
+    status: 'completed' as const,
+    rpeAvg: 8.0
+  }));
+
+  return {
+    id: prof.id || `ath_${reg.email.replace(/[^a-zA-Z0-9]/g, '_')}`,
+    name: prof.fullName || reg.name,
+    email: prof.email || reg.email,
+    avatar: prof.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(prof.fullName || reg.name)}`,
+    age: assess?.age || 24,
+    heightCm: assess?.heightCm || 175,
+    goal: goal,
+    membershipTier: prof.membershipTier || 'FitZone Member',
+    joinDate: new Date(reg.registeredAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    phone: prof.phone || '+91 98000 00000',
+    lastActive: loggedMeals.length > 0 || attendanceRecords.length > 0 ? 'Today' : 'Newly Registered',
+    attendanceConsistency: attendanceRecords.length > 0 ? `${attendanceRecords.length} sessions logged` : '0 sessions (New)',
+    status: 'Active on Floor',
+    statusLevel: 'On Track',
+    currentWeight: `${weight} kg`,
+    activeRoutineTitle: st.activeWorkout?.title || 'Daily Workout Routine',
+    weightHistory: (st.progressLogs || []).map(p => ({ date: p.date, weightKg: p.weightKg })),
+    workoutHistory,
+    nutritionOverview: {
+      targetCalories: st.computedMetrics?.calorieTarget || 2400,
+      avgCalories: loggedMeals.reduce((acc, m) => acc + (m.calories || 0), 0),
+      targetProteinG: st.computedMetrics?.proteinG || 140,
+      avgProteinG: loggedMeals.reduce((acc, m) => acc + (m.protein || 0), 0),
+      targetCarbsG: st.computedMetrics?.carbsG || 250,
+      avgCarbsG: loggedMeals.reduce((acc, m) => acc + (m.carbs || 0), 0),
+      targetFatG: st.computedMetrics?.fatG || 65,
+      avgFatG: loggedMeals.reduce((acc, m) => acc + (m.fat || 0), 0),
+      lastLoggedDate: loggedMeals.length > 0 ? 'Today' : 'None yet',
+      loggingStreak: loggedMeals.length > 0 ? 1 : 0,
+      recentMeals: loggedMeals.map(m => ({
+        type: m.type,
+        title: m.title,
+        time: m.time,
+        calories: m.calories,
+        protein: m.protein
+      }))
+    },
+    attendance: {
+      weeklyVisits: attendanceRecords.length,
+      weeklyTarget: 4,
+      monthlyRate: attendanceRecords.length > 0 ? `${Math.min(100, attendanceRecords.length * 20)}%` : '0%',
+      streakDays: prof.streakDays || 0,
+      totalVisits: attendanceRecords.length,
+      recentLogs: attendanceRecords.map(a => ({
+        date: a.date,
+        time: a.time,
+        gymName: a.gymName
+      }))
+    }
+  };
+}
+
 function getStoredRuntimeState(): TrainerRuntimeState {
+  // If Clean Slate Mode is active, only show real registered users from this browser
+  if (isCleanSlateActive()) {
+    const registeredUsers = getRegisteredUsers();
+    const realMembers = Object.values(registeredUsers)
+      .filter(u => u.state.userProfile?.role === 'member')
+      .map(mapRegisteredUserToMemberProfile);
+
+    // If a trainer was registered in local storage, use that profile
+    const registeredTrainer = Object.values(registeredUsers).find(u => u.state.userProfile?.role === 'trainer');
+    const trainerProfile = registeredTrainer?.state.selectedTrainer || INITIAL_TRAINERS[0];
+
+    return {
+      members: realMembers,
+      interventions: [], // 0 rule-based flags in clean slate mode
+      sessions: [],     // 0 sessions booked yet
+      messages: [],
+      trainerProfile
+    };
+  }
+
   if (typeof window === 'undefined') {
     return {
       members: DETAILED_MEMBERS_SEED,
@@ -398,10 +497,19 @@ function getStoredRuntimeState(): TrainerRuntimeState {
 
   try {
     const raw = localStorage.getItem(TRAINER_STORAGE_KEY);
+    const registeredUsers = getRegisteredUsers();
+    const realMembers = Object.values(registeredUsers)
+      .filter(u => u.state.userProfile?.role === 'member')
+      .map(mapRegisteredUserToMemberProfile);
+
     if (raw) {
       const parsed = JSON.parse(raw);
+      // Merge seed members with any newly registered members
+      const existingMembers = parsed.members || DETAILED_MEMBERS_SEED;
+      const combinedMembers = [...realMembers, ...existingMembers.filter((m: DetailedMemberProfile) => !realMembers.some(r => r.id === m.id || r.email === m.email))];
+
       return {
-        members: parsed.members || DETAILED_MEMBERS_SEED,
+        members: combinedMembers,
         interventions: parsed.interventions || INTERVENTIONS_SEED,
         sessions: parsed.sessions || SESSIONS_SEED,
         messages: parsed.messages || [],
@@ -522,6 +630,23 @@ export const TrainerService = {
   // 3. Get Dashboard Metrics
   async getDashboardMetrics(trainerId: string = CURRENT_TRAINER_ID) {
     const runtime = getStoredRuntimeState();
+
+    if (isCleanSlateActive()) {
+      const assignedCount = runtime.members.length;
+      const activeCount = runtime.members.filter(m => m.status === 'Active on Floor').length;
+      const attentionCount = runtime.interventions.filter(i => i.status === 'Open').length;
+      const todaySessionsCount = runtime.sessions.length;
+      const weeklyAttendancePct = runtime.members.length > 0 ? '100%' : '0%';
+
+      return {
+        assignedMembers: assignedCount,
+        activeMembers: activeCount,
+        membersNeedingAttention: attentionCount,
+        todaySessions: todaySessionsCount,
+        weeklyAttendance: weeklyAttendancePct
+      };
+    }
+
     const assignedCount = runtime.members.length > 0 ? 24 : 0;
     const activeCount = runtime.members.filter(m => m.status === 'Active on Floor').length + 15;
     const attentionCount = runtime.interventions.filter(i => i.status === 'Open').length;

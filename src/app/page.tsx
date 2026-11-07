@@ -22,6 +22,7 @@ import {
   createDemoState,
   saveRegisteredUserRecord,
   findRegisteredUser,
+  resetAllLocalData,
   type AttendanceRecord
 } from '@/lib/store';
 import {
@@ -3498,12 +3499,23 @@ export default function FitSyncApp() {
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-surface-border flex gap-2">
+                  <div className="pt-3 border-t border-surface-border flex flex-col gap-2">
                     <button
                       onClick={handleLogout}
-                      className="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 transition flex items-center justify-center gap-1.5"
+                      className="w-full py-2.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-gray-300 text-xs font-bold border border-surface-border transition flex items-center justify-center gap-1.5"
                     >
                       <span>Sign Out from FitSync</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        haptics.playTap();
+                        resetAllLocalData();
+                        window.location.reload();
+                      }}
+                      className="w-full py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 transition flex items-center justify-center gap-1.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>🧹 Reset to Clean Scratch (Wipe Demo Data)</span>
                     </button>
                   </div>
                 </div>
