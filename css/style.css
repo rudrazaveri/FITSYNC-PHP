@@ -1,0 +1,1502 @@
+/* ==========================================================================
+   FitSync — Master Dashboard Design System
+   Color Scheme: Electric Blue Light Theme
+   Author: FitSync Frontend Architecture Team
+   ========================================================================== */
+
+:root {
+  /* Brand Color Palette */
+  --primary-blue: #155DFC;
+  --primary-blue-hover: #0E48D4;
+  --secondary-blue: #3B82F6;
+  --light-blue: #DBEAFE;
+  --light-blue-bg: #EFF6FF;
+  --light-blue-soft: #F0F6FF;
+  
+  /* Backgrounds & Neutrals */
+  --bg-page: #F5F7FF;
+  --card-bg: #FFFFFF;
+  --text-main: #0F172A;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+  --border-color: #E2E8F0;
+  --border-subtle: #F1F5F9;
+
+  /* Accent & Functional Tokens */
+  --success-green: #16A34A;
+  --light-green: #DCFCE7;
+  --orange: #F97316;
+  --light-orange: #FFEDD5;
+  --pink: #EC4899;
+  --light-pink: #FCE7F3;
+  --purple: #8B5CF6;
+  --light-purple: #F3E8FF;
+
+  /* Dimensions & Spacing */
+  --sidebar-width: 245px;
+  --right-panel-width: 345px;
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+  --shadow-hover: 0 4px 12px rgba(21, 93, 252, 0.08);
+}
+
+/* Base Reset & Typography */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* 3-Column Dashboard Master Shell */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* View Containers Visibility */
+.view-container {
+  display: none;
+}
+.view-container.active {
+  display: block;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Page Header Bar for Module Views */
+.module-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+.module-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.module-header-title h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+.module-header-title p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.btn-back-dashboard {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--primary-blue);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-back-dashboard:hover {
+  background-color: var(--light-blue-bg);
+  border-color: var(--primary-blue);
+}
+
+/* ==========================================================================
+   1. Left Fixed Navigation Sidebar
+   ========================================================================== */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--card-bg);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+/* Sidebar Top Brand */
+.sidebar-brand {
+  padding: 20px 18px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.brand-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background-color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.brand-info h1 {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+
+.brand-info p {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* User Profile Badge in Sidebar */
+.sidebar-user {
+  margin: 6px 14px 14px;
+  padding: 9px 12px;
+  background-color: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sidebar-user:hover {
+  background-color: var(--light-blue-bg);
+  border-color: var(--light-blue);
+}
+
+.user-avatar-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary-blue);
+  flex-shrink: 0;
+}
+
+.user-meta h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.user-meta span {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  display: block;
+}
+
+/* Sidebar Navigation Items */
+.sidebar-nav {
+  padding: 4px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8.5px 12px;
+  border-radius: var(--radius-sm);
+  color: #334155;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar-nav-item:hover {
+  background-color: #F1F5F9;
+  color: var(--text-main);
+}
+
+.sidebar-nav-item svg,
+.sidebar-nav-item i {
+  width: 17px;
+  height: 17px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.sidebar-nav-item:hover svg,
+.sidebar-nav-item:hover i {
+  color: var(--primary-blue);
+}
+
+/* Active Dashboard Navigation Item */
+.sidebar-nav-item.active {
+  background-color: var(--primary-blue);
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(21, 93, 252, 0.22);
+}
+
+.sidebar-nav-item.active svg,
+.sidebar-nav-item.active i {
+  color: #FFFFFF !important;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 8px 14px;
+}
+
+.sidebar-bottom {
+  padding: 4px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ==========================================================================
+   2. Main Layout Shell (Center Content + Right Panel)
+   ========================================================================== */
+.main-wrapper {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
+.dashboard-center {
+  flex: 1;
+  min-width: 0;
+  padding: 24px 28px;
+}
+
+.dashboard-right {
+  width: var(--right-panel-width);
+  padding: 24px 24px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Mobile Top Bar */
+.mobile-top-bar {
+  display: none;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 16px;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.mobile-menu-btn {
+  background: none;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 95;
+}
+
+/* ==========================================================================
+   3. Card Component Styling
+   ========================================================================== */
+.fs-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  position: relative;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 18px;
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.2px;
+}
+
+.card-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-blue);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  cursor: pointer;
+}
+
+.card-link:hover {
+  color: var(--primary-blue-hover);
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   4. Welcome Banner
+   ========================================================================== */
+.welcome-banner {
+  background: linear-gradient(135deg, #E0EBFF 0%, #EFF6FF 100%);
+  border: 1px solid #DBEAFE;
+  border-radius: var(--radius-lg);
+  padding: 22px 28px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-blue);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.welcome-heading {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.4px;
+  line-height: 1.25;
+  margin-bottom: 4px;
+}
+
+.welcome-heading .highlight-name {
+  color: var(--primary-blue);
+}
+
+.welcome-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.banner-star-deco {
+  color: #93C5FD;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   5. Four Fitness Statistics Cards
+   ========================================================================== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.stat-card {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 124px;
+  margin-bottom: 0;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.stat-card:hover {
+  border-color: var(--primary-blue);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.stat-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.stat-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon-box svg,
+.stat-icon-box i {
+  width: 18px;
+  height: 18px;
+}
+
+.stat-icon-blue {
+  background-color: var(--light-blue-bg);
+  color: var(--primary-blue);
+  border: 1px solid var(--light-blue);
+}
+
+.stat-icon-pink {
+  background-color: var(--light-pink);
+  color: var(--pink);
+  border: 1px solid #FBCFE8;
+}
+
+.stat-icon-orange {
+  background-color: var(--light-orange);
+  color: var(--orange);
+  border: 1px solid #FED7AA;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.stat-trend-green {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--success-green);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.stat-badge-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+.badge-healthy {
+  background-color: var(--light-green);
+  color: var(--success-green);
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background-color: #EDF2F7;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--primary-blue);
+  transition: width 0.3s ease;
+}
+
+/* ==========================================================================
+   6 & 7. Middle Row: Fitness Goal & Weekly Activity Chart
+   ========================================================================== */
+.middle-row-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.goal-content-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 6px 0;
+}
+
+.circular-progress-wrap {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin-bottom: 14px;
+}
+
+.circular-progress-svg {
+  transform: rotate(-90deg);
+  width: 110px;
+  height: 110px;
+}
+
+.circle-bg {
+  fill: none;
+  stroke: var(--light-blue);
+  stroke-width: 8;
+}
+
+.circle-progress {
+  fill: none;
+  stroke: var(--primary-blue);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 264;
+  stroke-dashoffset: 66;
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+.circle-inner-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.circle-pct {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+.circle-sub {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.goal-details-box {
+  width: 100%;
+  background-color: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.goal-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.goal-target-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.chart-box-container {
+  height: 190px;
+  width: 100%;
+  position: relative;
+}
+
+/* ==========================================================================
+   8. Quick Action Tiles (6 in 1 Row)
+   ========================================================================== */
+.quick-actions-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.quick-action-tile {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.quick-action-tile:hover {
+  border-color: var(--primary-blue);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.quick-action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--light-blue-bg);
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quick-action-icon svg,
+.quick-action-icon i {
+  width: 18px;
+  height: 18px;
+}
+
+.quick-action-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   9 & 10. Bottom Row: Gym & Membership + Recent Progress
+   ========================================================================== */
+.bottom-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.gym-card-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.gym-image-placeholder {
+  width: 95px;
+  height: 95px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: linear-gradient(135deg, #1E293B, #0F172A);
+  flex-shrink: 0;
+  border: 1px solid var(--border-color);
+}
+
+.gym-details-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gym-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gym-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.badge-active {
+  background-color: var(--light-green);
+  color: var(--success-green);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+.gym-meta-line {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-outline-gym {
+  margin-top: 10px;
+  align-self: flex-start;
+  padding: 6px 14px;
+  border: 1px solid var(--primary-blue);
+  color: var(--primary-blue);
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-outline-gym:hover {
+  background-color: var(--light-blue-bg);
+}
+
+.progress-chart-container {
+  height: 130px;
+  width: 100%;
+}
+
+/* ==========================================================================
+   11. Right Column: Today's Workout Widget
+   ========================================================================== */
+.workout-preview-box {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.workout-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.workout-meta-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.workout-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.workout-meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.meta-pill {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background-color: #F1F5F9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.btn-primary-block {
+  width: 100%;
+  padding: 10px 16px;
+  background-color: var(--primary-blue);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary-block:hover {
+  background-color: var(--primary-blue-hover);
+  box-shadow: 0 4px 12px rgba(21, 93, 252, 0.25);
+}
+
+/* ==========================================================================
+   12. Nutrition Summary Widget
+   ========================================================================== */
+.nutrition-widget-layout {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.nutrition-donut-wrap {
+  width: 90px;
+  height: 90px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.nutrition-donut-svg {
+  transform: rotate(-90deg);
+  width: 90px;
+  height: 90px;
+}
+
+.donut-inner-data {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.donut-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.donut-label {
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+
+.macro-bars-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.macro-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.macro-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.macro-track {
+  width: 100%;
+  height: 5px;
+  background-color: #EDF2F7;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.macro-fill-protein {
+  height: 100%;
+  background-color: var(--success-green);
+  border-radius: 9999px;
+}
+
+.macro-fill-carbs {
+  height: 100%;
+  background-color: var(--primary-blue);
+  border-radius: 9999px;
+}
+
+.macro-fill-fat {
+  height: 100%;
+  background-color: var(--orange);
+  border-radius: 9999px;
+}
+
+/* ==========================================================================
+   13. Water Intake Widget
+   ========================================================================== */
+.water-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.water-icon-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.water-icon-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--light-blue-bg);
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.water-icon-circle svg,
+.water-icon-circle i {
+  width: 15px;
+  height: 15px;
+}
+
+.water-val-lg {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+/* ==========================================================================
+   14. Upcoming Appointments Widget
+   ========================================================================== */
+.appointment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.appointment-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background-color: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.apt-avatar-img {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary-blue);
+  flex-shrink: 0;
+}
+
+.apt-date-box {
+  width: 50px;
+  height: 50px;
+  background-color: var(--light-blue-bg);
+  border: 1px solid var(--light-blue);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.apt-day-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  text-transform: uppercase;
+}
+
+.apt-day-num {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--primary-blue);
+  line-height: 1;
+}
+
+.apt-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.apt-pro-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.apt-specialty {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.apt-time {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.badge-online {
+  background-color: var(--light-green);
+  color: var(--success-green);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+}
+
+.badge-inperson {
+  background-color: var(--light-blue-bg);
+  color: var(--primary-blue);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+}
+
+/* ==========================================================================
+   15. Extended Module-Specific Styling (16 FitSync Features)
+   ========================================================================== */
+
+/* Search & Filter Bar */
+.filter-search-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.search-input-box {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+}
+.search-input-box svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  width: 16px;
+  height: 16px;
+}
+.search-input-box input {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  outline: none;
+  background-color: #FFFFFF;
+}
+.search-input-box input:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(21, 93, 252, 0.1);
+}
+.filter-chip-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filter-chip {
+  padding: 6px 14px;
+  border: 1px solid var(--border-color);
+  background: #FFFFFF;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.filter-chip:hover, .filter-chip.active {
+  background-color: var(--primary-blue);
+  color: #FFFFFF;
+  border-color: var(--primary-blue);
+}
+
+/* Multi-Gym Grid */
+.gyms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.gym-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+.gym-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+.gym-card-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+.gym-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.tag-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #F1F5F9;
+  color: var(--text-secondary);
+}
+
+/* Trainer Directory */
+.trainers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.trainer-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+.trainer-card:hover {
+  border-color: var(--primary-blue);
+  box-shadow: var(--shadow-hover);
+}
+.trainer-avatar-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 12px;
+  border: 3px solid var(--primary-blue);
+}
+
+/* Exercise Library Grid */
+.exercises-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.exercise-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  overflow: hidden;
+}
+.exercise-card:hover {
+  border-color: var(--primary-blue);
+  box-shadow: var(--shadow-hover);
+}
+.exercise-card-img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+}
+
+/* Recipe Catalog Grid */
+.recipes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.recipe-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+.recipe-card-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+.recipe-card-body {
+  padding: 16px;
+}
+
+/* Attendance Pass & Calendar */
+.attendance-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+}
+.qr-pass-box {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+}
+
+/* Document Vault List */
+.documents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.document-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+/* Data Table */
+.fs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+.fs-table th {
+  padding: 10px 14px;
+  background: #F8FAFC;
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+}
+.fs-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  color: var(--text-main);
+}
+.fs-table tr:hover td {
+  background: #F8FAFC;
+}
+
+/* Forms & Inputs */
+.form-group {
+  margin-bottom: 16px;
+}
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-main);
+  font-family: inherit;
+  background-color: #FFFFFF;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(21, 93, 252, 0.12);
+}
+
+/* Modals */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.active {
+  display: flex;
+}
+.modal-card {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-body {
+  padding: 20px 24px;
+}
+.modal-footer {
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.btn-secondary {
+  padding: 8px 16px;
+  background-color: #F1F5F9;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background-color: #E2E8F0;
+}
+.preset-chips-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.water-preset-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--light-blue);
+  background-color: var(--light-blue-bg);
+  color: var(--primary-blue);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.water-preset-btn:hover {
+  background-color: var(--primary-blue);
+  color: #FFFFFF;
+}
+
+/* Toast Container */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.toast-item {
+  background-color: #0F172A;
+  color: #FFFFFF;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+.toast-item.fade-out {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.toast-item.toast-success {
+  border-left: 4px solid var(--success-green);
+}
+.toast-item.toast-info {
+  border-left: 4px solid var(--primary-blue);
+}
+.toast-close {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: auto;
+}

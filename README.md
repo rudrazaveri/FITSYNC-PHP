@@ -1,166 +1,152 @@
-# FitSync AI — Intelligent Multi-Gym Fitness, Health & Personalized Coaching Platform
+# FitSync — Multi-Gym Fitness & Healthcare Management Platform
 
 > **"Your Fitness. Your Health. Your Intelligence."**  
-> *One unified ecosystem for personalized fitness, predictive nutrition, clinical healthcare connectivity, and multi-gym management.*
+> *A unified ecosystem for multi-gym management, personalized fitness tracking, biometric assessments, nutrition, and healthcare connectivity.*
 
 ---
 
-## 🌟 Executive Overview & Product Architecture
+## 🌟 Executive Overview
 
-**FitSync AI** is a commercial-grade, unified health-tech and fitness-tech mobile platform that connects:
-1. **Gym Members** — Athletes and fitness enthusiasts tracking workouts, nutrition, biometrics, and recovery.
-2. **Gym Trainers** — Certified strength and conditioning coaches monitoring assigned members, approving progression, and acting on automated intervention intelligence.
-3. **Gym Owners & Administrators** — Gym branch operators managing turnstile attendance, equipment, trainers, and membership packages.
-4. **Sports Medicine Doctors** — Medical physicians reviewing blood biomarker panels, cardiac diagnostics, and conducting online telehealth consultations.
-5. **Physiotherapists** — Rehabilitation specialists diagnosing joint mechanics, posture kinematics, and mobility recovery.
-6. **Platform Administrators** — Multi-gym network directors managing cross-city tenant isolation (Vadodara, Ahmedabad, Surat).
+**FitSync** is a full-featured fitness and healthcare web platform designed for members, certified gym trainers, gym branch owners, and medical consultants. Built using a lightweight, standards-compliant stack (**HTML5, CSS3, Vanilla JavaScript, PHP, and Supabase / PostgreSQL**), it delivers a native-feeling single-page application (SPA) experience without bulky frontend frameworks.
 
 ---
 
-## 🎨 Design System & Visual Specification ("BioDigital Kinetic")
+## 🛠️ Technology Stack (Minor Project Specification)
 
-FitSync AI implements the **BioDigital Kinetic** design system, fusing **Dark Space Glassmorphism** with high-contrast biological neon accents:
-
-| Token Category | Hex Value / Gradient | Role & Usage |
+| Layer | Technologies | Role & Purpose |
 | :--- | :--- | :--- |
-| **Canvas Base** | `#0B0F17` / `#070A10` | Non-reflective pitch charcoal foundation. Eliminates eye strain and optimizes OLED power efficiency. |
-| **Fitness Primary** | `#10B981` (Neon Emerald) | Kinetic energy, streak milestones, target calories, active PR progression, optimal recovery. |
-| **Healthcare Primary**| `#06B6D4` / `#38BDF8` (Cyan) | Clinical teleconsultations, doctor badges, bloodwork diagnostics, hydration metrics, patient consent. |
-| **AI Nebula** | `linear-gradient(135deg, #8B5CF6, #3B82F6, #06B6D4)` | Predictive nutrition coach, adaptive progression recommendations, automated safety checks. |
-| **Warning Status** | `#F59E0B` (Amber) | Recurring dietary patterns, sub-optimal training volume, trainer intervention flags. |
-| **Danger / Allergen** | `#EF4444` (Crimson) | Dietary safety allergen conflicts (Peanuts), missed workout thresholds, clinical alerts. |
-
-### Typography Scale
-- **Display Hero:** `Space Grotesk` (34px, 800 weight, -0.03em tracking) for primary telemetry readouts (18,400 kg, 2,650 kcal).
-- **Headlines:** `Space Grotesk` (18px - 22px, 700 weight) for workout titles, module headers, and provider profiles.
-- **Body & Labels:** `Plus Jakarta Sans` (12px - 14px, 400 - 600 weight) for instructions, nutrition breakdowns, and chat dialogue.
-- **Biometric Annotations:** `JetBrains Mono` (10px - 12px, tabular numerals) for BMR, TDEE, rest timers, and lab values.
+| **Frontend Core** | **HTML5 & CSS3** | Semantic layout and Electric Blue design system with custom CSS variables, responsive grid/flexbox, and modal dialogs. |
+| **Interactions** | **Vanilla JavaScript (ES6+)** | Zero-reload client-side routing (`switchView`), Mifflin-St Jeor formula engine, rest interval timer, and LocalStorage caching. |
+| **Visualizations** | **Chart.js & Lucide Icons** | Activity bar charts, weight progression line charts, hydration tracking, and 72 interface icons with SVG fallbacks. |
+| **Backend API** | **PHP 8.x** | Modular REST endpoints (`api/workouts.php`, `api/meals.php`, `api/assessment.php`), session authentication, and database connectivity. |
+| **Database** | **Supabase (PostgreSQL)** | Cloud-hosted relational database storing user profiles, gym branches, workouts, nutrition, attendance logs, and progress metrics. |
 
 ---
 
-## 📱 Prototype Pages & Feature Map (All 8 Roles & Modules)
+## 🎨 Design System: Electric Blue Theme
 
-### Page 1: 🎨 Design System
-- Live color swatches with functional token definitions.
-- Typography scale showcase.
-- Reusable component sandbox: Kinetic CTA buttons, AI predictive buttons, healthcare cards, status badges, and inputs.
-- AI visual language (✨ AI Insight, 🧠 FitSync Recommendation).
-- Healthcare visual language (🔒 Patient Privacy Lock, clinical consent badges).
+Designed according to high-contrast modern dashboard standards:
 
-### Page 2: 📱 Member App (Aarav Shah, 23 • Muscle Gain • FitZone Vadodara)
-1. **Welcome & Onboarding:**
-   - Brand logo, hero tagline, and entry CTA ("Get Started").
-2. **Member Registration:**
-   - Name, email, phone, DOB, gender, and encrypted credential setup.
-3. **Gym Discovery & Selection:**
-   - Searchable branch selector with FitZone Vadodara (4.9★, 1.2km, 8 trainers), PowerHouse Ahmedabad, and Elite Fitness Surat.
-4. **Senses-Style Health & Fitness Assessment (4 Steps):**
-   - **Step 1:** Age (23), Height (175 cm), Weight (72.4 kg), optional tape metrics (Waist 81cm, Neck 38cm, Hip 96cm).
-   - **Step 2:** Activity Index (Moderately Active, 4–5 days/week).
-   - **Step 3:** Primary Fitness Goal (Build Muscle) & Secondary Goals (Strength, Flexibility).
-   - **Step 4:** Dietary Preferences & Allergies (Non-Vegetarian, **Peanuts Allergen** flagged).
-5. **Assessment Results Engine:**
-   - **Real Formula Computation:**
-     - **BMI:** 23.6 (*Healthy / Optimal*)
-     - **BMR (Mifflin-St Jeor):** 1,720 kcal/day (*Calories at complete rest*)
-     - **TDEE:** 2,450 kcal/day (*Energy expenditure with activity*)
-     - **Daily Target:** 2,650 kcal (*+200 kcal surplus for muscle gain*)
-     - **Daily Macros:** Protein 150g (2.1g/kg), Carbs 300g, Healthy Fats 75g (25% ratio)
-     - **Fitness Score:** 82 / 100 with sub-scores (Activity 85, Strength 80, Consistency 88, Nutrition 78).
-     - Non-diagnostic transparency disclaimer banner.
-6. **Member Home Dashboard:**
-   - Good Morning, Aarav Shah header with FitZone badge and notification bell.
-   - Quick Today's Summary (Calories, Protein, Workout, 5-Day Streak 🔥).
-   - One-tap interactive hydration logger (`+250ml`).
-   - Hero Workout Card (Chest & Triceps, 6 Exercises, 45 min).
-   - AI Coach Card ("Ask FitSync AI").
-   - Upcoming telehealth appointment preview (Dr. Ramesh Sharma at 05:30 PM with 1-tap room entry).
-7. **Workout Module & Adaptive Progression:**
-   - Chest & Triceps routine: Barbell Bench Press, Incline DB Press, Cable Fly, Tricep Pushdown, Overhead DB Extension.
-   - Set-by-set logging with interactive status toggles ("✓ Completed").
-   - Live rest countdown timer with audio feedback.
-   - **FitSync Adaptive AI Recommendation:** Detects easy bench sets and suggests increasing load to 82.5 kg, backed by Coach Raj's approval.
-   - Exercise library with search, muscle group filters, and full guide modal.
-8. **Nutrition Module & Safety Engine:**
-   - Caloric budget progress bar and macro breakdown.
-   - Interactive meal logging with instant macro computation.
-   - **Dietary Safety Check:** Real-time conflict scanner (entering "Peanut Butter" triggers `🔴 Potential Allergen Conflict Detected: Peanuts`).
-   - Recommended Gourmet Fitness Bowl with high-protein photography.
-   - **Food Reaction Tracker:** Recurring pattern observer (Milk → Bloating flagged with pattern insight and non-diagnostic note).
-9. **Health Hub & Clinical Connectivity:**
-   - Sports medicine physicians (Dr. Ananya Iyer, MBBS MD) and physiotherapists (Dr. Ramesh Sharma, MPT).
-   - Provider availability schedule grid (Monday 10am-1pm, Wednesday 4pm-7pm, Thursday 10am-2pm).
-   - Interactive 5-step appointment booking modal with instant confirmation.
-   - Health Reports Vault: Blood panels, MRI scans, and metabolic testing with explicit patient consent sharing controls.
-10. **Telehealth Video Consultation UI:**
-    - Fullscreen consultation room with Dr. Ramesh Sharma.
-    - Live ticking session timer, microphone toggle, camera toggle, speaker toggle, in-call notes, and end call button.
-11. **Progress, Photos, Goals & Attendance:**
-    - SVG weight trend chart (-2.1 kg this month).
-    - Monthly attendance heatmap (18 visits, 88% attendance, 5-day streak).
-    - Goal progress bars (Bench 82.5/90 kg, Protein 112/150g, Attendance 5/4 days).
-12. **Floating AI Assistant & Global Search:**
-    - Persistent ✨ `Ask FitSync AI` drawer with pre-loaded prompts and instant context-aware replies.
-    - Medical safety triage disclaimer for acute pain symptoms.
-
-### Page 3: 🏋️ Trainer App (Coach Raj Patel UI)
-- Active member queue: 24 assigned members, 14 active today, 4 sessions.
-- **AI Trainer Intervention Intelligence:**
-  - `🔴 Rahul Verma:` Missed 3 workouts in last 10 days (AI suggests 3-day split nudge).
-  - `🟡 Aarav Shah:` High bar velocity on bench press; approved 82.5 kg progression.
-  - `🟡 Priya Nair:` Has not logged nutrition for 6 consecutive days.
-
-### Page 4: 🩺 Doctor App (Dr. Ananya Iyer UI)
-- Clinical queue: Patient consultations, video room access, and scheduling.
-- Sovereign Medical Vault: View authorized patient blood panels with explicit consent badges.
-- Weekly availability configuration grid.
-
-### Page 5: 🏃 Physiotherapist App (Dr. Ramesh Sharma UI)
-- Physical therapy sessions and kinematic tracking.
-- Rotator cuff mobility metrics (85° external rotation) and thoracic spine recovery tracking.
-- Direct entry into the live video consultation room.
-
-### Page 6: 🏢 Gym Admin / Owner App (FitZone Vadodara)
-- 482 total members, 8 certified trainers, 86.4% monthly attendance rate.
-- Trainer roster performance monitor.
-- Membership packages configuration (Silver Basic, Gold All-Access, Platinum VIP).
-
-### Page 7: 🌐 Platform Admin App (Multi-Gym Network Architecture)
-- Enterprise multi-tenant overview: FitZone Vadodara, PowerHouse Ahmedabad, Elite Fitness Surat.
-- Total network stats: 1,492 members, 26 trainers, 342 monthly clinical consults.
-- Isolated database partition architecture and cross-network health provider registry.
-
-### Page 8: 🗺️ Prototype Flow (Interactive Node Diagram)
-- Interactive visual graph connecting all 6 major user journeys.
-- One-click jump buttons that transport you directly into any screen state in the prototype.
+- **Primary Blue:** `#155DFC`
+- **Secondary Blue:** `#3B82F6`
+- **Light Blue Accent:** `#DBEAFE`
+- **Background:** `#F5F7FF`
+- **Card Background:** `#FFFFFF` (14–16px border-radius, subtle 1px border)
+- **Main Text:** `#0F172A`
+- **Muted Text:** `#64748B`
+- **Success / Green:** `#16A34A`
+- **Accent Orange:** `#F97316`
+- **Typography:** `Inter` (Google Fonts)
 
 ---
 
-## 🛠️ How to Run & Explore Locally
+## 📱 Platform Modules (16 Integrated Views)
 
-The prototype runs as a zero-dependency modern web application.
+1. **Dashboard (`#view-dashboard`):** 3-column layout featuring welcome banner, 4 live telemetry stat cards (Weight, BMI, Calories, Water), Fitness Goal circular ring, Weekly Activity bar chart, 6 quick actions, Gym & Membership overview, Recent Progress trend line, Today's Workout widget, Nutrition summary, and upcoming medical/physio consultations.
+2. **Gyms & Membership (`#view-gyms`):** Multi-gym branch directory (FitZone Pune, PowerHouse Mumbai, CrossFit Arena, Elite Fitness) with amenity badges, trainer counts, and active tier validation.
+3. **Trainers (`#view-trainers`):** Certified coach directory with specialty filters, experience badges, and direct session booking.
+4. **Workouts (`#view-workouts`):** Structured training splits, exercise checklists, and live workout session launcher.
+5. **Exercise Library (`#view-exercises`):** Searchable exercise encyclopedia with form cues, targeted muscle groups, and equipment tags.
+6. **Fitness Assessment (`#view-assessment`):** Live Mifflin-St Jeor biometric calculator computing BMR, TDEE, goal-adjusted calorie intake, macronutrient splits, and U.S. Navy body fat estimates.
+7. **Progress Tracking (`#view-progress`):** Historical body weight logging with dedicated high-resolution Chart.js line graph and milestone targets.
+8. **Nutrition & Diet (`#view-nutrition`):** Macronutrient balance tracker (Protein, Carbs, Fats), caloric budget progress, and meal logging.
+9. **Recipes (`#view-recipes`):** High-protein recipes with prep times, calorie counts, and macro breakdowns.
+10. **Water Intake Station (`#view-water`):** Interactive hydration tracker with preset quick-adds (+150ml, +250ml, +500ml), weekly consumption chart, and daily target bottle visualization.
+11. **Appointments (`#view-appointments`):** Telehealth consultation scheduler for sports medicine physicians and physiotherapists.
+12. **Health Reports Vault (`#view-reports`):** Encrypted medical and laboratory report repository.
+13. **Attendance & Turnstile (`#view-attendance`):** Multi-gym turnstile check-in simulator, monthly visit streaks, and QR code pass.
+14. **Reports & Analytics (`#view-analytics`):** Monthly attendance, workout volume, and calorie adherence trends.
+15. **Settings (`#view-settings`):** Member profile management, emergency contact details, and preference configurations.
+16. **Help & Support (`#view-help`):** FAQ accordion, contact support channels, and platform user guides.
 
-### Quick Start
+---
+
+## 🪟 Interactive Modals (8 Total)
+
+- **`workoutModal`**: Exercise set tracker with live ticking rest countdown timer (60s / 90s).
+- **`addWaterModal`**: Instant hydration logging with one-tap presets and custom millilitre input.
+- **`addMealModal`**: Meal category selector and nutrition logging form.
+- **`updateProgressModal`**: Body weight logger updating charts and localStorage in real time.
+- **`bookAppointmentModal`**: Doctor / Physiotherapist consultation booking.
+- **`uploadReportModal`**: Encrypted medical file upload simulation.
+- **`gymDetailsModal`**: Detailed view of gym branch amenities, hours, and location.
+- **`goalDetailsModal`**: Breakdown of primary fitness goal milestones.
+
+---
+
+## 🚀 Running the Project Locally
+
+### 1. Frontend Quick Preview (Zero Setup)
+You can preview the platform immediately using any local web server or by opening `index.html` in your browser:
 ```bash
-# In the project directory (c:\figma)
-python -m http.server 3000
-```
-Open **[http://localhost:3000](http://localhost:3000)** in any modern browser (Chrome, Edge, Safari, Firefox).
+# Using Python
+python -m http.server 8085
 
-### Key Interactive Features to Try:
-1. **Switch Viewports:** Click `📱 390×844` in the top right to view in the iPhone 15 Pro hardware frame, or `🖥️ Fluid` to expand to a responsive layout.
-2. **Audio Haptics:** Click buttons with sound turned on to experience synthesized native-feeling clicks, completion chimes, and AI pulses.
-3. **Take the Assessment:** Click `⚡ Quick Jump Flow...` → `4. Senses Health Assessment` to experience the 4-step biometric onboarding with live Mifflin-St Jeor formula calculations!
-4. **Log Sets & Rest Timer:** Go to `Workout`, tap a set to toggle completion, and start the interactive rest timer.
-5. **Test Allergen Safety:** Go to `Nutrition` → `🛡️ Safety Check` and type "Peanut Butter" to witness the live allergy conflict warning.
-6. **Join a Video Call:** Click `📹 Join Video Room` on the Home or Health tab to enter the simulated telehealth consultation with Dr. Sharma!
-7. **Ask FitSync AI:** Click the floating `✨ Ask FitSync AI` button and tap any prompt chip for immediate intelligent answers.
+# Open in your browser:
+# http://127.0.0.1:8085/
+# or http://127.0.0.1:8085/fitsync/
+```
+
+### 2. Full PHP + Supabase Backend
+To run with PHP and Supabase backend features:
+1. Ensure **PHP 8.0+** is installed (or use **XAMPP / WAMP / Laragon**).
+2. Configure your Supabase credentials in `config/supabase.php` or `.env.local`:
+   ```php
+   define('SUPABASE_URL', 'https://your-project.supabase.co');
+   define('SUPABASE_ANON_KEY', 'your-anon-key');
+   ```
+3. Run the migrations in `supabase/migrations/` inside your Supabase SQL Editor.
+4. Start the PHP server:
+   ```bash
+   php -S 127.0.0.1:8000
+   ```
+5. Open `http://127.0.0.1:8000` to access the full application.
+
+For detailed backend setup instructions, consult [PHP_SETUP_GUIDE.md](file:///c:/FIT-SYNC%20AI%20php/PHP_SETUP_GUIDE.md).
 
 ---
 
-## ☁️ Google Stitch Design Cloud Project
+## 📁 Repository Structure
 
-This prototype is also registered in Stitch:
-- **Project ID:** `2416637838043309167`
-- **Screen ID:** `f8f6a2a4398644fe8f817bc1d38d7e65`
-- **Design System Asset:** `assets/46baee7b8f684790b145f3ae27eeb3bf` (*BioDigital Kinetic*)
+```text
+FIT-SYNC AI php/
+├── index.html            # Main User Dashboard SPA (all 16 modules)
+├── index.php             # PHP entrypoint with session router
+├── dashboard.php         # Server-rendered PHP dashboard
+├── login.php             # Authentication login page
+├── register.php          # Member registration page
+├── workouts.php          # PHP workouts module
+├── nutrition.php         # PHP nutrition module
+├── assessment.php        # PHP assessment module
+├── attendance.php        # PHP attendance module
+├── api/                  # PHP REST API endpoints
+│   ├── assessment.php
+│   ├── meals.php
+│   └── workouts.php
+├── config/               # PHP config and Supabase client
+│   ├── config.php
+│   ├── session.php
+│   └── supabase.php
+├── css/                  # Styling & themes
+│   ├── style.css         # Master Electric Blue design system
+│   └── responsive.css    # Responsive mobile & tablet layouts
+├── js/                   # Vanilla JavaScript controllers
+│   ├── app.js            # Router, modal controller, rest timer
+│   ├── charts.js         # Chart.js visualization engine
+│   └── data.js           # FitSyncStore state & localStorage
+├── assets/               # Media & visual assets
+│   ├── images/           # 26 high-resolution themed photos
+│   └── css/
+├── fitsync/              # Standalone frontend bundle
+├── supabase/             # Database migrations & seed data
+│   ├── migrations/
+│   └── seed.sql
+├── documents/            # Feature specs & project documentation
+├── PHP_SETUP_GUIDE.md    # PHP & database setup instructions
+└── TECHNOLOGY_STACK.md   # Architectural & stack breakdown
+```
+
+---
+
+## 📄 License & Academic Attribution
+Developed for Minor Project requirements — FitSync Multi-Gym Fitness & Healthcare Management Platform.

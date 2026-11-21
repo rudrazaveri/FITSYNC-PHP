@@ -1,0 +1,150 @@
+/* FitSync AI — Modern Fitness Theme (Bootstrap 5 Enhancements) */
+:root {
+  --primary: #10b981;
+  --primary-hover: #059669;
+  --secondary: #6366f1;
+  --bg-dark: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-border: rgba(255, 255, 255, 0.08);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent-cyan: #06b6d4;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Glassmorphism & Custom Card styles */
+.fitness-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.fitness-card:hover {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+/* Navbar */
+.navbar-custom {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--bg-card-border);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  color: #fff !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-badge-ai {
+  font-size: 11px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* Custom Buttons */
+.btn-fitness {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 18px;
+  transition: all 0.2s ease;
+}
+
+.btn-fitness:hover {
+  background: #059669;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+}
+
+.btn-outline-fitness {
+  border: 1px solid #10b981;
+  color: #10b981;
+  background: transparent;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 18px;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-fitness:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border-color: #34d399;
+}
+
+/* Rest Timer Widget */
+.timer-display {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: #10b981;
+  letter-spacing: 2px;
+}
+
+/* Progress bar customizations */
+.progress {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-bar-fitness {
+  background: linear-gradient(90deg, #10b981, #06b6d4);
+}
+
+/* Hero section */
+.hero-gradient {
+  background: radial-gradient(circle at 50% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 70%);
+}
+
+/* Form inputs on dark backgrounds */
+.form-control-dark, .form-select-dark {
+  background-color: #0b1120;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+  border-radius: 8px;
+}
+
+.form-control-dark:focus, .form-select-dark:focus {
+  background-color: #0b1120;
+  border-color: #10b981;
+  color: #f8fafc;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.footer-custom {
+  background: #0a0f1d;
+  border-top: 1px solid var(--bg-card-border);
+  margin-top: auto;
+}
