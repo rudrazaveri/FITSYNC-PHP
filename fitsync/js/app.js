@@ -277,27 +277,41 @@ function setupEventListeners() {
   setupFormHandlers();
 }
 
-function setupFormHandlers() {
-  // 1. Water Intake Form
-  const waterForm = document.getElementById('waterForm');
-  if (waterForm) {
-    document.querySelectorAll('.water-preset-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const amount = parseFloat(btn.getAttribute('data-amount'));
-        window.fitSyncStore.addWater(amount);
-        updateDashboardUI();
-        if (window.renderAllCharts) window.renderAllCharts();
-        showToast(`Added ${amount * 1000} ml of water!`, 'success');
-        closeModal('addWaterModal');
-      });
-    });
+// Trigger Realistic Glass Water Filling Animation
+function triggerWaterFillAnimation() {
+  const glassWrapper = document.getElementById('glassStationWrapper');
+  if (!glassWrapper) return;
+  glassWrapper.classList.remove('water-filling');
+  void glassWrapper.offsetWidth; // force browser layout reflow
+  glassWrapper.classList.add('water-filling');
+  setTimeout(() => {
+    glassWrapper.classList.remove('water-filling');
+  }, 1200);
+}
 
+function setupFormHandlers() {
+  // 1. Water Intake Form & Station Presets
+  const waterForm = document.getElementById('waterForm');
+  document.querySelectorAll('.water-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const amount = parseFloat(btn.getAttribute('data-amount'));
+      window.fitSyncStore.addWater(amount);
+      triggerWaterFillAnimation();
+      updateDashboardUI();
+      if (window.renderAllCharts) window.renderAllCharts();
+      showToast(`Added ${amount * 1000} ml of water!`, 'success');
+      closeModal('addWaterModal');
+    });
+  });
+
+  if (waterForm) {
     waterForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const customMl = parseFloat(document.getElementById('customWaterInput').value);
       if (customMl > 0) {
         const liters = customMl / 1000;
         window.fitSyncStore.addWater(liters);
+        triggerWaterFillAnimation();
         updateDashboardUI();
         if (window.renderAllCharts) window.renderAllCharts();
         showToast(`Added ${customMl} ml water recorded!`, 'success');
@@ -586,3 +600,4 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.showToast = showToast;
 window.initIcons = initIcons;
+window.triggerWaterFillAnimation = triggerWaterFillAnimation;
