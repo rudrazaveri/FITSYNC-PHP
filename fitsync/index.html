@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FitSync – Multi-Gym Fitness & Healthcare Management Platform</title>
-
+  
   <!-- Favicon -->
   <link rel="icon" type="image/jpeg" href="assets/images/logo.jpg">
 
@@ -30,7 +28,6 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
 
   <!-- Mobile Top Header (Visible on screens <768px) -->
@@ -52,7 +49,7 @@
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="app-layout">
-
+    
     <!-- ====================================================================
          1. Left Fixed Navigation Sidebar (245px)
          ==================================================================== -->
@@ -70,8 +67,7 @@
 
       <!-- User Profile Badge (Clicking navigates to Settings) -->
       <div class="sidebar-user" onclick="switchView('settings')" title="Click to view Settings & Profile">
-        <img src="assets/images/isha_avatar.jpg" class="user-avatar-circle" alt="IK"
-          onerror="this.outerHTML='<div class=\'user-avatar-circle\'>IK</div>'">
+        <img src="assets/images/isha_avatar.jpg" class="user-avatar-circle" alt="IK" onerror="this.outerHTML='<div class=\'user-avatar-circle\'>IK</div>'">
         <div class="user-meta">
           <h4>Isha Kulkarni</h4>
           <span>Member · Premium</span>
@@ -183,7 +179,7 @@
          2. Main Application Wrapper (Central Content + Right Panel)
          ==================================================================== -->
     <div class="main-wrapper">
-
+      
       <!-- Center Main Scrollable Area -->
       <main class="dashboard-center">
 
@@ -191,7 +187,7 @@
              MODULE 1: PRIMARY USER DASHBOARD (Exact Design Authority)
              ================================================================ -->
         <div class="view-container active" id="view-dashboard">
-
+          
           <!-- Welcome Banner -->
           <section class="welcome-banner">
             <div>
@@ -201,19 +197,17 @@
             </div>
             <!-- Subtle 4-Point Decorative Star SVG -->
             <svg class="banner-star-deco" width="46" height="46" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z" />
+              <path d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z"/>
             </svg>
           </section>
 
           <!-- Four Fitness Statistics Cards (Clicking jumps to their respective pages!) -->
           <section class="stats-grid">
             <!-- Card 1: Current Weight -> Navigates to Progress Tracking -->
-            <div class="fs-card stat-card" onclick="switchView('progress')"
-              title="Click to view full Progress Tracking">
+            <div class="fs-card stat-card" onclick="switchView('progress')" title="Click to view full Progress Tracking">
               <div class="stat-card-top">
                 <div class="stat-icon-box stat-icon-blue">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round" class="weight-scale-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="weight-scale-icon">
                     <rect width="18" height="18" x="3" y="3" rx="4"></rect>
                     <circle cx="12" cy="8" r="2.5"></circle>
                     <path d="M12 7v1"></path>
@@ -287,8 +281,7 @@
               </div>
 
               <div class="goal-content-wrap">
-                <div class="circular-progress-wrap" onclick="openModal('goalDetailsModal')" style="cursor: pointer;"
-                  title="Click to edit goal">
+                <div class="circular-progress-wrap" onclick="openModal('goalDetailsModal')" style="cursor: pointer;" title="Click to edit goal">
                   <svg class="circular-progress-svg" viewBox="0 0 100 100">
                     <circle class="circle-bg" cx="50" cy="50" r="42" />
                     <circle class="circle-progress" id="goalProgressCircle" cx="50" cy="50" r="42" />
@@ -313,8 +306,7 @@
             <div class="fs-card">
               <div class="card-header-row">
                 <h3 class="card-title">This Week's Activity</h3>
-                <a href="javascript:void(0)" class="card-link" onclick="switchView('analytics')">Full Analytics
-                  &rarr;</a>
+                <a href="javascript:void(0)" class="card-link" onclick="switchView('analytics')">Full Analytics &rarr;</a>
               </div>
               <div class="chart-box-container">
                 <canvas id="weeklyActivityChart"></canvas>
@@ -360,8 +352,7 @@
               </div>
 
               <div class="gym-card-layout">
-                <img src="assets/images/gym_fitzone.jpg" alt="FitZone Gym" class="gym-image-placeholder"
-                  onerror="this.src='assets/images/bench_press.jpg'">
+                <img src="assets/images/gym_fitzone.jpg" alt="FitZone Gym" class="gym-image-placeholder" onerror="this.src='assets/images/bench_press.jpg'">
                 <div class="gym-details-col">
                   <div class="gym-title-row">
                     <h4 class="gym-name">FitZone Gym</h4>
@@ -418,20 +409,15 @@
           </div>
 
           <!-- Active Membership Status Banner -->
-          <div class="fs-card"
-            style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border-color: var(--light-blue); margin-bottom: 20px;">
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div class="fs-card" style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border-color: var(--light-blue); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
               <div>
                 <span class="badge-active" style="margin-bottom: 6px; display: inline-block;">ACTIVE PASS</span>
-                <h3 style="font-size: 18px; font-weight: 800; color: var(--text-main);">FitZone Gym — Premium All-Access
-                </h3>
-                <p style="font-size: 12px; color: var(--text-secondary);">Access all 4 Pune branches • Valid until 15
-                  Mar 2027 • Turnstile Code: <strong>FS-PUN-9821</strong></p>
+                <h3 style="font-size: 18px; font-weight: 800; color: var(--text-main);">FitZone Gym — Premium All-Access</h3>
+                <p style="font-size: 12px; color: var(--text-secondary);">Access all 4 Pune branches • Valid until 15 Mar 2027 • Turnstile Code: <strong>FS-PUN-9821</strong></p>
               </div>
               <div style="display: flex; gap: 8px;">
-                <button class="btn-primary-block" style="width: auto; padding: 8px 18px;"
-                  onclick="switchView('attendance')">
+                <button class="btn-primary-block" style="width: auto; padding: 8px 18px;" onclick="switchView('attendance')">
                   <i data-lucide="qr-code" style="width: 14px; height: 14px;"></i> Open Turnstile Pass
                 </button>
                 <button class="btn-secondary" onclick="openModal('gymDetailsModal')">Membership Details</button>
@@ -457,84 +443,70 @@
           <!-- Gyms Grid with Distinct Photos -->
           <div class="gyms-grid">
             <div class="gym-card">
-              <img src="assets/images/gym_fitzone.jpg" class="gym-card-img" alt="FitZone Gym"
-                onerror="this.src='assets/images/bench_press.jpg'">
+              <img src="assets/images/gym_fitzone.jpg" class="gym-card-img" alt="FitZone Gym" onerror="this.src='assets/images/bench_press.jpg'">
               <div class="gym-card-body">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                   <h4 style="font-size: 15px; font-weight: 700;">FitZone Gym</h4>
                   <span class="badge-active">Home Branch</span>
                 </div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Kothrud, Pune • 4.9 ★ (320
-                  reviews)</p>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Kothrud, Pune • 4.9 ★ (320 reviews)</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
                   <span class="tag-badge">Olympic Platforms</span>
                   <span class="tag-badge">Steam & Sauna</span>
                   <span class="tag-badge">Crossfit Turf</span>
                 </div>
-                <button class="btn-primary-block" style="margin-top: auto; padding: 8px;"
-                  onclick="openModal('gymDetailsModal')">Branch Details</button>
+                <button class="btn-primary-block" style="margin-top: auto; padding: 8px;" onclick="openModal('gymDetailsModal')">Branch Details</button>
               </div>
             </div>
 
             <div class="gym-card">
-              <img src="assets/images/gym_powerhouse.jpg" class="gym-card-img" alt="PowerHouse Arena"
-                onerror="this.src='assets/images/bench_press.jpg'">
+              <img src="assets/images/gym_powerhouse.jpg" class="gym-card-img" alt="PowerHouse Arena" onerror="this.src='assets/images/bench_press.jpg'">
               <div class="gym-card-body">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                   <h4 style="font-size: 15px; font-weight: 700;">PowerHouse Arena</h4>
                   <span class="stat-badge-pill badge-healthy">All-Access</span>
                 </div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Baner, Pune • 4.8 ★ (245
-                  reviews)</p>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Baner, Pune • 4.8 ★ (245 reviews)</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
                   <span class="tag-badge">Hammer Strength</span>
                   <span class="tag-badge">Recovery Lounge</span>
                   <span class="tag-badge">Boxing Ring</span>
                 </div>
-                <button class="btn-secondary" style="margin-top: auto; width: 100%;"
-                  onclick="showToast('PowerHouse Arena is covered under your Premium Plan!', 'info')">Check Access
-                  Pass</button>
+                <button class="btn-secondary" style="margin-top: auto; width: 100%;" onclick="showToast('PowerHouse Arena is covered under your Premium Plan!', 'info')">Check Access Pass</button>
               </div>
             </div>
 
             <div class="gym-card">
-              <img src="assets/images/gym_crossfit.jpg" class="gym-card-img" alt="Metro Crossfit"
-                onerror="this.src='assets/images/bench_press.jpg'">
+              <img src="assets/images/gym_crossfit.jpg" class="gym-card-img" alt="Metro Crossfit" onerror="this.src='assets/images/bench_press.jpg'">
               <div class="gym-card-body">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                   <h4 style="font-size: 15px; font-weight: 700;">Metro Crossfit Studio</h4>
                   <span class="stat-badge-pill badge-healthy">All-Access</span>
                 </div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Viman Nagar, Pune • 4.8 ★
-                  (180 reviews)</p>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Viman Nagar, Pune • 4.8 ★ (180 reviews)</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
                   <span class="tag-badge">Rogue Rig</span>
                   <span class="tag-badge">Kettlebells</span>
                   <span class="tag-badge">Rowing Ergometers</span>
                 </div>
-                <button class="btn-secondary" style="margin-top: auto; width: 100%;"
-                  onclick="showToast('Metro Crossfit Studio turnstile pass verified.', 'info')">Check Access
-                  Pass</button>
+                <button class="btn-secondary" style="margin-top: auto; width: 100%;" onclick="showToast('Metro Crossfit Studio turnstile pass verified.', 'info')">Check Access Pass</button>
               </div>
             </div>
 
             <div class="gym-card">
-              <img src="assets/images/gym_elite.jpg" class="gym-card-img" alt="Elite Iron Republic"
-                onerror="this.src='assets/images/bench_press.jpg'">
+              <img src="assets/images/gym_elite.jpg" class="gym-card-img" alt="Elite Iron Republic" onerror="this.src='assets/images/bench_press.jpg'">
               <div class="gym-card-body">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                   <h4 style="font-size: 15px; font-weight: 700;">Elite Iron Republic</h4>
                   <span class="stat-badge-pill badge-healthy">All-Access</span>
                 </div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Kalyani Nagar, Pune • 4.9
-                  ★ (410 reviews)</p>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Kalyani Nagar, Pune • 4.9 ★ (410 reviews)</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
                   <span class="tag-badge">Eleiko Plates</span>
                   <span class="tag-badge">Ice Baths</span>
                   <span class="tag-badge">24h Open</span>
                 </div>
-                <button class="btn-secondary" style="margin-top: auto; width: 100%;"
-                  onclick="showToast('Elite Iron Republic pass verified.', 'info')">Check Access Pass</button>
+                <button class="btn-secondary" style="margin-top: auto; width: 100%;" onclick="showToast('Elite Iron Republic pass verified.', 'info')">Check Access Pass</button>
               </div>
             </div>
           </div>
@@ -559,13 +531,11 @@
           <!-- Assigned Coach Spotlight Card -->
           <div class="fs-card" style="margin-bottom: 20px;">
             <div style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
-              <img src="assets/images/trainer_raj.jpg" class="trainer-avatar-img"
-                style="margin: 0; width: 84px; height: 84px;" alt="Coach Raj">
+              <img src="assets/images/trainer_raj.jpg" class="trainer-avatar-img" style="margin: 0; width: 84px; height: 84px;" alt="Coach Raj">
               <div style="flex: 1;">
                 <span class="badge-active" style="margin-bottom: 4px; display: inline-block;">YOUR ASSIGNED COACH</span>
                 <h3 style="font-size: 18px; font-weight: 800;">Coach Raj Malhotra</h3>
-                <p style="font-size: 13px; color: var(--text-secondary);">Head Strength & Conditioning Coach • FitZone
-                  Kothrud • 8+ Years Experience</p>
+                <p style="font-size: 13px; color: var(--text-secondary);">Head Strength & Conditioning Coach • FitZone Kothrud • 8+ Years Experience</p>
                 <div style="display: flex; gap: 6px; margin-top: 6px;">
                   <span class="tag-badge">Hypertrophy</span>
                   <span class="tag-badge">Powerlifting</span>
@@ -573,8 +543,7 @@
                 </div>
               </div>
               <div style="display: flex; gap: 8px;">
-                <button class="btn-primary-block" style="width: auto; padding: 8px 16px;"
-                  onclick="openModal('bookAppointmentModal')">Book PT Session</button>
+                <button class="btn-primary-block" style="width: auto; padding: 8px 16px;" onclick="openModal('bookAppointmentModal')">Book PT Session</button>
                 <button class="btn-secondary" onclick="switchView('workouts')">View My Workout Plan</button>
               </div>
             </div>
@@ -586,27 +555,23 @@
             <div class="trainer-card">
               <img src="assets/images/trainer_simran.jpg" class="trainer-avatar-img" alt="Simran Kaur">
               <h4 style="font-size: 15px; font-weight: 700;">Simran Kaur</h4>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Functional Fitness &
-                Mobility • 6 Yrs Exp</p>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Functional Fitness & Mobility • 6 Yrs Exp</p>
               <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 12px;">
                 <span class="tag-badge">Mobility</span>
                 <span class="tag-badge">Fat Loss</span>
               </div>
-              <button class="btn-secondary" style="width: 100%;"
-                onclick="showToast('Consultation request sent to Simran Kaur.', 'success')">Request Consult</button>
+              <button class="btn-secondary" style="width: 100%;" onclick="showToast('Consultation request sent to Simran Kaur.', 'success')">Request Consult</button>
             </div>
 
             <div class="trainer-card">
               <img src="assets/images/trainer_vikram.jpg" class="trainer-avatar-img" alt="Vikram Shinde">
               <h4 style="font-size: 15px; font-weight: 700;">Vikram Shinde</h4>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Olympic Weightlifting
-                Specialist • 7 Yrs Exp</p>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Olympic Weightlifting Specialist • 7 Yrs Exp</p>
               <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 12px;">
                 <span class="tag-badge">Clean & Jerk</span>
                 <span class="tag-badge">Snatch Tech</span>
               </div>
-              <button class="btn-secondary" style="width: 100%;"
-                onclick="showToast('Consultation request sent to Vikram Shinde.', 'success')">Request Consult</button>
+              <button class="btn-secondary" style="width: 100%;" onclick="showToast('Consultation request sent to Vikram Shinde.', 'success')">Request Consult</button>
             </div>
           </div>
         </div>
@@ -679,19 +644,14 @@
                   <span class="wk-badge-sub" id="wkRoutineSubBadge">Daily Routine Preview</span>
                 </div>
                 <h3 class="wk-routine-title" id="wkRoutineTitle">Back & Biceps Power</h3>
-                <p class="wk-routine-tagline" id="wkRoutineTagline">Pull Movement Pattern • V-Taper & Arm Thickness •
-                  Intermediate</p>
+                <p class="wk-routine-tagline" id="wkRoutineTagline">Pull Movement Pattern • V-Taper & Arm Thickness • Intermediate</p>
               </div>
 
               <div class="wk-header-actions">
-                <button class="btn-secondary" id="wkResetSetsBtn" onclick="resetWorkoutSets()"
-                  title="Reset set checkboxes for this routine"
-                  style="padding: 7px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                <button class="btn-secondary" id="wkResetSetsBtn" onclick="resetWorkoutSets()" title="Reset set checkboxes for this routine" style="padding: 7px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
                   <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i> Reset Sets
                 </button>
-                <button class="btn-primary-block"
-                  style="width: auto; padding: 7px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;"
-                  onclick="promptAddExercise()">
+                <button class="btn-primary-block" style="width: auto; padding: 7px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;" onclick="promptAddExercise()">
                   <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Exercise
                 </button>
 
@@ -707,8 +667,7 @@
                     <button class="wk-chip-btn" onclick="setHeaderRestPreset(90)">90s</button>
                     <button class="wk-chip-btn" onclick="setHeaderRestPreset(120)">120s</button>
                   </div>
-                  <button class="wk-timer-control-btn" id="wkHeaderTimerToggle" onclick="toggleHeaderRestTimer()"
-                    title="Start / Pause Rest Timer">
+                  <button class="wk-timer-control-btn" id="wkHeaderTimerToggle" onclick="toggleHeaderRestTimer()" title="Start / Pause Rest Timer">
                     <i data-lucide="play" id="wkHeaderTimerIcon" style="width: 12px; height: 12px;"></i>
                   </button>
                   <button class="wk-timer-reset-btn" onclick="resetHeaderRestTimer()" title="Reset Rest Timer">
@@ -745,14 +704,14 @@
         </div>
 
         <!-- ================================================================
-             MODULE 5: EXERCISE LIBRARY
+             MODULE 5: EXERCISE LIBRARY & INTERACTIVE ANATOMY
              ================================================================ -->
         <div class="view-container" id="view-exercises">
           <div class="module-header-bar">
             <div class="module-header-title">
               <div>
-                <h2>Exercise Library</h2>
-                <p>Curated catalog of strength, hypertrophy, and functional biomechanical exercises</p>
+                <h2>Exercise Library & Anatomy Explorer</h2>
+                <p>Interactive human muscular anatomy map and comprehensive exercise catalog across every muscle group</p>
               </div>
             </div>
             <button class="btn-back-dashboard" data-switch-view="dashboard">
@@ -760,79 +719,276 @@
             </button>
           </div>
 
-          <!-- Search & Filter -->
-          <div class="filter-search-bar">
-            <div class="search-input-box">
-              <i data-lucide="search"></i>
-              <input type="text" placeholder="Search exercises by name, equipment, or muscle...">
+          <!-- INTERACTIVE HUMAN ANATOMY MUSCLE DIAGRAM -->
+          <div class="anatomy-section-card">
+            <div class="anatomy-card-top">
+              <div class="anatomy-heading-group">
+                <span class="anatomy-pill-tag"><i data-lucide="activity" style="width: 13px; height: 13px;"></i> Biomechanical Anatomy</span>
+                <h3 class="anatomy-main-title">Interactive Human Muscular Anatomy</h3>
+                <p class="anatomy-main-desc">Click or hover any muscle group to inspect functional kinesiology and instantly filter targeted exercises</p>
+              </div>
+              <div class="anatomy-view-toggles">
+                <button type="button" class="anatomy-toggle-pill active" id="btnAnatomyFront" onclick="setAnatomyView('front')">
+                  <i data-lucide="user" style="width: 13px; height: 13px;"></i> Anterior (Front)
+                </button>
+                <button type="button" class="anatomy-toggle-pill" id="btnAnatomyBack" onclick="setAnatomyView('back')">
+                  <i data-lucide="user-check" style="width: 13px; height: 13px;"></i> Posterior (Back)
+                </button>
+                <button type="button" class="anatomy-toggle-pill" id="btnAnatomyBoth" onclick="setAnatomyView('both')">
+                  <i data-lucide="columns" style="width: 13px; height: 13px;"></i> Dual View
+                </button>
+              </div>
             </div>
-            <div class="filter-chip-row">
-              <button class="filter-chip active">All (6)</button>
-              <button class="filter-chip">Chest</button>
-              <button class="filter-chip">Back</button>
-              <button class="filter-chip">Shoulders</button>
-              <button class="filter-chip">Legs</button>
-              <button class="filter-chip">Arms</button>
+
+            <!-- SVGs Display Wrapper -->
+            <div class="anatomy-diagram-wrapper" id="anatomyDiagramWrapper" data-active-view="front">
+              <!-- Anterior (Front) View Card -->
+              <div class="anatomy-figure-panel" id="anatomyPanelFront">
+                <div class="anatomy-figure-title">Anterior Kinetic Chain (Front View)</div>
+                <div class="anatomy-svg-box">
+                  <svg viewBox="0 0 320 540" class="anatomy-svg" id="svgAnatomyFront" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <filter id="glow-front" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3.5" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+                    </defs>
+
+                    <!-- Base Athletic Body Contour -->
+                    <g class="anatomy-silhouette-layer">
+                      <ellipse cx="160" cy="38" rx="22" ry="28" class="anatomy-base-body" />
+                      <path d="M 148 64 L 148 84 L 172 84 L 172 64 Z" class="anatomy-base-body" />
+                      <path d="M 120 94 C 102 96, 92 115, 90 140 C 88 152, 92 180, 88 194 C 80 210, 70 240, 64 272 C 60 286, 50 312, 48 316 C 56 320, 64 316, 72 278 C 76 256, 84 220, 88 202 C 94 218, 102 242, 114 254 C 120 258, 124 260, 130 260 L 126 310 C 120 340, 120 375, 124 390 C 122 410, 120 445, 126 486 C 124 498, 118 518, 134 520 C 142 520, 142 505, 142 486 C 142 445, 146 410, 146 390 C 148 375, 150 340, 146 310 L 146 270 L 154 270 L 154 310 C 150 340, 152 375, 154 390 C 154 410, 158 445, 158 486 C 158 505, 158 520, 166 520 C 182 518, 176 498, 174 486 C 180 445, 178 410, 176 390 C 180 375, 180 340, 174 310 L 170 260 C 176 260, 180 258, 186 254 C 198 242, 206 218, 212 202 C 216 220, 224 256, 228 278 C 236 316, 244 320, 252 316 C 250 312, 240 286, 236 272 C 230 240, 220 210, 212 194 C 208 180, 212 152, 210 140 C 208 115, 198 96, 180 94 Z" class="anatomy-base-body" />
+                    </g>
+
+                    <!-- INTERACTIVE MUSCLE PATHS (ANTERIOR) -->
+                    <!-- 1. Trapezius / Neck Front -->
+                    <g class="muscle-group" data-muscle="traps" title="Trapezius">
+                      <path d="M 148 68 L 122 94 L 144 94 L 148 76 Z" class="muscle-shape" />
+                      <path d="M 172 68 L 198 94 L 176 94 L 172 76 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 2. Shoulders (Anterior & Lateral Deltoids) -->
+                    <g class="muscle-group" data-muscle="shoulders" title="Deltoids">
+                      <!-- Left Deltoid -->
+                      <path d="M 120 94 C 102 96, 92 115, 90 140 C 96 146, 110 144, 118 136 C 122 122, 122 104, 120 94 Z" class="muscle-shape" />
+                      <!-- Right Deltoid -->
+                      <path d="M 200 94 C 218 96, 228 115, 230 140 C 224 146, 210 144, 202 136 C 198 122, 198 104, 200 94 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 3. Chest (Pectoralis Major) -->
+                    <g class="muscle-group" data-muscle="chest" title="Pectoralis Major">
+                      <!-- Left Pectoralis -->
+                      <path d="M 158 96 L 126 96 C 122 108, 120 128, 122 138 C 126 150, 142 153, 158 149 Z" class="muscle-shape" />
+                      <!-- Right Pectoralis -->
+                      <path d="M 162 96 L 194 96 C 198 108, 200 128, 198 138 C 194 150, 178 153, 162 149 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 4. Biceps Brachii -->
+                    <g class="muscle-group" data-muscle="biceps" title="Biceps Brachii">
+                      <!-- Left Bicep -->
+                      <path d="M 116 142 C 105 146, 96 160, 95 186 C 102 192, 114 188, 118 175 C 120 162, 120 150, 116 142 Z" class="muscle-shape" />
+                      <!-- Right Bicep -->
+                      <path d="M 204 142 C 215 146, 224 160, 225 186 C 218 192, 206 188, 202 175 C 200 162, 200 150, 204 142 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 5. Forearms (Brachioradialis & Flexors) -->
+                    <g class="muscle-group" data-muscle="forearms" title="Forearms">
+                      <!-- Left Forearm -->
+                      <path d="M 94 192 C 86 208, 76 238, 70 270 C 78 274, 88 266, 95 240 C 102 216, 102 202, 94 192 Z" class="muscle-shape" />
+                      <!-- Right Forearm -->
+                      <path d="M 226 192 C 234 208, 244 238, 250 270 C 242 274, 232 266, 225 240 C 218 216, 218 202, 226 192 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 6. Rectus Abdominis & Obliques (Abs & Core) -->
+                    <g class="muscle-group" data-muscle="abs" title="Rectus Abdominis & Obliques">
+                      <!-- Upper Abs Left & Right -->
+                      <path d="M 148 154 L 158 154 L 158 174 L 146 174 C 146 164, 147 158, 148 154 Z" class="muscle-shape" />
+                      <path d="M 172 154 L 162 154 L 162 174 L 174 174 C 174 164, 173 158, 172 154 Z" class="muscle-shape" />
+                      <!-- Mid Abs Left & Right -->
+                      <path d="M 145 178 L 158 178 L 158 200 L 145 200 Z" class="muscle-shape" />
+                      <path d="M 175 178 L 162 178 L 162 200 L 175 200 Z" class="muscle-shape" />
+                      <!-- Lower Abs Left & Right -->
+                      <path d="M 145 204 L 158 204 L 158 232 L 148 226 Z" class="muscle-shape" />
+                      <path d="M 175 204 L 162 204 L 162 232 L 172 226 Z" class="muscle-shape" />
+                      <!-- External Obliques Flanks -->
+                      <path d="M 124 154 C 122 178, 126 210, 134 236 L 142 232 C 140 200, 140 172, 144 154 Z" class="muscle-shape" />
+                      <path d="M 196 154 C 198 178, 194 210, 186 236 L 178 232 C 180 200, 180 172, 176 154 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 7. Quadriceps Femoris (Thighs) -->
+                    <g class="muscle-group" data-muscle="quads" title="Quadriceps">
+                      <!-- Left Quad -->
+                      <path d="M 132 254 C 120 280, 118 325, 128 375 C 138 378, 146 365, 148 340 C 150 310, 150 280, 144 260 Z" class="muscle-shape" />
+                      <!-- Right Quad -->
+                      <path d="M 188 254 C 200 280, 202 325, 192 375 C 182 378, 174 365, 172 340 C 170 310, 170 280, 176 260 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 8. Calves / Tibialis Anterior (Front Lower Legs) -->
+                    <g class="muscle-group" data-muscle="calves" title="Calves">
+                      <!-- Left Shin & Calf -->
+                      <path d="M 126 395 C 120 420, 122 455, 132 485 L 140 483 C 136 455, 138 425, 142 395 Z" class="muscle-shape" />
+                      <!-- Right Shin & Calf -->
+                      <path d="M 194 395 C 200 420, 198 455, 188 485 L 180 483 C 184 455, 182 425, 178 395 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- Anatomical Center Contours -->
+                    <line x1="160" y1="96" x2="160" y2="236" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" />
+                    <circle cx="160" cy="208" r="2.2" fill="#94A3B8" />
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Posterior (Back) View Card -->
+              <div class="anatomy-figure-panel" id="anatomyPanelBack">
+                <div class="anatomy-figure-title">Posterior Kinetic Chain (Back View)</div>
+                <div class="anatomy-svg-box">
+                  <svg viewBox="0 0 320 540" class="anatomy-svg" id="svgAnatomyBack" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <filter id="glow-back" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3.5" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+                    </defs>
+
+                    <!-- Base Athletic Body Contour (Back) -->
+                    <g class="anatomy-silhouette-layer">
+                      <ellipse cx="160" cy="38" rx="22" ry="28" class="anatomy-base-body" />
+                      <path d="M 148 64 L 148 84 L 172 84 L 172 64 Z" class="anatomy-base-body" />
+                      <path d="M 120 94 C 102 96, 92 115, 90 140 C 88 152, 92 180, 88 194 C 80 210, 70 240, 64 272 C 60 286, 50 312, 48 316 C 56 320, 64 316, 72 278 C 76 256, 84 220, 88 202 C 94 218, 102 242, 114 254 C 120 258, 124 260, 130 260 L 126 310 C 120 340, 120 375, 124 390 C 122 410, 120 445, 126 486 C 124 498, 118 518, 134 520 C 142 520, 142 505, 142 486 C 142 445, 146 410, 146 390 C 148 375, 150 340, 146 310 L 146 270 L 154 270 L 154 310 C 150 340, 152 375, 154 390 C 154 410, 158 445, 158 486 C 158 505, 158 520, 166 520 C 182 518, 176 498, 174 486 C 180 445, 178 410, 176 390 C 180 375, 180 340, 174 310 L 170 260 C 176 260, 180 258, 186 254 C 198 242, 206 218, 212 202 C 216 220, 224 256, 228 278 C 236 316, 244 320, 252 316 C 250 312, 240 286, 236 272 C 230 240, 220 210, 212 194 C 208 180, 212 152, 210 140 C 208 115, 198 96, 180 94 Z" class="anatomy-base-body" />
+                    </g>
+
+                    <!-- INTERACTIVE MUSCLE PATHS (POSTERIOR) -->
+                    <!-- 1. Trapezius (Diamond Upper & Mid Back) -->
+                    <g class="muscle-group" data-muscle="traps" title="Trapezius">
+                      <path d="M 160 68 L 126 94 L 142 128 L 160 172 L 178 128 L 194 94 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 2. Posterior Deltoids (Rear Shoulders) -->
+                    <g class="muscle-group" data-muscle="shoulders" title="Posterior Deltoids">
+                      <!-- Left Rear Deltoid -->
+                      <path d="M 122 96 C 104 100, 94 118, 92 140 C 100 144, 114 140, 120 130 C 122 118, 122 104, 122 96 Z" class="muscle-shape" />
+                      <!-- Right Rear Deltoid -->
+                      <path d="M 198 96 C 216 100, 226 118, 228 140 C 220 144, 206 140, 200 130 C 198 118, 198 104, 198 96 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 3. Upper Back & Latissimus Dorsi (Back) -->
+                    <g class="muscle-group" data-muscle="back" title="Latissimus Dorsi & Rhomboids">
+                      <!-- Left Upper Back / Rhomboids -->
+                      <path d="M 122 132 C 120 146, 126 158, 138 165 L 154 144 L 138 126 Z" class="muscle-shape" />
+                      <!-- Right Upper Back / Rhomboids -->
+                      <path d="M 198 132 C 200 146, 194 158, 182 165 L 166 144 L 182 126 Z" class="muscle-shape" />
+                      <!-- Left Latissimus Wing -->
+                      <path d="M 124 162 C 118 185, 126 215, 142 234 L 154 230 L 154 176 L 140 166 Z" class="muscle-shape" />
+                      <!-- Right Latissimus Wing -->
+                      <path d="M 196 162 C 202 185, 194 215, 178 234 L 166 230 L 166 176 L 180 166 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 4. Triceps Brachii -->
+                    <g class="muscle-group" data-muscle="triceps" title="Triceps Brachii">
+                      <!-- Left Tricep -->
+                      <path d="M 114 142 C 102 148, 94 165, 92 188 C 100 192, 112 188, 116 174 C 118 162, 118 150, 114 142 Z" class="muscle-shape" />
+                      <!-- Right Tricep -->
+                      <path d="M 206 142 C 218 148, 226 165, 228 188 C 220 192, 208 188, 204 174 C 202 162, 202 150, 206 142 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 5. Forearms Posterior -->
+                    <g class="muscle-group" data-muscle="forearms" title="Forearms Posterior">
+                      <path d="M 92 192 C 84 210, 76 238, 70 270 C 78 274, 88 266, 94 240 C 100 216, 100 202, 92 192 Z" class="muscle-shape" />
+                      <path d="M 228 192 C 236 210, 244 238, 250 270 C 242 274, 232 266, 226 240 C 220 216, 220 202, 228 192 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 6. Lower Back (Erector Spinae) -->
+                    <g class="muscle-group" data-muscle="lowerback" title="Erector Spinae (Lower Back)">
+                      <path d="M 146 220 L 156 214 L 156 250 L 144 250 Z" class="muscle-shape" />
+                      <path d="M 174 220 L 164 214 L 164 250 L 176 250 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 7. Gluteus Maximus & Medius (Glutes) -->
+                    <g class="muscle-group" data-muscle="glutes" title="Gluteus Maximus & Medius">
+                      <!-- Left Glute -->
+                      <path d="M 132 254 C 122 268, 122 298, 134 320 C 146 324, 156 312, 158 290 L 158 254 Z" class="muscle-shape" />
+                      <!-- Right Glute -->
+                      <path d="M 188 254 C 198 268, 198 298, 186 320 C 174 324, 164 312, 162 290 L 162 254 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 8. Hamstrings (Posterior Thighs) -->
+                    <g class="muscle-group" data-muscle="hamstrings" title="Hamstrings">
+                      <!-- Left Hamstring -->
+                      <path d="M 134 324 C 124 345, 126 372, 134 394 C 144 396, 152 388, 154 365 C 156 345, 154 330, 148 324 Z" class="muscle-shape" />
+                      <!-- Right Hamstring -->
+                      <path d="M 186 324 C 196 345, 194 372, 186 394 C 176 396, 168 388, 166 365 C 164 345, 166 330, 172 324 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- 9. Calves (Gastrocnemius & Soleus) -->
+                    <g class="muscle-group" data-muscle="calves" title="Gastrocnemius & Soleus">
+                      <!-- Left Calf -->
+                      <path d="M 132 400 C 122 418, 122 445, 130 472 L 138 488 L 144 484 C 142 458, 144 430, 146 400 Z" class="muscle-shape" />
+                      <!-- Right Calf -->
+                      <path d="M 188 400 C 198 418, 198 445, 190 472 L 182 488 L 176 484 C 178 458, 176 430, 174 400 Z" class="muscle-shape" />
+                    </g>
+
+                    <!-- Spine Contour Line -->
+                    <line x1="160" y1="90" x2="160" y2="252" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="3 3" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Selected Muscle Biomechanics Live Card -->
+            <div class="anatomy-info-card" id="anatomyInfoCard">
+              <div class="anatomy-info-main">
+                <div class="anatomy-pulse-dot"></div>
+                <div class="anatomy-text-wrap">
+                  <div class="anatomy-title-row">
+                    <h4 class="anatomy-muscle-title" id="anatomyMuscleTitle">Full Musculoskeletal Anatomy</h4>
+                    <span class="anatomy-latin-badge" id="anatomyMuscleLatin">Systema Musculare Humanum</span>
+                  </div>
+                  <p class="anatomy-muscle-function" id="anatomyMuscleFunction">
+                    Complete multi-joint human movement patterns, total neuromuscular coordination, and systemic athletic strength across all kinetic planes.
+                  </p>
+                  <div class="anatomy-meta-row">
+                    <span class="anatomy-meta-item"><strong>Synergists:</strong> <span id="anatomyMuscleSynergists">Anterior & Posterior Musculature</span></span>
+                    <span class="anatomy-meta-item"><strong>Target Plane:</strong> <span id="anatomyMusclePlane">Multi-Planar</span></span>
+                  </div>
+                </div>
+              </div>
+              <div class="anatomy-info-action">
+                <div class="anatomy-counter-badge" id="anatomyExerciseCounter">38 Exercises Available</div>
+                <button type="button" class="anatomy-btn-reset" id="anatomyBtnReset" onclick="selectMuscle('all')">
+                  <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i> View All
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Exercise Grid with Real Exercise Photos -->
-          <div class="exercises-grid">
-            <div class="exercise-card" onclick="openModal('workoutModal')">
-              <img src="assets/images/ex_bench.jpg" class="exercise-card-img" alt="Bench Press">
-              <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Barbell
-                Incline Bench Press</h4>
-              <p style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin-bottom: 6px;">Target:
-                Upper Pectoralis Major</p>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Set bench at 30°. Retract
-                scapulae, touch clavicle, drive upward without flaring elbows.</p>
-              <div style="display: flex; gap: 6px;">
-                <span class="tag-badge">Barbell</span>
-                <span class="tag-badge">Intermediate</span>
-              </div>
+          <!-- Filter & Search Bar -->
+          <div class="filter-search-bar" style="margin-top: 22px;">
+            <div class="search-input-box">
+              <i data-lucide="search"></i>
+              <input type="text" id="exerciseSearchInput" placeholder="Search exercises by name, equipment, difficulty, or target muscle...">
             </div>
+            <div class="filter-chip-row" id="exerciseFilterChips">
+              <button class="filter-chip active" data-muscle="all">All (38)</button>
+              <button class="filter-chip" data-muscle="chest">Chest</button>
+              <button class="filter-chip" data-muscle="back">Back</button>
+              <button class="filter-chip" data-muscle="shoulders">Shoulders</button>
+              <button class="filter-chip" data-muscle="traps">Traps</button>
+              <button class="filter-chip" data-muscle="biceps">Biceps</button>
+              <button class="filter-chip" data-muscle="triceps">Triceps</button>
+              <button class="filter-chip" data-muscle="forearms">Forearms</button>
+              <button class="filter-chip" data-muscle="abs">Abs & Core</button>
+              <button class="filter-chip" data-muscle="quads">Quads</button>
+              <button class="filter-chip" data-muscle="hamstrings">Hamstrings</button>
+              <button class="filter-chip" data-muscle="glutes">Glutes</button>
+              <button class="filter-chip" data-muscle="calves">Calves</button>
+              <button class="filter-chip" data-muscle="lowerback">Lower Back</button>
+            </div>
+          </div>
 
-            <div class="exercise-card">
-              <img src="assets/images/ex_deadlift.jpg" class="exercise-card-img" alt="Deadlift">
-              <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Romanian
-                Deadlift (RDL)</h4>
-              <p style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin-bottom: 6px;">Target:
-                Hamstrings & Posterior Chain</p>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Hinge at hips with soft
-                knees, feel deep hamstring stretch, squeeze glutes to lockout.</p>
-              <div style="display: flex; gap: 6px;">
-                <span class="tag-badge">Free Weights</span>
-                <span class="tag-badge">Compound</span>
-              </div>
-            </div>
-
-            <div class="exercise-card">
-              <img src="assets/images/ex_lateral_raise.jpg" class="exercise-card-img" alt="Lateral Raise">
-              <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Dumbbell
-                Lateral Deltoid Raise</h4>
-              <p style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin-bottom: 6px;">Target:
-                Lateral Deltoid Head</p>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Raise dumbbells in scapular
-                plane with slight forward tilt. 0.5s pause at apex.</p>
-              <div style="display: flex; gap: 6px;">
-                <span class="tag-badge">Isolation</span>
-                <span class="tag-badge">Hypertrophy</span>
-              </div>
-            </div>
-
-            <div class="exercise-card">
-              <img src="assets/images/ex_lat_pulldown.jpg" class="exercise-card-img" alt="Lat Pulldown">
-              <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Neutral-Grip
-                Lat Pulldown</h4>
-              <p style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin-bottom: 6px;">Target:
-                Latissimus Dorsi</p>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Depress shoulder blades
-                before pulling. Drive elbows down towards your hips.</p>
-              <div style="display: flex; gap: 6px;">
-                <span class="tag-badge">Cable Machine</span>
-                <span class="tag-badge">Back Width</span>
-              </div>
-            </div>
+          <!-- Dynamic Exercise Cards Grid -->
+          <div class="exercises-grid" id="exerciseLibraryGrid" style="margin-top: 20px;">
+            <!-- Populated dynamically by JavaScript -->
           </div>
         </div>
 
@@ -927,25 +1083,20 @@
               <h3 class="card-title" style="margin-bottom: 14px;">Real-Time Mathematical Engine</h3>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                <div
-                  style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; text-align: center;">
+                <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; text-align: center;">
                   <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">BODY MASS INDEX</span>
                   <div id="asResBmi" style="font-size: 26px; font-weight: 800; color: var(--primary-blue);">22.1</div>
                   <span class="badge-healthy" style="font-size: 10px;">Normal Range</span>
                 </div>
 
-                <div
-                  style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; text-align: center;">
-                  <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">BODY FAT %
-                    (NAVY)</span>
-                  <div id="asResBodyFat" style="font-size: 26px; font-weight: 800; color: var(--success-green);">22.4%
-                  </div>
+                <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; text-align: center;">
+                  <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">BODY FAT % (NAVY)</span>
+                  <div id="asResBodyFat" style="font-size: 26px; font-weight: 800; color: var(--success-green);">22.4%</div>
                   <span style="font-size: 10px; color: var(--text-secondary);">Optimal Athletic</span>
                 </div>
               </div>
 
-              <div
-                style="background: var(--light-blue-bg); border: 1px solid var(--light-blue); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+              <div style="background: var(--light-blue-bg); border: 1px solid var(--light-blue); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                   <span style="font-size: 12px; color: var(--text-secondary);">Basal Metabolic Rate (BMR)</span>
                   <strong id="asResBmr" style="color: var(--text-main);">1,410 kcal</strong>
@@ -954,26 +1105,18 @@
                   <span style="font-size: 12px; color: var(--text-secondary);">Total Energy Expenditure (TDEE)</span>
                   <strong id="asResTdee" style="color: var(--text-main);">2,185 kcal</strong>
                 </div>
-                <div
-                  style="display: flex; justify-content: space-between; pt: 4px; border-top: 1px solid #DBEAFE; margin-top: 6px; padding-top: 6px;">
-                  <span style="font-size: 13px; font-weight: 700; color: var(--primary-blue);">Target Daily
-                    Calories</span>
+                <div style="display: flex; justify-content: space-between; pt: 4px; border-top: 1px solid #DBEAFE; margin-top: 6px; padding-top: 6px;">
+                  <span style="font-size: 13px; font-weight: 700; color: var(--primary-blue);">Target Daily Calories</span>
                   <strong id="asResTarget" style="font-size: 16px; color: var(--primary-blue);">2,350 kcal</strong>
                 </div>
               </div>
 
-              <div
-                style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px;">
-                <span
-                  style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Macronutrient
-                  Allocation</span>
-                <div id="asResMacros"
-                  style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-top: 4px;">125g Protein •
-                  275g Carbs • 65g Fat</div>
+              <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Macronutrient Allocation</span>
+                <div id="asResMacros" style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-top: 4px;">125g Protein • 275g Carbs • 65g Fat</div>
               </div>
 
-              <button class="btn-secondary" style="width: 100%;" onclick="switchView('progress')">View Historical Trend
-                Line &rarr;</button>
+              <button class="btn-secondary" style="width: 100%;" onclick="switchView('progress')">View Historical Trend Line &rarr;</button>
             </div>
           </div>
         </div>
@@ -997,8 +1140,7 @@
           <div class="fs-card" style="margin-bottom: 20px;">
             <div class="card-header-row">
               <h3 class="card-title">Weight Progression (Last 5 Months)</h3>
-              <button class="btn-primary-block" style="width: auto; padding: 6px 14px;"
-                onclick="openModal('updateProgressModal')">+ Log New Metric</button>
+              <button class="btn-primary-block" style="width: auto; padding: 6px 14px;" onclick="openModal('updateProgressModal')">+ Log New Metric</button>
             </div>
             <!-- FIXED: Distinct ID to eliminate duplicate canvas collision -->
             <div style="height: 190px;">
@@ -1020,38 +1162,10 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>20 Nov 2026</td>
-                  <td>62.5 kg</td>
-                  <td>74.0 cm</td>
-                  <td>92.0 cm</td>
-                  <td>29.5 cm</td>
-                  <td>54.0 cm</td>
-                </tr>
-                <tr>
-                  <td>20 Oct 2026</td>
-                  <td>63.0 kg</td>
-                  <td>74.5 cm</td>
-                  <td>91.5 cm</td>
-                  <td>29.0 cm</td>
-                  <td>54.5 cm</td>
-                </tr>
-                <tr>
-                  <td>20 Sep 2026</td>
-                  <td>63.8 kg</td>
-                  <td>75.0 cm</td>
-                  <td>91.0 cm</td>
-                  <td>28.5 cm</td>
-                  <td>55.0 cm</td>
-                </tr>
-                <tr>
-                  <td>20 Aug 2026</td>
-                  <td>64.2 kg</td>
-                  <td>76.0 cm</td>
-                  <td>91.0 cm</td>
-                  <td>28.0 cm</td>
-                  <td>55.5 cm</td>
-                </tr>
+                <tr><td>20 Nov 2026</td><td>62.5 kg</td><td>74.0 cm</td><td>92.0 cm</td><td>29.5 cm</td><td>54.0 cm</td></tr>
+                <tr><td>20 Oct 2026</td><td>63.0 kg</td><td>74.5 cm</td><td>91.5 cm</td><td>29.0 cm</td><td>54.5 cm</td></tr>
+                <tr><td>20 Sep 2026</td><td>63.8 kg</td><td>75.0 cm</td><td>91.0 cm</td><td>28.5 cm</td><td>55.0 cm</td></tr>
+                <tr><td>20 Aug 2026</td><td>64.2 kg</td><td>76.0 cm</td><td>91.0 cm</td><td>28.0 cm</td><td>55.5 cm</td></tr>
               </tbody>
             </table>
           </div>
@@ -1074,12 +1188,10 @@
           </div>
 
           <!-- Allergen Alert Pill (from prompt Section 1.16) -->
-          <div
-            style="background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;">
+          <div style="background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="alert-triangle" style="color: #DC2626; width: 18px; height: 18px; flex-shrink: 0;"></i>
             <div style="font-size: 12px; color: #991B1B;">
-              <strong>Active Dietary Conflict:</strong> Peanut allergy registered in profile. FitSync automated scanner
-              flags any recipe containing roasted peanuts or peanut oil.
+              <strong>Active Dietary Conflict:</strong> Peanut allergy registered in profile. FitSync automated scanner flags any recipe containing roasted peanuts or peanut oil.
             </div>
           </div>
 
@@ -1087,26 +1199,22 @@
             <div class="card-header-row">
               <h3 class="card-title">Today's Meals Timeline</h3>
               <div style="display: flex; gap: 8px;">
-                <button class="btn-primary-block" style="width: auto; padding: 6px 14px;"
-                  onclick="openModal('addMealModal')">+ Add Meal</button>
+                <button class="btn-primary-block" style="width: auto; padding: 6px 14px;" onclick="openModal('addMealModal')">+ Add Meal</button>
                 <button class="btn-secondary" onclick="switchView('recipes')">Browse Recipes &rarr;</button>
               </div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 12px;">
-              <div
-                style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
                 <div>
-                  <span style="font-size: 11px; font-weight: 700; color: var(--primary-blue);">08:15 AM •
-                    BREAKFAST</span>
+                  <span style="font-size: 11px; font-weight: 700; color: var(--primary-blue);">08:15 AM • BREAKFAST</span>
                   <div style="font-size: 14px; font-weight: 600;">Rolled Oats & Whey Bowl with Chia Seeds</div>
                   <div style="font-size: 11px; color: var(--text-secondary);">36g Protein • 62g Carbs • 9g Fat</div>
                 </div>
                 <strong style="color: var(--primary-blue);">480 kcal</strong>
               </div>
 
-              <div
-                style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
                 <div>
                   <span style="font-size: 11px; font-weight: 700; color: var(--primary-blue);">01:20 PM • LUNCH</span>
                   <div style="font-size: 14px; font-weight: 600;">Grilled Paneer & Quinoa Power Bowl</div>
@@ -1115,11 +1223,9 @@
                 <strong style="color: var(--primary-blue);">640 kcal</strong>
               </div>
 
-              <div
-                style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
                 <div>
-                  <span style="font-size: 11px; font-weight: 700; color: var(--primary-blue);">05:00 PM •
-                    POST-WORKOUT</span>
+                  <span style="font-size: 11px; font-weight: 700; color: var(--primary-blue);">05:00 PM • POST-WORKOUT</span>
                   <div style="font-size: 14px; font-weight: 600;">Greek Yogurt with Banana & Honey</div>
                   <div style="font-size: 11px; color: var(--text-secondary);">22g Protein • 48g Carbs • 4g Fat</div>
                 </div>
@@ -1151,12 +1257,9 @@
               <div class="recipe-card-body">
                 <span class="tag-badge" style="margin-bottom: 6px; display: inline-block;">Breakfast • 10 mins</span>
                 <h4 style="font-size: 15px; font-weight: 700;">High-Protein Oats & Whey Bowl</h4>
-                <div style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin: 4px 0 10px;">36g
-                  Protein • 480 kcal</div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Rolled oats, whey
-                  isolate, almond milk, and chia seeds.</p>
-                <button class="btn-secondary" style="width: 100%;"
-                  onclick="showToast('Recipe added to your meal planner!', 'success')">View Full Recipe</button>
+                <div style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin: 4px 0 10px;">36g Protein • 480 kcal</div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Rolled oats, whey isolate, almond milk, and chia seeds.</p>
+                <button class="btn-secondary" style="width: 100%;" onclick="showToast('Recipe added to your meal planner!', 'success')">View Full Recipe</button>
               </div>
             </div>
 
@@ -1165,12 +1268,9 @@
               <div class="recipe-card-body">
                 <span class="tag-badge" style="margin-bottom: 6px; display: inline-block;">Lunch • 20 mins</span>
                 <h4 style="font-size: 15px; font-weight: 700;">Paneer Quinoa Power Bowl</h4>
-                <div style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin: 4px 0 10px;">38g
-                  Protein • 640 kcal</div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Low-fat paneer, fluffy
-                  quinoa, steamed bell peppers, and olive dressing.</p>
-                <button class="btn-secondary" style="width: 100%;"
-                  onclick="showToast('Recipe added to your meal planner!', 'success')">View Full Recipe</button>
+                <div style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin: 4px 0 10px;">38g Protein • 640 kcal</div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Low-fat paneer, fluffy quinoa, steamed bell peppers, and olive dressing.</p>
+                <button class="btn-secondary" style="width: 100%;" onclick="showToast('Recipe added to your meal planner!', 'success')">View Full Recipe</button>
               </div>
             </div>
 
@@ -1179,12 +1279,9 @@
               <div class="recipe-card-body">
                 <span class="tag-badge" style="margin-bottom: 6px; display: inline-block;">Post-Workout • 5 mins</span>
                 <h4 style="font-size: 15px; font-weight: 700;">Berry Blast Recovery Shake</h4>
-                <div style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin: 4px 0 10px;">30g
-                  Protein • 290 kcal</div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Whey isolate,
-                  blueberries, almond milk, and raw honey.</p>
-                <button class="btn-secondary" style="width: 100%;"
-                  onclick="showToast('Recipe added to your meal planner!', 'success')">View Full Recipe</button>
+                <div style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin: 4px 0 10px;">30g Protein • 290 kcal</div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Whey isolate, blueberries, almond milk, and raw honey.</p>
+                <button class="btn-secondary" style="width: 100%;" onclick="showToast('Recipe added to your meal planner!', 'success')">View Full Recipe</button>
               </div>
             </div>
 
@@ -1193,12 +1290,9 @@
               <div class="recipe-card-body">
                 <span class="tag-badge" style="margin-bottom: 6px; display: inline-block;">Dinner • 25 mins</span>
                 <h4 style="font-size: 15px; font-weight: 700;">Moong Dal & Veggie Medley</h4>
-                <div style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin: 4px 0 10px;">26g
-                  Protein • 420 kcal</div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Yellow moong lentils,
-                  spinach leaves, carrots, cumin, and turmeric.</p>
-                <button class="btn-secondary" style="width: 100%;"
-                  onclick="showToast('Recipe added to your meal planner!', 'success')">View Full Recipe</button>
+                <div style="font-size: 12px; color: var(--primary-blue); font-weight: 600; margin: 4px 0 10px;">26g Protein • 420 kcal</div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Yellow moong lentils, spinach leaves, carrots, cumin, and turmeric.</p>
+                <button class="btn-secondary" style="width: 100%;" onclick="showToast('Recipe added to your meal planner!', 'success')">View Full Recipe</button>
               </div>
             </div>
           </div>
@@ -1257,27 +1351,21 @@
                 <!-- Crisp Glass Rim, Tapered Walls & Base Outline -->
                 <svg class="glass-overlay-svg" viewBox="0 0 84 148" fill="none">
                   <!-- Rounded Glass Lip Rim -->
-                  <ellipse cx="42" cy="4" rx="39" ry="3.5" stroke="#155DFC" stroke-width="2.5"
-                    fill="rgba(255,255,255,0.7)" />
+                  <ellipse cx="42" cy="4" rx="39" ry="3.5" stroke="#155DFC" stroke-width="2.5" fill="rgba(255,255,255,0.7)"/>
                   <!-- Left Tapered Wall -->
-                  <path d="M 3 4 L 16 141 Q 17 146 24 146" stroke="#155DFC" stroke-width="2.5" stroke-linecap="round" />
+                  <path d="M 3 4 L 16 141 Q 17 146 24 146" stroke="#155DFC" stroke-width="2.5" stroke-linecap="round"/>
                   <!-- Right Tapered Wall -->
-                  <path d="M 81 4 L 68 141 Q 67 146 60 146" stroke="#155DFC" stroke-width="2.5"
-                    stroke-linecap="round" />
+                  <path d="M 81 4 L 68 141 Q 67 146 60 146" stroke="#155DFC" stroke-width="2.5" stroke-linecap="round"/>
                   <!-- Base Bottom Line -->
-                  <path d="M 22 146 L 62 146" stroke="#155DFC" stroke-width="2.5" stroke-linecap="round" />
+                  <path d="M 22 146 L 62 146" stroke="#155DFC" stroke-width="2.5" stroke-linecap="round"/>
                 </svg>
               </div>
 
-              <div style="font-size: 26px; font-weight: 800; color: var(--text-main);" id="stationWaterCurrent">2.1 L
-              </div>
+              <div style="font-size: 26px; font-weight: 800; color: var(--text-main);" id="stationWaterCurrent">2.1 L</div>
               <span style="font-size: 12px; color: var(--text-secondary);">Target: 3.0 Liters</span>
-              <div style="font-size: 11px; color: var(--primary-blue); font-weight: 600; margin-top: 4px;">Remaining:
-                <span id="stationWaterRem">0.9 L</span></div>
+              <div style="font-size: 11px; color: var(--primary-blue); font-weight: 600; margin-top: 4px;">Remaining: <span id="stationWaterRem">0.9 L</span></div>
               <div style="margin-top: 14px;">
-                <button type="button" class="btn-secondary"
-                  style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; padding: 7px 12px; color: #DC2626;"
-                  onclick="resetWaterIntake()">
+                <button type="button" class="btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; padding: 7px 12px; color: #DC2626;" onclick="resetWaterIntake()">
                   <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i> Reset Today's Water
                 </button>
               </div>
@@ -1286,17 +1374,15 @@
             <!-- Quick Add Station -->
             <div class="fs-card">
               <h3 class="card-title" style="margin-bottom: 14px;">Instant Hydration Logs</h3>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">Click an amount to record
-                immediately:</p>
-
+              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">Click an amount to record immediately:</p>
+              
               <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
                 <button class="water-preset-btn" data-amount="0.15" style="padding: 12px;">+150 ml (Cup)</button>
                 <button class="water-preset-btn" data-amount="0.25" style="padding: 12px;">+250 ml (Glass)</button>
                 <button class="water-preset-btn" data-amount="0.50" style="padding: 12px;">+500 ml (Bottle)</button>
                 <button class="water-preset-btn" data-amount="0.75" style="padding: 12px;">+750 ml (Shaker)</button>
                 <button class="water-preset-btn" data-amount="1.00" style="padding: 12px;">+1000 ml (1 L)</button>
-                <button class="btn-secondary" style="padding: 12px;"
-                  onclick="openModal('addWaterModal')">Custom...</button>
+                <button class="btn-secondary" style="padding: 12px;" onclick="openModal('addWaterModal')">Custom...</button>
               </div>
             </div>
           </div>
@@ -1328,8 +1414,7 @@
           <div class="fs-card" style="margin-bottom: 20px;">
             <div class="card-header-row">
               <h3 class="card-title">Upcoming Scheduled Consultations</h3>
-              <button class="btn-primary-block" style="width: auto; padding: 6px 14px;"
-                onclick="openModal('bookAppointmentModal')">+ Book New Session</button>
+              <button class="btn-primary-block" style="width: auto; padding: 6px 14px;" onclick="openModal('bookAppointmentModal')">+ Book New Session</button>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -1383,8 +1468,7 @@
           <div class="fs-card">
             <div class="card-header-row">
               <h3 class="card-title">Encrypted Personal Vault</h3>
-              <button class="btn-primary-block" style="width: auto; padding: 6px 14px;"
-                onclick="openModal('uploadReportModal')">
+              <button class="btn-primary-block" style="width: auto; padding: 6px 14px;" onclick="openModal('uploadReportModal')">
                 <i data-lucide="upload-cloud" style="width: 14px; height: 14px;"></i> Upload Document
               </button>
             </div>
@@ -1392,50 +1476,41 @@
             <div class="documents-list">
               <div class="document-item">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                  <div
-                    style="width: 38px; height: 38px; border-radius: var(--radius-sm); background: #EFF6FF; color: var(--primary-blue); display: flex; align-items: center; justify-content: center;">
+                  <div style="width: 38px; height: 38px; border-radius: var(--radius-sm); background: #EFF6FF; color: var(--primary-blue); display: flex; align-items: center; justify-content: center;">
                     <i data-lucide="file-text"></i>
                   </div>
                   <div>
                     <strong style="font-size: 14px;">Comprehensive Blood Biomarker Panel</strong>
-                    <div style="font-size: 11px; color: var(--text-secondary);">14 Nov 2026 • 2.4 MB • Verified by Dr.
-                      Meera Nair</div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">14 Nov 2026 • 2.4 MB • Verified by Dr. Meera Nair</div>
                   </div>
                 </div>
-                <button class="btn-secondary"
-                  onclick="showToast('Document downloaded from encrypted vault.', 'success')">Download PDF</button>
+                <button class="btn-secondary" onclick="showToast('Document downloaded from encrypted vault.', 'success')">Download PDF</button>
               </div>
 
               <div class="document-item">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                  <div
-                    style="width: 38px; height: 38px; border-radius: var(--radius-sm); background: #EFF6FF; color: var(--primary-blue); display: flex; align-items: center; justify-content: center;">
+                  <div style="width: 38px; height: 38px; border-radius: var(--radius-sm); background: #EFF6FF; color: var(--primary-blue); display: flex; align-items: center; justify-content: center;">
                     <i data-lucide="file-text"></i>
                   </div>
                   <div>
                     <strong style="font-size: 14px;">DEXA Body Composition Scan</strong>
-                    <div style="font-size: 11px; color: var(--text-secondary);">28 Oct 2026 • 1.8 MB • FitSync
-                      Biometrics Lab</div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">28 Oct 2026 • 1.8 MB • FitSync Biometrics Lab</div>
                   </div>
                 </div>
-                <button class="btn-secondary" onclick="showToast('DEXA Scan downloaded.', 'success')">Download
-                  PDF</button>
+                <button class="btn-secondary" onclick="showToast('DEXA Scan downloaded.', 'success')">Download PDF</button>
               </div>
 
               <div class="document-item">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                  <div
-                    style="width: 38px; height: 38px; border-radius: var(--radius-sm); background: #EFF6FF; color: var(--primary-blue); display: flex; align-items: center; justify-content: center;">
+                  <div style="width: 38px; height: 38px; border-radius: var(--radius-sm); background: #EFF6FF; color: var(--primary-blue); display: flex; align-items: center; justify-content: center;">
                     <i data-lucide="file-text"></i>
                   </div>
                   <div>
                     <strong style="font-size: 14px;">ECG & Resting Cardiovascular Rhythm</strong>
-                    <div style="font-size: 11px; color: var(--text-secondary);">10 Oct 2026 • 1.1 MB • Verified Normal
-                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">10 Oct 2026 • 1.1 MB • Verified Normal</div>
                   </div>
                 </div>
-                <button class="btn-secondary" onclick="showToast('ECG Report downloaded.', 'success')">Download
-                  PDF</button>
+                <button class="btn-secondary" onclick="showToast('ECG Report downloaded.', 'success')">Download PDF</button>
               </div>
             </div>
           </div>
@@ -1462,12 +1537,10 @@
             <div class="qr-pass-box">
               <span class="badge-active" style="margin-bottom: 8px; display: inline-block;">ACTIVE PASS</span>
               <h3 style="font-size: 16px; font-weight: 800;">FitSync Turnstile Pass</h3>
-              <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">Valid across all 4 branches
-              </p>
+              <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">Valid across all 4 branches</p>
 
               <!-- QR Code SVG -->
-              <div
-                style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: inline-block; margin-bottom: 12px;">
+              <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: inline-block; margin-bottom: 12px;">
                 <svg width="150" height="150" viewBox="0 0 100 100" fill="#0F172A">
                   <rect x="0" y="0" width="30" height="30" rx="3" />
                   <rect x="5" y="5" width="20" height="20" fill="#fff" rx="2" />
@@ -1487,10 +1560,8 @@
                 </svg>
               </div>
 
-              <div style="font-family: monospace; font-size: 14px; font-weight: 700; color: var(--primary-blue);">
-                FS-PUN-9821</div>
-              <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">Refreshes automatically every
-                60s</p>
+              <div style="font-family: monospace; font-size: 14px; font-weight: 700; color: var(--primary-blue);">FS-PUN-9821</div>
+              <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">Refreshes automatically every 60s</p>
 
               <button class="btn-primary-block" id="simulateCheckInBtn">
                 <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Simulate Scan Turnstile
@@ -1500,22 +1571,17 @@
             <!-- Attendance Records & Stats -->
             <div class="fs-card">
               <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px;">
-                <div
-                  style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
                   <span style="font-size: 11px; color: var(--text-secondary);">MONTHLY VISITS</span>
-                  <div style="font-size: 20px; font-weight: 800; color: var(--primary-blue);" id="attMonthlyVisits">18 /
-                    22 Days</div>
+                  <div style="font-size: 20px; font-weight: 800; color: var(--primary-blue);" id="attMonthlyVisits">18 / 22 Days</div>
                 </div>
-                <div
-                  style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
                   <span style="font-size: 11px; color: var(--text-secondary);">ACTIVE STREAK</span>
                   <div style="font-size: 20px; font-weight: 800; color: var(--orange);" id="attStreak">5 Days 🔥</div>
                 </div>
-                <div
-                  style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
+                <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
                   <span style="font-size: 11px; color: var(--text-secondary);">CONSISTENCY</span>
-                  <div style="font-size: 20px; font-weight: 800; color: var(--success-green);" id="attConsistency">91%
-                  </div>
+                  <div style="font-size: 20px; font-weight: 800; color: var(--success-green);" id="attConsistency">91%</div>
                 </div>
               </div>
 
@@ -1531,41 +1597,11 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>Today</td>
-                    <td>06:45 AM</td>
-                    <td>FitZone Gym, Kothrud</td>
-                    <td>Turnstile QR</td>
-                    <td><span class="badge-active">Verified</span></td>
-                  </tr>
-                  <tr>
-                    <td>19 Nov 2026</td>
-                    <td>07:10 AM</td>
-                    <td>FitZone Gym, Kothrud</td>
-                    <td>Turnstile QR</td>
-                    <td><span class="badge-active">Verified</span></td>
-                  </tr>
-                  <tr>
-                    <td>18 Nov 2026</td>
-                    <td>06:30 AM</td>
-                    <td>FitZone Gym, Kothrud</td>
-                    <td>Turnstile QR</td>
-                    <td><span class="badge-active">Verified</span></td>
-                  </tr>
-                  <tr>
-                    <td>17 Nov 2026</td>
-                    <td>07:00 AM</td>
-                    <td>PowerHouse Arena, Baner</td>
-                    <td>Turnstile QR</td>
-                    <td><span class="badge-active">Verified</span></td>
-                  </tr>
-                  <tr>
-                    <td>16 Nov 2026</td>
-                    <td>06:50 AM</td>
-                    <td>FitZone Gym, Kothrud</td>
-                    <td>Turnstile QR</td>
-                    <td><span class="badge-active">Verified</span></td>
-                  </tr>
+                  <tr><td>Today</td><td>06:45 AM</td><td>FitZone Gym, Kothrud</td><td>Turnstile QR</td><td><span class="badge-active">Verified</span></td></tr>
+                  <tr><td>19 Nov 2026</td><td>07:10 AM</td><td>FitZone Gym, Kothrud</td><td>Turnstile QR</td><td><span class="badge-active">Verified</span></td></tr>
+                  <tr><td>18 Nov 2026</td><td>06:30 AM</td><td>FitZone Gym, Kothrud</td><td>Turnstile QR</td><td><span class="badge-active">Verified</span></td></tr>
+                  <tr><td>17 Nov 2026</td><td>07:00 AM</td><td>PowerHouse Arena, Baner</td><td>Turnstile QR</td><td><span class="badge-active">Verified</span></td></tr>
+                  <tr><td>16 Nov 2026</td><td>06:50 AM</td><td>FitZone Gym, Kothrud</td><td>Turnstile QR</td><td><span class="badge-active">Verified</span></td></tr>
                 </tbody>
               </table>
             </div>
@@ -1617,16 +1653,13 @@
           <div class="fs-card">
             <h3 class="card-title" style="margin-bottom: 12px;">Export Verified Data</h3>
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-              <button class="btn-primary-block" style="width: auto; padding: 10px 18px;"
-                onclick="showToast('Generating Monthly Fitness Dossier (PDF)...', 'info')">
+              <button class="btn-primary-block" style="width: auto; padding: 10px 18px;" onclick="showToast('Generating Monthly Fitness Dossier (PDF)...', 'info')">
                 <i data-lucide="download" style="width: 14px; height: 14px;"></i> Export Monthly Report (PDF)
               </button>
-              <button class="btn-secondary" style="padding: 10px 18px;"
-                onclick="showToast('Exporting Workout Sets & Volume Logs (CSV)...', 'info')">
+              <button class="btn-secondary" style="padding: 10px 18px;" onclick="showToast('Exporting Workout Sets & Volume Logs (CSV)...', 'info')">
                 <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i> Export Workouts (CSV)
               </button>
-              <button class="btn-secondary" style="padding: 10px 18px;"
-                onclick="showToast('Exporting Nutrition & Water Diary (CSV)...', 'info')">
+              <button class="btn-secondary" style="padding: 10px 18px;" onclick="showToast('Exporting Nutrition & Water Diary (CSV)...', 'info')">
                 <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i> Export Nutrition Diary (CSV)
               </button>
             </div>
@@ -1653,12 +1686,10 @@
             <h3 class="card-title" style="margin-bottom: 16px;">Personal Information</h3>
             <form id="settingsProfileForm">
               <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
-                <img src="assets/images/isha_avatar.jpg" class="user-avatar-circle" style="width: 64px; height: 64px;"
-                  alt="Isha">
+                <img src="assets/images/isha_avatar.jpg" class="user-avatar-circle" style="width: 64px; height: 64px;" alt="Isha">
                 <div>
                   <h4 style="font-size: 16px; font-weight: 700;">Isha Kulkarni</h4>
-                  <p style="font-size: 12px; color: var(--text-secondary);">Member ID: FS-MEM-2026-441 • Gold Tier
-                    Athlete</p>
+                  <p style="font-size: 12px; color: var(--text-secondary);">Member ID: FS-MEM-2026-441 • Gold Tier Athlete</p>
                 </div>
               </div>
 
@@ -1690,16 +1721,14 @@
                   <input type="checkbox" checked style="accent-color: var(--primary-blue);"> Workout & Rest Reminders
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
-                  <input type="checkbox" checked style="accent-color: var(--primary-blue);"> Hourly Water Hydration
-                  Pings
+                  <input type="checkbox" checked style="accent-color: var(--primary-blue);"> Hourly Water Hydration Pings
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
                   <input type="checkbox" checked style="accent-color: var(--primary-blue);"> Coach Feedback Alerts
                 </label>
               </div>
 
-              <button type="submit" class="btn-primary-block" style="width: auto; padding: 10px 24px;">Save
-                Settings</button>
+              <button type="submit" class="btn-primary-block" style="width: auto; padding: 10px 24px;">Save Settings</button>
             </form>
           </div>
         </div>
@@ -1724,42 +1753,33 @@
             <div class="fs-card">
               <h3 class="card-title" style="margin-bottom: 14px;">Frequently Asked Questions</h3>
               <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
-                <div
-                  style="padding: 12px; background: #F8FAFC; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <div style="padding: 12px; background: #F8FAFC; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
                   <strong style="color: var(--text-main);">How does multi-gym access work?</strong>
-                  <p style="color: var(--text-secondary); margin-top: 4px;">With your Premium Membership, you can walk
-                    into any of the 4 Pune branches and scan your turnstile QR code for instant admission.</p>
+                  <p style="color: var(--text-secondary); margin-top: 4px;">With your Premium Membership, you can walk into any of the 4 Pune branches and scan your turnstile QR code for instant admission.</p>
                 </div>
-                <div
-                  style="padding: 12px; background: #F8FAFC; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <div style="padding: 12px; background: #F8FAFC; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
                   <strong style="color: var(--text-main);">How do I message my coach?</strong>
-                  <p style="color: var(--text-secondary); margin-top: 4px;">Navigate to the Trainers tab, locate Coach
-                    Raj Malhotra, and click "Send Query" or "Book PT Session".</p>
+                  <p style="color: var(--text-secondary); margin-top: 4px;">Navigate to the Trainers tab, locate Coach Raj Malhotra, and click "Send Query" or "Book PT Session".</p>
                 </div>
-                <div
-                  style="padding: 12px; background: #F8FAFC; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <div style="padding: 12px; background: #F8FAFC; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
                   <strong style="color: var(--text-main);">How are BMR and TDEE computed?</strong>
-                  <p style="color: var(--text-secondary); margin-top: 4px;">FitSync implements the clinically recognized
-                    Mifflin-St Jeor formula based on your age, biological sex, height, weight, and activity level.</p>
+                  <p style="color: var(--text-secondary); margin-top: 4px;">FitSync implements the clinically recognized Mifflin-St Jeor formula based on your age, biological sex, height, weight, and activity level.</p>
                 </div>
               </div>
             </div>
 
             <div class="fs-card">
               <h3 class="card-title" style="margin-bottom: 14px;">Contact Support Desk</h3>
-              <form
-                onsubmit="showToast('Your message has been submitted to FitSync Member Support.', 'success'); this.reset(); return false;">
+              <form onsubmit="showToast('Your message has been submitted to FitSync Member Support.', 'success'); this.reset(); return false;">
                 <div class="form-group">
                   <label class="form-label">Subject</label>
                   <input type="text" class="form-input" placeholder="e.g. Turnstile QR code refresh query" required>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Message</label>
-                  <textarea class="form-textarea" rows="4" placeholder="Describe your question or issue in detail..."
-                    required></textarea>
+                  <textarea class="form-textarea" rows="4" placeholder="Describe your question or issue in detail..." required></textarea>
                 </div>
-                <button type="submit" class="btn-primary-block" style="width: auto; padding: 10px 24px;">Submit
-                  Ticket</button>
+                <button type="submit" class="btn-primary-block" style="width: auto; padding: 10px 24px;">Submit Ticket</button>
               </form>
             </div>
           </div>
@@ -1771,7 +1791,7 @@
            3. Right Dashboard Widgets Column (Visible on Dashboard View)
            ==================================================================== -->
       <aside class="dashboard-right">
-
+        
         <!-- Today's Workout Widget -->
         <div class="fs-card">
           <div class="card-header-row">
@@ -1780,15 +1800,13 @@
           </div>
 
           <div class="workout-preview-box">
-            <img src="assets/images/ex_bench.jpg" alt="Workout" class="workout-thumb"
-              onerror="this.src='assets/images/bench_press.jpg'">
+            <img src="assets/images/ex_bench.jpg" alt="Workout" class="workout-thumb" onerror="this.src='assets/images/bench_press.jpg'">
             <div class="workout-meta-box">
               <div style="font-size: 11px; color: var(--primary-blue); font-weight: 700;">💪 STRENGTH</div>
               <h4 class="workout-name">Upper Body Strength</h4>
-
+              
               <div class="workout-meta-tags">
-                <span class="meta-pill"><i data-lucide="clock" style="width: 11px; height: 11px; display: inline;"></i>
-                  45 min</span>
+                <span class="meta-pill"><i data-lucide="clock" style="width: 11px; height: 11px; display: inline;"></i> 45 min</span>
                 <span class="meta-pill">6 Exercises</span>
                 <span class="meta-pill">Intermediate</span>
               </div>
@@ -1812,8 +1830,7 @@
             <div class="nutrition-donut-wrap">
               <svg class="nutrition-donut-svg" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="40" stroke="#DBEAFE" stroke-width="9" fill="none" />
-                <circle cx="50" cy="50" r="40" stroke="#155DFC" stroke-width="9" stroke-dasharray="251"
-                  stroke-dashoffset="50" stroke-linecap="round" fill="none" />
+                <circle cx="50" cy="50" r="40" stroke="#155DFC" stroke-width="9" stroke-dasharray="251" stroke-dashoffset="50" stroke-linecap="round" fill="none" />
               </svg>
               <div class="donut-inner-data">
                 <span class="donut-val" id="nutCalorieCenter">1,820</span>
@@ -1858,8 +1875,7 @@
         <!-- Water Intake Widget -->
         <div class="fs-card">
           <div class="water-widget-header">
-            <div class="water-icon-title" style="cursor: pointer;" onclick="switchView('water')"
-              title="Click to open Water Station">
+            <div class="water-icon-title" style="cursor: pointer;" onclick="switchView('water')" title="Click to open Water Station">
               <div class="water-icon-circle">
                 <i data-lucide="droplet"></i>
               </div>
@@ -1868,9 +1884,8 @@
             <a href="javascript:void(0)" class="card-link" id="rightAddWaterLink">+ Add water</a>
           </div>
 
-          <div class="water-val-lg" id="rightWaterValue" style="cursor: pointer;" onclick="switchView('water')">2.1 /
-            3.0 L</div>
-
+          <div class="water-val-lg" id="rightWaterValue" style="cursor: pointer;" onclick="switchView('water')">2.1 / 3.0 L</div>
+          
           <div class="progress-bar-container" style="height: 7px; cursor: pointer;" onclick="switchView('water')">
             <div class="progress-bar-fill" id="rightWaterBar" style="width: 70%;"></div>
           </div>
@@ -1934,14 +1949,10 @@
         <button class="modal-close-btn" data-close-modal>&times;</button>
       </div>
       <div class="modal-body">
-        <div
-          style="background: var(--light-blue-bg); border: 1px solid var(--light-blue); border-radius: var(--radius-md); padding: 16px; text-align: center; margin-bottom: 20px;">
-          <div style="font-size: 11px; font-weight: 700; color: var(--primary-blue); text-transform: uppercase;">Set
-            Rest Interval</div>
-          <div id="modalTimerDisplay"
-            style="font-size: 38px; font-weight: 800; color: var(--primary-blue); font-family: monospace; margin: 4px 0;">
-            01:00</div>
-
+        <div style="background: var(--light-blue-bg); border: 1px solid var(--light-blue); border-radius: var(--radius-md); padding: 16px; text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--primary-blue); text-transform: uppercase;">Set Rest Interval</div>
+          <div id="modalTimerDisplay" style="font-size: 38px; font-weight: 800; color: var(--primary-blue); font-family: monospace; margin: 4px 0;">01:00</div>
+          
           <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 12px;">
             <button class="timer-chip-btn water-preset-btn" data-sec="30">30s</button>
             <button class="timer-chip-btn water-preset-btn" data-sec="60">60s</button>
@@ -1949,16 +1960,14 @@
           </div>
 
           <div style="display: flex; justify-content: center; gap: 8px;">
-            <button class="btn-primary-block" id="modalTimerStartBtn"
-              style="width: auto; padding: 6px 18px;">Start</button>
+            <button class="btn-primary-block" id="modalTimerStartBtn" style="width: auto; padding: 6px 18px;">Start</button>
             <button class="btn-secondary" id="modalTimerResetBtn" style="padding: 6px 16px;">Reset</button>
           </div>
         </div>
 
         <h5 style="font-size: 13px; font-weight: 700; margin-bottom: 10px;">Prescribed Exercises (6)</h5>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <label
-            style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+          <label style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
             <input type="checkbox" checked style="width: 16px; height: 16px; accent-color: var(--primary-blue);">
             <div style="flex: 1;">
               <div style="font-size: 13px; font-weight: 600;">1. Incline Barbell Bench Press</div>
@@ -1967,8 +1976,7 @@
             <span class="badge-active">Done</span>
           </label>
 
-          <label
-            style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+          <label style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
             <input type="checkbox" checked style="width: 16px; height: 16px; accent-color: var(--primary-blue);">
             <div style="flex: 1;">
               <div style="font-size: 13px; font-weight: 600;">2. Dumbbell Overhead Press</div>
@@ -1977,8 +1985,7 @@
             <span class="badge-active">Done</span>
           </label>
 
-          <label
-            style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+          <label style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
             <input type="checkbox" style="width: 16px; height: 16px; accent-color: var(--primary-blue);">
             <div style="flex: 1;">
               <div style="font-size: 13px; font-weight: 600;">3. Cable Chest Flyes</div>
@@ -1990,9 +1997,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" data-close-modal>Close</button>
-        <button class="btn-primary-block" style="width: auto;"
-          onclick="showToast('Workout session completed and saved to history!', 'success'); closeModal('workoutModal');">Complete
-          Session</button>
+        <button class="btn-primary-block" style="width: auto;" onclick="showToast('Workout session completed and saved to history!', 'success'); closeModal('workoutModal');">Complete Session</button>
       </div>
     </div>
   </div>
@@ -2009,8 +2014,7 @@
       </div>
       <form id="waterForm">
         <div class="modal-body">
-          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">Select a fast preset or enter
-            custom milliliters below:</p>
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">Select a fast preset or enter custom milliliters below:</p>
           <div class="preset-chips-row">
             <button type="button" class="water-preset-btn" data-amount="0.15">+150 ml (Cup)</button>
             <button type="button" class="water-preset-btn" data-amount="0.25">+250 ml (Glass)</button>
@@ -2018,14 +2022,11 @@
           </div>
           <div class="form-group">
             <label class="form-label">Custom Quantity (ml)</label>
-            <input type="number" id="customWaterInput" class="form-input" placeholder="e.g. 350" min="50" max="2000"
-              step="50">
+            <input type="number" id="customWaterInput" class="form-input" placeholder="e.g. 350" min="50" max="2000" step="50">
           </div>
         </div>
         <div class="modal-footer" style="justify-content: space-between;">
-          <button type="button" class="btn-secondary"
-            style="color: #DC2626; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;"
-            onclick="resetWaterIntake(); closeModal('addWaterModal');">
+          <button type="button" class="btn-secondary" style="color: #DC2626; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" onclick="resetWaterIntake(); closeModal('addWaterModal');">
             <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i> Reset to 0 L
           </button>
           <div style="display: flex; gap: 8px;">
@@ -2061,8 +2062,7 @@
 
           <div class="form-group">
             <label class="form-label">Food Item / Recipe</label>
-            <input type="text" id="mealFoodName" class="form-input" placeholder="e.g. Paneer Tikka & Multigrain Roti"
-              required>
+            <input type="text" id="mealFoodName" class="form-input" placeholder="e.g. Paneer Tikka & Multigrain Roti" required>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -2100,8 +2100,7 @@
     <div class="modal-card">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-blue);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-blue);">
             <rect width="18" height="18" x="3" y="3" rx="4"></rect>
             <circle cx="12" cy="8" r="2.5"></circle>
             <path d="M12 7v1"></path>
@@ -2115,8 +2114,7 @@
         <div class="modal-body">
           <div class="form-group">
             <label class="form-label">Body Weight (kg)</label>
-            <input type="number" step="0.1" id="newWeightInput" class="form-input" placeholder="62.5" value="62.5"
-              required>
+            <input type="number" step="0.1" id="newWeightInput" class="form-input" placeholder="62.5" value="62.5" required>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="form-group">
@@ -2154,8 +2152,7 @@
             <select class="form-select" id="appointmentDoctor">
               <option value="Dr. Meera Nair (General Physician)">Dr. Meera Nair — General Physician</option>
               <option value="Mr. Arjun Desai (Physiotherapist)">Mr. Arjun Desai — Sports Physiotherapist</option>
-              <option value="Coach Raj Malhotra (Strength Coach)">Coach Raj Malhotra — Strength & Conditioning Coach
-              </option>
+              <option value="Coach Raj Malhotra (Strength Coach)">Coach Raj Malhotra — Strength & Conditioning Coach</option>
             </select>
           </div>
 
@@ -2207,9 +2204,7 @@
             <label class="form-label">Select File (PDF, JPG, PNG)</label>
             <input type="file" class="form-input" accept=".pdf,.png,.jpg,.jpeg" required>
           </div>
-          <p style="font-size: 11px; color: var(--text-muted);"><i data-lucide="lock"
-              style="width: 12px; height: 12px; display: inline;"></i> Encrypted and protected under FitSync Client
-            Privacy Vault.</p>
+          <p style="font-size: 11px; color: var(--text-muted);"><i data-lucide="lock" style="width: 12px; height: 12px; display: inline;"></i> Encrypted and protected under FitSync Client Privacy Vault.</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
@@ -2230,15 +2225,12 @@
         <button class="modal-close-btn" data-close-modal>&times;</button>
       </div>
       <div class="modal-body">
-        <img src="assets/images/gym_fitzone.jpg"
-          style="width: 100%; height: 140px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 14px;"
-          onerror="this.src='assets/images/bench_press.jpg'">
+        <img src="assets/images/gym_fitzone.jpg" style="width: 100%; height: 140px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 14px;" onerror="this.src='assets/images/bench_press.jpg'">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <h5 style="font-size: 16px; font-weight: 700;">FitZone Fitness & Sports Hub</h5>
           <span class="badge-active">Active Member</span>
         </div>
-        <div
-          style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
           <div>📍 <strong>Address:</strong> Plot 42, Mayur Colony, Kothrud, Pune</div>
           <div>⏰ <strong>Hours:</strong> Mon - Sat: 5:30 AM – 10:30 PM • Sun: 7:00 AM – 2:00 PM</div>
           <div>🏋️ <strong>Facilities:</strong> Olympic Platforms, Steam Room, Crossfit Turf</div>
@@ -2247,8 +2239,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" data-close-modal>Close</button>
-        <button class="btn-primary-block" style="width: auto;"
-          onclick="closeModal('gymDetailsModal'); switchView('attendance');">View Attendance Pass</button>
+        <button class="btn-primary-block" style="width: auto;" onclick="closeModal('gymDetailsModal'); switchView('attendance');">View Attendance Pass</button>
       </div>
     </div>
   </div>
@@ -2265,15 +2256,11 @@
       </div>
       <div class="modal-body" style="text-align: center;">
         <span style="font-size: 32px;">💪</span>
-        <h5 style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-top: 4px;">Build Muscle
-          (Hypertrophy)</h5>
-        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">Target: 68.0 kg • Deadline: 28
-          Feb 2027</p>
+        <h5 style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-top: 4px;">Build Muscle (Hypertrophy)</h5>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">Target: 68.0 kg • Deadline: 28 Feb 2027</p>
 
-        <div
-          style="background: var(--light-blue-bg); border: 1px solid var(--light-blue); border-radius: var(--radius-md); padding: 14px; text-align: left;">
-          <div
-            style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--primary-blue); margin-bottom: 6px;">
+        <div style="background: var(--light-blue-bg); border: 1px solid var(--light-blue); border-radius: var(--radius-md); padding: 14px; text-align: left;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--primary-blue); margin-bottom: 6px;">
             <span>Milestone Progress</span>
             <span>75% Completed</span>
           </div>
@@ -2284,8 +2271,57 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" data-close-modal>Close</button>
-        <button class="btn-primary-block" style="width: auto;"
-          onclick="closeModal('goalDetailsModal'); switchView('progress');">Open Progress Tracking</button>
+        <button class="btn-primary-block" style="width: auto;" onclick="closeModal('goalDetailsModal'); switchView('progress');">Open Progress Tracking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 9: Exercise Detail & Biomechanical Guide Modal -->
+  <div class="modal-overlay" id="exerciseDetailModal">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="book-open" style="color: var(--primary-blue);"></i>
+          <h4 class="modal-title" id="exModalTitle">Exercise Biomechanics Guide</h4>
+        </div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; height: 180px; margin-bottom: 16px; border: 1px solid var(--border-color);">
+          <img id="exModalImage" src="assets/images/ex_bench.jpg" alt="Exercise preview" style="width: 100%; height: 100%; object-fit: cover;">
+          <span id="exModalDifficultyTag" class="tag-badge" style="position: absolute; top: 12px; right: 12px; background: rgba(15, 23, 42, 0.85); color: #FFF; font-weight: 700; border: none;">
+            Intermediate
+          </span>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
+          <span class="tag-badge" id="exModalMuscleBadge" style="background: var(--light-blue-bg); color: var(--primary-blue); font-weight: 700;">Target: Pectoralis Major</span>
+          <span class="tag-badge" id="exModalTypeBadge">Compound</span>
+          <span class="tag-badge" id="exModalEquipBadge">Barbell</span>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 14px;">
+          <h5 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="check-circle-2" style="width: 14px; height: 14px; color: var(--success-green);"></i> Execution & Biomechanical Cues
+          </h5>
+          <p id="exModalCues" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+            Retract scapulae, touch clavicle, drive upward without flaring elbows.
+          </p>
+        </div>
+
+        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius-md); padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: #166534; letter-spacing: 0.5px;">Recommended Hypertrophy Stimulus</div>
+            <div style="font-size: 13px; font-weight: 700; color: #15803D;" id="exModalTargetSets">3-4 Sets • 8-12 Reps • 90s Rest</div>
+          </div>
+          <i data-lucide="zap" style="color: #16A34A; width: 20px; height: 20px;"></i>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close-modal>Close</button>
+        <button class="btn-primary-block" id="exModalAddBtn" style="width: auto;">
+          <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add to Today's Workout
+        </button>
       </div>
     </div>
   </div>
@@ -2296,5 +2332,4 @@
   <script src="js/app.js"></script>
 
 </body>
-
 </html>

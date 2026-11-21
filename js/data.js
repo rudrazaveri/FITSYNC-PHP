@@ -563,64 +563,568 @@ const DEFAULT_FITSYNC_DATA = {
     { day: "Sunday", focus: "Full Rest Day", exercises: 0, duration: "—", status: "Rest" }
   ],
   exerciseLibrary: [
+    // 1. CHEST (Pectoralis Major & Minor)
     {
-      id: "ex-1",
+      id: "ex-chest-incline-bb",
       name: "Barbell Incline Bench Press",
-      muscle: "Chest (Upper Pectoralis)",
-      equipment: "Incline Bench, Barbell",
+      muscleGroup: "chest",
+      muscle: "Upper Pectoralis Major (Clavicular Head), Anterior Deltoid",
+      equipment: "Incline Bench, Olympic Barbell",
       difficulty: "Intermediate",
       type: "Compound",
-      cues: "Set bench at 30 degrees. Retract scapulae, lower bar to clavicle level, drive upward without flaring elbows.",
+      cues: "Set bench at 30°. Retract scapulae, lower bar under control to upper clavicle, press upward through mid-chest without flaring elbows.",
+      image: "assets/images/ex_bench.jpg"
+    },
+    {
+      id: "ex-chest-flat-bb",
+      name: "Flat Barbell Bench Press",
+      muscleGroup: "chest",
+      muscle: "Pectoralis Major (Sternal Head), Anterior Deltoid, Triceps",
+      equipment: "Flat Bench, Olympic Barbell",
+      difficulty: "Intermediate",
+      type: "Compound",
+      cues: "Maintain 5-point contact, arch lower back naturally, drive heels into floor. Touch mid-sternum with elbows tucked at 45°.",
       image: "assets/images/bench_press.jpg"
     },
     {
-      id: "ex-2",
-      name: "Barbell Romanian Deadlift (RDL)",
-      muscle: "Hamstrings & Glutes",
-      equipment: "Barbell, Plates",
+      id: "ex-chest-db-fly",
+      name: "Incline Dumbbell Chest Flyes",
+      muscleGroup: "chest",
+      muscle: "Upper & Middle Pectoralis Major (Hypertrophy Stretch)",
+      equipment: "Incline Bench, Dumbbells",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Slight bend in elbows. Open arms in wide arc until deep pec stretch is felt, squeeze chest at top without clanking dumbbells.",
+      image: "assets/images/ex_bench.jpg"
+    },
+    {
+      id: "ex-chest-dips",
+      name: "Parallel Bar Chest Dips",
+      muscleGroup: "chest",
+      muscle: "Lower Pectoralis Major (Costal Head), Triceps",
+      equipment: "Dip Station",
       difficulty: "Intermediate",
       type: "Compound",
-      cues: "Hinge at hips, keep bar in contact with thighs, slight knee flexion, drive hips forward to lockout.",
+      cues: "Lean forward 30° to target pecs. Lower until upper arms are parallel to floor, push through palms to lockout.",
       image: "assets/images/bench_press.jpg"
     },
     {
-      id: "ex-3",
-      name: "Dumbbell Lateral Raise",
-      muscle: "Shoulders (Lateral Deltoid)",
+      id: "ex-chest-cable-cross",
+      name: "Cable Low-to-High Flye Crossover",
+      muscleGroup: "chest",
+      muscle: "Upper Pectoralis (Clavicular Head & Sternal Tie-In)",
+      equipment: "Dual Cable Tower",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Set pulleys to lowest notch. Drive hands upward and inward in an upward scooping motion, squeeze upper chest for 1 second.",
+      image: "assets/images/ex_lateral_raise.jpg"
+    },
+    {
+      id: "ex-chest-pushups",
+      name: "Standard Push-Ups (Deficit / Floor)",
+      muscleGroup: "chest",
+      muscle: "Pectoralis Major, Serratus Anterior, Core",
+      equipment: "Bodyweight",
+      difficulty: "Beginner",
+      type: "Compound",
+      cues: "Full plank alignment with glutes engaged. Lower chest to 1 inch off floor, push actively away while spreading shoulder blades at top.",
+      image: "assets/images/bench_press.jpg"
+    },
+
+    // 2. BACK (Latissimus Dorsi, Rhomboids, Mid/Upper Back)
+    {
+      id: "ex-back-lat-pulldown",
+      name: "Wide-Grip Lat Pulldown",
+      muscleGroup: "back",
+      muscle: "Latissimus Dorsi (Outer Width), Teres Major, Biceps",
+      equipment: "Cable Pulldown Machine",
+      difficulty: "Beginner",
+      type: "Compound",
+      cues: "Grip slightly wider than shoulders. Depress scapulae first, drive elbows downward toward hips, bring bar to upper chest.",
+      image: "assets/images/ex_lat_pulldown.jpg"
+    },
+    {
+      id: "ex-back-pullups",
+      name: "Bodyweight Neutral-Grip Pull-Ups",
+      muscleGroup: "back",
+      muscle: "Latissimus Dorsi, Brachialis, Lower Trapezius",
+      equipment: "Pull-Up Bar",
+      difficulty: "Advanced",
+      type: "Compound",
+      cues: "Hang with dead-hang extension. Initiate with back muscles, drive elbows down to ribs until chin clears the bar cleanly.",
+      image: "assets/images/ex_lat_pulldown.jpg"
+    },
+    {
+      id: "ex-back-bb-row",
+      name: "Barbell Bent-Over Row",
+      muscleGroup: "back",
+      muscle: "Rhomboids, Latissimus Dorsi, Mid-Trapezius, Posterior Delts",
+      equipment: "Olympic Barbell",
+      difficulty: "Intermediate",
+      type: "Compound",
+      cues: "Hinge at 45° with rigid flat back. Pull bar toward belly button, squeeze shoulder blades together at apex.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+    {
+      id: "ex-back-seated-row",
+      name: "Seated Cable Row (Close-Grip)",
+      muscleGroup: "back",
+      muscle: "Rhomboids, Mid Trapezius, Latissimus Dorsi Thickness",
+      equipment: "Low Cable Machine, V-Bar",
+      difficulty: "Beginner",
+      type: "Compound",
+      cues: "Sit tall with chest upright. Pull handle to lower abdomen, keep elbows tucked close to torso, control the stretch on release.",
+      image: "assets/images/ex_lat_pulldown.jpg"
+    },
+    {
+      id: "ex-back-db-row",
+      name: "Single-Arm Dumbbell Row",
+      muscleGroup: "back",
+      muscle: "Latissimus Dorsi (Unilateral Thickness), Teres Major",
+      equipment: "Flat Bench, Dumbbell",
+      difficulty: "Beginner",
+      type: "Compound",
+      cues: "Support one knee on bench. Row dumbbell back towards hip pocket in a J-curve arc, preventing torso rotation.",
+      image: "assets/images/ex_lat_pulldown.jpg"
+    },
+
+    // 3. TRAPEZIUS & UPPER BACK (Traps)
+    {
+      id: "ex-traps-bb-shrug",
+      name: "Barbell Power Shrugs",
+      muscleGroup: "traps",
+      muscle: "Upper Trapezius, Levator Scapulae",
+      equipment: "Barbell / Smith Machine",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Hold bar at hip level. Elevate shoulders straight up towards ears without rolling shoulders, hold peak contraction for 1 full second.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+    {
+      id: "ex-traps-face-pull",
+      name: "Cable Face Pulls with External Rotation",
+      muscleGroup: "traps",
+      muscle: "Rear Deltoids, Rhomboids, Middle & Lower Trapezius",
+      equipment: "Cable Tower, Rope Attachment",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Set pulley at eye height. Pull rope towards bridge of nose while externally rotating wrists so thumbs point backward.",
+      image: "assets/images/ex_lateral_raise.jpg"
+    },
+    {
+      id: "ex-traps-prone-y-raise",
+      name: "Prone Incline Y-Raise",
+      muscleGroup: "traps",
+      muscle: "Lower Trapezius, Scapular Stabilizers",
+      equipment: "Incline Bench, Light Dumbbells",
+      difficulty: "Intermediate",
+      type: "Isolation",
+      cues: "Lie face down on 30° incline. Raise arms in a 45° 'Y' position thumbs upward, squeezing lower shoulder blades down and back.",
+      image: "assets/images/ex_lateral_raise.jpg"
+    },
+
+    // 4. LOWER BACK (Erector Spinae)
+    {
+      id: "ex-lowerback-deadlift",
+      name: "Barbell Conventional Deadlift",
+      muscleGroup: "lowerback",
+      muscle: "Erector Spinae, Gluteus Maximus, Hamstrings, Traps",
+      equipment: "Olympic Barbell & Bumper Plates",
+      difficulty: "Advanced",
+      type: "Compound",
+      cues: "Bar over midfoot. Wedge hips down, pull slack out of bar, drive floor away with legs while keeping spine neutral throughout.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+    {
+      id: "ex-lowerback-hyper",
+      name: "Hyperextensions (Back Extensions)",
+      muscleGroup: "lowerback",
+      muscle: "Erector Spinae (Lumbar Spine), Gluteal Muscles",
+      equipment: "45-Degree Hyperextension Bench",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Hips against pad edge. Lower torso smoothly, extend back until body forms straight diagonal line without hyperextending lumbar spine.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+    {
+      id: "ex-lowerback-goodmorning",
+      name: "Barbell Good Mornings",
+      muscleGroup: "lowerback",
+      muscle: "Erector Spinae, Hamstrings, Gluteus Maximus",
+      equipment: "Barbell, Squat Rack",
+      difficulty: "Intermediate",
+      type: "Compound",
+      cues: "Bar rested on upper traps. Soft knee bend, hinge hips backward until torso is nearly parallel with floor, drive hips forward.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+
+    // 5. SHOULDERS (Deltoids - Anterior, Lateral, Posterior)
+    {
+      id: "ex-shoulders-ohp",
+      name: "Standing Barbell Overhead Press (OHP)",
+      muscleGroup: "shoulders",
+      muscle: "Anterior Deltoids, Lateral Deltoids, Triceps, Core",
+      equipment: "Olympic Barbell, Squat Rack",
+      difficulty: "Advanced",
+      type: "Compound",
+      cues: "Tight glutes and braced core. Press bar in vertical path, tuck head through window at top for full overhead lockout.",
+      image: "assets/images/ex_bench.jpg"
+    },
+    {
+      id: "ex-shoulders-db-press",
+      name: "Seated Dumbbell Shoulder Press",
+      muscleGroup: "shoulders",
+      muscle: "Anterior & Lateral Deltoids, Triceps Brachii",
+      equipment: "Adjustable Bench, Dumbbells",
+      difficulty: "Beginner",
+      type: "Compound",
+      cues: "Set bench at 75-80°. Press dumbbells upward along natural arc, stopping just short of locking out elbows.",
+      image: "assets/images/ex_bench.jpg"
+    },
+    {
+      id: "ex-shoulders-lat-raise",
+      name: "Dumbbell Lateral Deltoid Raise",
+      muscleGroup: "shoulders",
+      muscle: "Lateral Deltoids (Side Delts / V-Taper Width)",
       equipment: "Dumbbells",
       difficulty: "Beginner",
       type: "Isolation",
-      cues: "Slight forward torso lean. Raise elbows in scapular plane to parallel. Pause for 0.5s at peak.",
-      image: "assets/images/bench_press.jpg"
+      cues: "Slight 10° forward lean. Raise elbows in scapular plane to parallel with floor, lead with elbows, pause 0.5s at peak.",
+      image: "assets/images/ex_lateral_raise.jpg"
     },
     {
-      id: "ex-4",
-      name: "Lat Pulldown (Neutral Grip)",
-      muscle: "Back (Latissimus Dorsi)",
-      equipment: "Cable Machine, Attachment",
-      difficulty: "Beginner",
-      type: "Compound",
-      cues: "Depress shoulder blades before pulling. Drive elbows down towards hips, keep chest proud.",
-      image: "assets/images/bench_press.jpg"
+      id: "ex-shoulders-cable-y",
+      name: "Cable Lateral Y-Raise",
+      muscleGroup: "shoulders",
+      muscle: "Lateral Deltoids (Constant Cable Tension)",
+      equipment: "Dual Low Cable Pulley",
+      difficulty: "Intermediate",
+      type: "Isolation",
+      cues: "Cross cables behind back. Pull upwards and outwards to 45° angle, keeping constant tension through full range of motion.",
+      image: "assets/images/ex_lateral_raise.jpg"
     },
     {
-      id: "ex-5",
-      name: "Barbell Back Squat",
-      muscle: "Quadriceps & Core",
-      equipment: "Squat Rack, Barbell",
-      difficulty: "Advanced",
-      type: "Compound",
-      cues: "Brace core tightly. Break at hips and knees simultaneously, descend below parallel, drive through midfoot.",
-      image: "assets/images/bench_press.jpg"
-    },
-    {
-      id: "ex-6",
-      name: "Standing Cable Bicep Curl",
-      muscle: "Arms (Biceps Brachii)",
-      equipment: "Cable Pulley, Straight Bar",
+      id: "ex-shoulders-rear-pecdeck",
+      name: "Reverse Pec Deck (Rear Delt Fly)",
+      muscleGroup: "shoulders",
+      muscle: "Posterior Deltoids (Rear Delts), Infraspinatus",
+      equipment: "Pec Deck Machine",
       difficulty: "Beginner",
       type: "Isolation",
-      cues: "Pin elbows to ribs. Squeeze biceps hard at the top, control 3-second negative descent.",
+      cues: "Chest flat against pad. Keep slight elbow bend, drive arms back horizontally using rear shoulders rather than mid-back.",
+      image: "assets/images/ex_lateral_raise.jpg"
+    },
+
+    // 6. BICEPS (Biceps Brachii - Long & Short Heads, Brachialis)
+    {
+      id: "ex-biceps-bb-curl",
+      name: "Standing Barbell Bicep Curl",
+      muscleGroup: "biceps",
+      muscle: "Biceps Brachii (Short & Long Heads), Brachialis",
+      equipment: "EZ Bar / Straight Barbell",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Elbows pinned to sides of ribcage. Curl weight upward through full supination, control 3-second eccentric lowering phase.",
+      image: "assets/images/ex_bicep.jpg"
+    },
+    {
+      id: "ex-biceps-incline-curl",
+      name: "Incline Dumbbell Bicep Curl",
+      muscleGroup: "biceps",
+      muscle: "Biceps Brachii Long Head (Bicep Peak Stretch)",
+      equipment: "45-Degree Incline Bench, Dumbbells",
+      difficulty: "Intermediate",
+      type: "Isolation",
+      cues: "Arms hanging straight down behind torso. Curl dumbbells while maintaining shoulder extension to maximize long head stretch.",
+      image: "assets/images/ex_bicep.jpg"
+    },
+    {
+      id: "ex-biceps-hammer",
+      name: "Dumbbell Hammer Curls",
+      muscleGroup: "biceps",
+      muscle: "Brachialis & Brachioradialis (Arm Thickness)",
+      equipment: "Dumbbells",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Neutral thumbs-up grip. Curl dumbbells alternately or together toward front shoulders without swinging torso.",
+      image: "assets/images/ex_bicep.jpg"
+    },
+    {
+      id: "ex-biceps-preacher",
+      name: "Preacher Curl (Scott Bench)",
+      muscleGroup: "biceps",
+      muscle: "Biceps Brachii Short Head (Inner Peak Isolation)",
+      equipment: "Preacher Bench, EZ Bar",
+      difficulty: "Intermediate",
+      type: "Isolation",
+      cues: "Armpits snug over pad. Isolate biceps completely by eliminating momentum, curl upward to full flexion without lifting elbows.",
+      image: "assets/images/ex_bicep.jpg"
+    },
+
+    // 7. TRICEPS (Triceps Brachii - Lateral, Long, Medial Heads)
+    {
+      id: "ex-triceps-rope-pushdown",
+      name: "Tricep Rope Cable Pushdown",
+      muscleGroup: "triceps",
+      muscle: "Triceps Brachii (Lateral & Medial Heads)",
+      equipment: "High Cable Pulley, Rope Attachment",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Upper arms stationary by flanks. Push rope down, flaring rope ends outward at bottom for maximum tricep contraction.",
+      image: "assets/images/ex_lateral_raise.jpg"
+    },
+    {
+      id: "ex-triceps-skullcrusher",
+      name: "Lying Barbell Skull Crushers",
+      muscleGroup: "triceps",
+      muscle: "Triceps Brachii (Long Head & Medial Head)",
+      equipment: "Flat Bench, EZ Barbell",
+      difficulty: "Intermediate",
+      type: "Isolation",
+      cues: "Arms angled 10° backward from vertical. Hinge at elbows, lower bar to hairline, extend triceps back to start position.",
+      image: "assets/images/bench_press.jpg"
+    },
+    {
+      id: "ex-triceps-overhead-ext",
+      name: "Overhead Dumbbell Tricep Extension",
+      muscleGroup: "triceps",
+      muscle: "Triceps Brachii Long Head (Full Stretch Overhead)",
+      equipment: "Dumbbell / Cable",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Hold dumbbell with diamond cup grip overhead. Lower dumbbell deep behind head, flare elbows slightly, press straight up.",
+      image: "assets/images/bench_press.jpg"
+    },
+    {
+      id: "ex-triceps-cg-bench",
+      name: "Close-Grip Barbell Bench Press",
+      muscleGroup: "triceps",
+      muscle: "Triceps Brachii, Anterior Deltoids, Inner Pecs",
+      equipment: "Flat Olympic Bench",
+      difficulty: "Intermediate",
+      type: "Compound",
+      cues: "Shoulder-width grip. Keep elbows tucked tightly against ribs, lower to lower sternum, press explosively through triceps.",
+      image: "assets/images/ex_bench.jpg"
+    },
+
+    // 8. FOREARMS & GRIP (Brachioradialis, Wrist Flexors & Extensors)
+    {
+      id: "ex-forearms-reverse-curl",
+      name: "Reverse-Grip Barbell Wrist Curl",
+      muscleGroup: "forearms",
+      muscle: "Brachioradialis, Forearm Extensors",
+      equipment: "Barbell / EZ Bar",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Pronated overhand grip. Rest forearms across thighs, curl wrists upward toward ceiling, hold for 1 second.",
+      image: "assets/images/ex_bicep.jpg"
+    },
+    {
+      id: "ex-forearms-farmers-walk",
+      name: "Heavy Dumbbell Farmer's Carry",
+      muscleGroup: "forearms",
+      muscle: "Grip Flexors, Brachioradialis, Trapezius, Core",
+      equipment: "Heavy Dumbbells or Kettlebells",
+      difficulty: "Intermediate",
+      type: "Compound",
+      cues: "Stand tall with ribs down and shoulders packed. Walk 40 meters with measured heel-to-toe steps without swaying sideways.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+
+    // 9. QUADRICEPS (Rectus Femoris, Vastus Lateralis, Vastus Medialis)
+    {
+      id: "ex-quads-back-squat",
+      name: "Barbell Back Squat (High Bar)",
+      muscleGroup: "quads",
+      muscle: "Quadriceps Femoris (Rectus Femoris, Vastus Medialis), Glutes",
+      equipment: "Olympic Squat Rack & Barbell",
+      difficulty: "Advanced",
+      type: "Compound",
+      cues: "Bar on upper traps. Deep diaphragmatic brace, break at hips and knees simultaneously, descend below parallel, drive up through midfoot.",
+      image: "assets/images/ex_squat.jpg"
+    },
+    {
+      id: "ex-quads-leg-ext",
+      name: "Leg Extension Machine",
+      muscleGroup: "quads",
+      muscle: "Quadriceps (Vastus Medialis 'Teardrop' Isolation)",
+      equipment: "Leg Extension Machine",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Back against pad, knee joint aligned with machine pivot. Extend legs to full lockout, pause for 1 second, resist negative descent.",
+      image: "assets/images/ex_squat.jpg"
+    },
+    {
+      id: "ex-quads-split-squat",
+      name: "Bulgarian Split Squat",
+      muscleGroup: "quads",
+      muscle: "Quadriceps, Gluteus Medius, Adductors",
+      equipment: "Flat Bench, Pair of Dumbbells",
+      difficulty: "Intermediate",
+      type: "Compound",
+      cues: "Rear foot elevated on bench. Keep front knee tracking over second toe, sink straight down until back knee hovers above floor.",
+      image: "assets/images/ex_squat.jpg"
+    },
+    {
+      id: "ex-quads-hack-squat",
+      name: "Machine Hack Squat / Leg Press",
+      muscleGroup: "quads",
+      muscle: "Quadriceps Femoris Mass & Vastus Lateralis Sweep",
+      equipment: "Hack Squat Sled",
+      difficulty: "Intermediate",
+      type: "Compound",
+      cues: "Feet shoulder-width on platform. Lower sled under strict 3-second control to 90° knee angle, drive through heels without knee hyperextension.",
+      image: "assets/images/ex_squat.jpg"
+    },
+
+    // 10. HAMSTRINGS (Biceps Femoris, Semitendinosus, Semimembranosus)
+    {
+      id: "ex-hamstrings-rdl",
+      name: "Barbell Romanian Deadlift (RDL)",
+      muscleGroup: "hamstrings",
+      muscle: "Hamstrings (Biceps Femoris), Gluteus Maximus",
+      equipment: "Olympic Barbell & Plates",
+      difficulty: "Intermediate",
+      type: "Compound",
+      cues: "Soft knee bend throughout. Push hips straight back towards rear wall, slide bar down shins until deep hamstring stretch, drive hips through.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+    {
+      id: "ex-hamstrings-lying-curl",
+      name: "Lying Leg Curl Machine",
+      muscleGroup: "hamstrings",
+      muscle: "Hamstrings (Knee Flexion Hypertrophy)",
+      equipment: "Lying Leg Curl Machine",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Hips pressed firmly into bench. Curl pad toward glutes, dorsiflex toes slightly, control the lowering tempo to prevent hip lift.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+    {
+      id: "ex-hamstrings-seated-curl",
+      name: "Seated Leg Curl Machine",
+      muscleGroup: "hamstrings",
+      muscle: "Hamstrings (Peak Lengthened Position)",
+      equipment: "Seated Leg Curl Machine",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Adjust lap pad snugly. Curl heels down and back under seat, pause at peak flexion, emphasize 3-second controlled return.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+
+    // 11. GLUTES (Gluteus Maximus, Medius & Minimus)
+    {
+      id: "ex-glutes-hip-thrust",
+      name: "Barbell Hip Thrust",
+      muscleGroup: "glutes",
+      muscle: "Gluteus Maximus (Peak Contraction), Hamstrings",
+      equipment: "Hip Thrust Bench & Barbell Pad",
+      difficulty: "Intermediate",
+      type: "Compound",
+      cues: "Upper back hinged across bench, bar over hips. Drive through heels to full hip extension, tuck chin, squeeze glutes hard for 1 second at top.",
+      image: "assets/images/ex_squat.jpg"
+    },
+    {
+      id: "ex-glutes-kickback",
+      name: "Cable Standing Glute Kickback",
+      muscleGroup: "glutes",
+      muscle: "Gluteus Maximus & Gluteus Medius",
+      equipment: "Low Cable Tower, Ankle Strap",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Hinge torso slightly forward. Kick leg straight backward squeezing glute at top, avoid overarching lower spine.",
+      image: "assets/images/ex_squat.jpg"
+    },
+    {
+      id: "ex-glutes-abduction",
+      name: "Seated Hip Abduction Machine",
+      muscleGroup: "glutes",
+      muscle: "Gluteus Medius & Minimus (Hip Stability & Shelf)",
+      equipment: "Hip Abduction Machine",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Sit slightly forward off backrest. Push knees wide against resistance pads, hold peak contraction, return slowly.",
+      image: "assets/images/ex_squat.jpg"
+    },
+
+    // 12. CALVES (Gastrocnemius & Soleus)
+    {
+      id: "ex-calves-standing-raise",
+      name: "Standing Barbell Calf Raise",
+      muscleGroup: "calves",
+      muscle: "Gastrocnemius (Medial & Lateral Heads / Straight Knee)",
+      equipment: "Calf Block, Smith Machine or Barbell",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Balls of feet on edge of block. Drop heels for full calf stretch, drive onto big toes for peak contraction, pause at apex.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+    {
+      id: "ex-calves-seated-raise",
+      name: "Seated Calf Raise Machine",
+      muscleGroup: "calves",
+      muscle: "Soleus Muscle (Deep Postural Calf Muscle)",
+      equipment: "Seated Calf Raise Machine",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Knees bent at 90° isolates soleus. Lower heels into deep stretch, drive up onto toes with a 2-second hold at peak.",
+      image: "assets/images/ex_deadlift.jpg"
+    },
+
+    // 13. ABS & CORE (Rectus Abdominis, Obliques, Deep Transverse)
+    {
+      id: "ex-abs-hanging-raise",
+      name: "Hanging Leg / Knee Raises",
+      muscleGroup: "abs",
+      muscle: "Lower Rectus Abdominis, Hip Flexors, Deep Core",
+      equipment: "Pull-Up Bar / Captain's Chair",
+      difficulty: "Intermediate",
+      type: "Isolation",
+      cues: "Hang with engaged shoulders. Curl pelvis upward while lifting legs or knees to chest, avoid using body momentum.",
+      image: "assets/images/ex_lat_pulldown.jpg"
+    },
+    {
+      id: "ex-abs-cable-crunch",
+      name: "Kneeling Cable Rope Crunch",
+      muscleGroup: "abs",
+      muscle: "Upper Rectus Abdominis (Six-Pack Flexion)",
+      equipment: "High Cable Pulley, Rope Attachment",
+      difficulty: "Intermediate",
+      type: "Isolation",
+      cues: "Kneel facing cable. Hold rope by ears, curl spine downward bringing elbows towards thighs, squeeze abs without sitting back on heels.",
+      image: "assets/images/ex_lateral_raise.jpg"
+    },
+    {
+      id: "ex-abs-russian-twist",
+      name: "Weighted Russian Twists",
+      muscleGroup: "abs",
+      muscle: "External & Internal Obliques, Transverse Abdominis",
+      equipment: "Medicine Ball or Dumbbell, Exercise Mat",
+      difficulty: "Beginner",
+      type: "Isolation",
+      cues: "Sit with knees bent, torso reclined at 45°. Rotate torso side to side touching weight to floor with controlled cadence.",
+      image: "assets/images/ex_lateral_raise.jpg"
+    },
+    {
+      id: "ex-abs-ab-wheel",
+      name: "Ab Wheel Rollout",
+      muscleGroup: "abs",
+      muscle: "Total Core Anti-Extension, Rectus Abdominis, Lats",
+      equipment: "Ab Roller Wheel, Knee Mat",
+      difficulty: "Advanced",
+      type: "Compound",
+      cues: "Start on knees with posterior pelvic tilt. Roll wheel forward while bracing core like a rock, pull back using abs without arching lower back.",
+      image: "assets/images/bench_press.jpg"
+    },
+    {
+      id: "ex-abs-plank",
+      name: "Weighted Forearm Plank",
+      muscleGroup: "abs",
+      muscle: "Transverse Abdominis, Deep Stabilizers, Glutes",
+      equipment: "Weight Plate / Bodyweight",
+      difficulty: "Intermediate",
+      type: "Isometric",
+      cues: "Elbows under shoulders, pull elbows toward toes isometrically while squeezing glutes and quads. Keep hips level.",
       image: "assets/images/bench_press.jpg"
     }
   ],
@@ -829,6 +1333,9 @@ class FitSyncStore {
         if (!parsed.workoutPlans || !parsed.workoutPlans.thu || !parsed.workoutPlans.thu.exercises || parsed.workoutPlans.thu.exercises[0].id !== "ex_greatest_stretch") {
           parsed.workoutPlans = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.workoutPlans));
         }
+        if (!parsed.exerciseLibrary || parsed.exerciseLibrary.length < 30) {
+          parsed.exerciseLibrary = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.exerciseLibrary));
+        }
         return parsed;
       }
     } catch (e) {
@@ -843,6 +1350,13 @@ class FitSyncStore {
     } catch (e) {
       console.warn('Could not save to LocalStorage:', e);
     }
+  }
+
+  getExerciseLibrary() {
+    if (!this.state.exerciseLibrary || this.state.exerciseLibrary.length < 30) {
+      this.state.exerciseLibrary = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.exerciseLibrary));
+    }
+    return this.state.exerciseLibrary;
   }
 
   getWorkoutPlan(dayKey) {
@@ -950,7 +1464,138 @@ class FitSyncStore {
   }
 }
 
+const MUSCLE_BIOMECHANICS = {
+  all: {
+    key: "all",
+    name: "Full Musculoskeletal Anatomy",
+    latin: "Systema Musculare Humanum",
+    view: "both",
+    category: "Full Kinetic Chain",
+    function: "Complete multi-joint human movement patterns, total neuromuscular coordination, and systemic athletic strength across all kinetic planes.",
+    synergists: "Anterior & Posterior Musculature",
+    count: 38
+  },
+  chest: {
+    key: "chest",
+    name: "Pectoralis Major & Minor",
+    latin: "Pectoralis major, Pectoralis minor",
+    view: "anterior",
+    category: "Anterior Torso",
+    function: "Horizontal adduction, shoulder flexion, internal arm rotation, and anterior pushing mechanics.",
+    synergists: "Anterior Deltoids, Triceps Brachii, Serratus Anterior"
+  },
+  back: {
+    key: "back",
+    name: "Latissimus Dorsi & Rhomboids",
+    latin: "Latissimus dorsi, Rhomboideus major/minor",
+    view: "posterior",
+    category: "Posterior Torso",
+    function: "Shoulder extension, adduction, scapular retraction, and horizontal/vertical pulling mechanics.",
+    synergists: "Biceps Brachii, Posterior Deltoids, Teres Major, Trapezius"
+  },
+  shoulders: {
+    key: "shoulders",
+    name: "Deltoids (Anterior, Lateral, Posterior)",
+    latin: "Musculus deltoideus",
+    view: "both",
+    category: "Shoulder Girdle",
+    function: "Arm abduction in scapular plane (lateral), arm flexion (anterior), horizontal abduction & external rotation (posterior).",
+    synergists: "Supraspinatus, Trapezius, Triceps Brachii, Clavicular Pecs"
+  },
+  traps: {
+    key: "traps",
+    name: "Trapezius (Upper, Middle, Lower)",
+    latin: "Musculus trapezius",
+    view: "posterior",
+    category: "Upper Back & Cervical",
+    function: "Scapular elevation, upward rotation, retraction, and depression; cervical spinal stabilization.",
+    synergists: "Levator Scapulae, Rhomboids, Posterior Deltoids"
+  },
+  lowerback: {
+    key: "lowerback",
+    name: "Erector Spinae & Lumbar Stabilizers",
+    latin: "Musculus erector spinae",
+    view: "posterior",
+    category: "Posterior Chain",
+    function: "Spinal extension, lateral flexion, rotation, and dynamic anti-flexion spinal posture preservation.",
+    synergists: "Gluteus Maximus, Hamstrings, Quadratus Lumborum, Multifidus"
+  },
+  biceps: {
+    key: "biceps",
+    name: "Biceps Brachii & Brachialis",
+    latin: "Biceps brachii, Brachialis",
+    view: "anterior",
+    category: "Anterior Arm",
+    function: "Forearm flexion at elbow joint, radioulnar supination, and secondary shoulder flexion assistance.",
+    synergists: "Brachioradialis, Pronator Teres, Anterior Deltoids"
+  },
+  triceps: {
+    key: "triceps",
+    name: "Triceps Brachii (Long, Lateral, Medial)",
+    latin: "Triceps brachii",
+    view: "posterior",
+    category: "Posterior Arm",
+    function: "Elbow extension; long head assists in shoulder extension and shoulder joint stabilization.",
+    synergists: "Anconeus, Pectoralis Major (sternal), Anterior Deltoid"
+  },
+  forearms: {
+    key: "forearms",
+    name: "Brachioradialis & Forearm Flexors/Extensors",
+    latin: "Brachioradialis, Flexores carpi",
+    view: "both",
+    category: "Lower Arm & Grip",
+    function: "Elbow flexion in neutral grip, wrist flexion/extension, radial/ulnar deviation, and crushing grip force.",
+    synergists: "Extensor carpi, Flexor digitorum, Thenar musculature"
+  },
+  quads: {
+    key: "quads",
+    name: "Quadriceps Femoris",
+    latin: "Rectus femoris, Vastus lateralis, Vastus medialis, Vastus intermedius",
+    view: "anterior",
+    category: "Anterior Thigh",
+    function: "Knee extension and eccentric deceleration; rectus femoris assists with hip flexion.",
+    synergists: "Gluteus Maximus, Adductor Magnus, Soleus"
+  },
+  hamstrings: {
+    key: "hamstrings",
+    name: "Hamstrings (Biceps Femoris & Semis)",
+    latin: "Biceps femoris, Semitendinosus, Semimembranosus",
+    view: "posterior",
+    category: "Posterior Thigh",
+    function: "Knee flexion, hip extension, tibial rotation, and eccentric deceleration in sprinting.",
+    synergists: "Gluteus Maximus, Adductor Magnus, Gastrocnemius"
+  },
+  glutes: {
+    key: "glutes",
+    name: "Gluteus Maximus, Medius & Minimus",
+    latin: "Gluteus maximus, Gluteus medius, Gluteus minimus",
+    view: "posterior",
+    category: "Pelvic Girdle",
+    function: "Primary hip extension, hip abduction, external rotation, and pelvic stabilization.",
+    synergists: "Hamstrings, Erector Spinae, Tensor Fasciae Latae"
+  },
+  calves: {
+    key: "calves",
+    name: "Gastrocnemius & Soleus",
+    latin: "Gastrocnemius, Soleus, Tibialis anterior",
+    view: "both",
+    category: "Lower Leg",
+    function: "Ankle plantarflexion, propulsive force generation, and knee flexion stabilization (gastrocnemius).",
+    synergists: "Plantaris, Flexor hallucis longus, Tibialis posterior"
+  },
+  abs: {
+    key: "abs",
+    name: "Rectus Abdominis & Obliques",
+    latin: "Rectus abdominis, Obliquus externus/internus",
+    view: "anterior",
+    category: "Anterior Core",
+    function: "Trunk flexion, posterior pelvic tilt, spinal rotation, lateral flexion, and intra-abdominal pressure generation.",
+    synergists: "Transverse Abdominis, Multifidus, Diaphragm, Pelvic Floor"
+  }
+};
+
 if (typeof window !== 'undefined') {
   window.fitSyncStore = new FitSyncStore();
   window.DEFAULT_FITSYNC_DATA = DEFAULT_FITSYNC_DATA;
+  window.MUSCLE_BIOMECHANICS = MUSCLE_BIOMECHANICS;
 }

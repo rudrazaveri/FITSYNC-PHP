@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupAssessmentLiveCalculator();
   initWorkoutPlannerModule();
   setupHeaderRestTimer();
+  initExerciseLibraryModule();
 });
 
 // Robust Icon Initializer (Lucide + Instant Inline SVG Fallback)
@@ -73,6 +74,9 @@ function switchView(viewName) {
 
   // Re-render icons and charts if needed
   initIcons();
+  if (viewName === 'exercises') {
+    renderExerciseLibrary(currentSelectedMuscle || 'all', currentExerciseSearch || '');
+  }
   setTimeout(() => {
     if (window.renderAllCharts) window.renderAllCharts();
   }, 60);
@@ -1115,3 +1119,326 @@ window.setHeaderRestPreset = setHeaderRestPreset;
 window.resetHeaderRestTimer = resetHeaderRestTimer;
 window.startHeaderRestTimer = startHeaderRestTimer;
 window.resetWaterIntake = resetWaterIntake;
+
+// =========================================================================
+// INTERACTIVE HUMAN ANATOMY & EXERCISE LIBRARY CONTROLLER
+// =========================================================================
+
+let currentSelectedMuscle = 'all';
+let currentExerciseSearch = '';
+let currentAnatomyView = 'front';
+
+function initExerciseLibraryModule() {
+  // 1. Setup SVG Muscle Group Click & Hover Listeners
+  const svgMuscleGroups = document.querySelectorAll('.muscle-group');
+  svgMuscleGroups.forEach(group => {
+    const muscle = group.getAttribute('data-muscle');
+    if (!muscle) return;
+
+    // Hover highlight
+    group.addEventListener('mouseenter', () => {
+      highlightMuscleOnDiagram(muscle, true);
+    });
+
+    group.addEventListener('mouseleave', () => {
+      highlightMuscleOnDiagram(muscle, false);
+    });
+
+    // Click to select/filter
+    group.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentSelectedMuscle === muscle) {
+        selectMuscle('all');
+      } else {
+        selectMuscle(muscle);
+      }
+    });
+  });
+
+  // 2. Setup Filter Chips
+  const filterChips = document.querySelectorAll('#exerciseFilterChips .filter-chip');
+  filterChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const muscle = chip.getAttribute('data-muscle') || 'all';
+      selectMuscle(muscle);
+    });
+  });
+
+  // 3. Setup Live Search Input
+  const searchInput = document.getElementById('exerciseSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      currentExerciseSearch = e.target.value.trim().toLowerCase();
+      renderExerciseLibrary(currentSelectedMuscle, currentExerciseSearch);
+    });
+  }
+
+  // 4. Initial Render
+  selectMuscle('all');
+}
+
+function setAnatomyView(view) {
+  currentAnatomyView = view;
+  const wrapper = document.getElementById('anatomyDiagramWrapper');
+  if (wrapper) {
+    wrapper.setAttribute('data-active-view', view);
+  }
+
+  // Update button active classes
+  document.querySelectorAll('.anatomy-toggle-pill').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  if (view === 'front') {
+    document.getElementById('btnAnatomyFront')?.classList.add('active');
+  } else if (view === 'back') {
+    document.getElementById('btnAnatomyBack')?.classList.add('active');
+  } else {
+    document.getElementById('btnAnatomyBoth')?.classList.add('active');
+  }
+  initIcons();
+}
+
+function highlightMuscleOnDiagram(muscleKey, isHover) {
+  const groups = document.querySelectorAll(`.muscle-group[data-muscle="${muscleKey}"]`);
+  groups.forEach(g => {
+    if (isHover) {
+      g.classList.add('highlighted');
+    } else {
+      g.classList.remove('highlighted');
+    }
+  });
+}
+
+function selectMuscle(muscleKey) {
+  currentSelectedMuscle = muscleKey || 'all';
+
+  // 1. Sync anatomy diagram active classes across both SVGs
+  document.querySelectorAll('.muscle-group').forEach(g => {
+    const m = g.getAttribute('data-muscle');
+    if (currentSelectedMuscle !== 'all' && m === currentSelectedMuscle) {
+      g.classList.add('active');
+    } else {
+      g.classList.remove('active');
+    }
+  });
+
+  // 2. Auto-switch diagram view if the selected muscle is predominantly on the other side
+  const biomechanics = window.MUSCLE_BIOMECHANICS || {};
+  const muscleInfo = biomechanics[currentSelectedMuscle] || biomechanics['all'];
+
+  if (currentAnatomyView !== 'both') {
+    if (muscleInfo && muscleInfo.view === 'posterior' && currentAnatomyView !== 'back') {
+      setAnatomyView('back');
+    } else if (muscleInfo && muscleInfo.view === 'anterior' && currentAnatomyView !== 'front') {
+      setAnatomyView('front');
+    }
+  }
+
+  // 3. Update the Anatomy Info Card Banner
+  updateAnatomyInfoBanner(currentSelectedMuscle, muscleInfo);
+
+  // 4. Update Filter Chips active state
+  document.querySelectorAll('#exerciseFilterChips .filter-chip').forEach(chip => {
+    const chipMuscle = chip.getAttribute('data-muscle') || 'all';
+    if (chipMuscle === currentSelectedMuscle) {
+      chip.classList.add('active');
+    } else {
+      chip.classList.remove('active');
+    }
+  });
+
+  // 5. Render Exercise Grid
+  renderExerciseLibrary(currentSelectedMuscle, currentExerciseSearch);
+}
+
+function updateAnatomyInfoBanner(muscleKey, muscleInfo) {
+  const allExercises = window.fitSyncStore ? window.fitSyncStore.getExerciseLibrary() : [];
+  let matchingCount = allExercises.length;
+  if (muscleKey !== 'all') {
+    matchingCount = allExercises.filter(ex => ex.muscleGroup === muscleKey).length;
+  }
+
+  const titleEl = document.getElementById('anatomyMuscleTitle');
+  const latinEl = document.getElementById('anatomyMuscleLatin');
+  const funcEl = document.getElementById('anatomyMuscleFunction');
+  const synEl = document.getElementById('anatomyMuscleSynergists');
+  const planeEl = document.getElementById('anatomyMusclePlane');
+  const counterEl = document.getElementById('anatomyExerciseCounter');
+
+  if (muscleInfo) {
+    if (titleEl) titleEl.textContent = muscleInfo.name || "Musculoskeletal System";
+    if (latinEl) latinEl.textContent = muscleInfo.latin || "Anatomia";
+    if (funcEl) funcEl.textContent = muscleInfo.function || "";
+    if (synEl) synEl.textContent = muscleInfo.synergists || "Full Body Kinetic Chain";
+    if (planeEl) {
+      planeEl.textContent = muscleInfo.view === 'both' ? 'Multi-Planar' : (muscleInfo.view === 'anterior' ? 'Frontal / Sagittal' : 'Posterior Sagittal');
+    }
+  }
+
+  if (counterEl) {
+    counterEl.textContent = `${matchingCount} Exercise${matchingCount === 1 ? '' : 's'} Available`;
+  }
+}
+
+function renderExerciseLibrary(filterMuscle = 'all', searchQuery = '') {
+  const container = document.getElementById('exerciseLibraryGrid');
+  if (!container) return;
+
+  const allExercises = window.fitSyncStore ? window.fitSyncStore.getExerciseLibrary() : [];
+  let filtered = allExercises;
+
+  // Filter by muscle group
+  if (filterMuscle && filterMuscle !== 'all') {
+    filtered = filtered.filter(ex => ex.muscleGroup === filterMuscle);
+  }
+
+  // Filter by search query
+  if (searchQuery && searchQuery.trim().length > 0) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(ex => {
+      const name = (ex.name || '').toLowerCase();
+      const muscle = (ex.muscle || '').toLowerCase();
+      const equip = (ex.equipment || '').toLowerCase();
+      const diff = (ex.difficulty || '').toLowerCase();
+      const cues = (ex.cues || '').toLowerCase();
+      return name.includes(q) || muscle.includes(q) || equip.includes(q) || diff.includes(q) || cues.includes(q);
+    });
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; background: #FFFFFF; border: 1px dashed var(--border-color); border-radius: var(--radius-lg); padding: 48px 24px; text-align: center;">
+        <div style="font-size: 36px; margin-bottom: 10px;">🔍</div>
+        <h4 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">No exercises found matching criteria</h4>
+        <p style="font-size: 13px; color: var(--text-secondary); max-width: 400px; margin: 0 auto 16px auto;">Try clearing your search query or selecting a different muscle group from the anatomy diagram.</p>
+        <button type="button" class="btn-primary-block" style="width: auto; margin: 0 auto; padding: 8px 18px;" onclick="document.getElementById('exerciseSearchInput').value=''; currentExerciseSearch=''; selectMuscle('all');">
+          Reset Filter & Search
+        </button>
+      </div>
+    `;
+    initIcons();
+    return;
+  }
+
+  let html = '';
+  filtered.forEach(ex => {
+    const diffClass = ex.difficulty === 'Beginner' ? 'diff-beginner' : (ex.difficulty === 'Advanced' ? 'diff-advanced' : 'diff-intermediate');
+    html += `
+      <div class="ex-library-card">
+        <div class="ex-library-card-img-wrap" onclick="showExerciseDetailModal('${ex.id}')">
+          <img src="${ex.image || 'assets/images/ex_bench.jpg'}" class="ex-library-card-img" alt="${ex.name}" onerror="this.src='assets/images/ex_bench.jpg'">
+          <span class="ex-library-diff-badge ${diffClass}">${ex.difficulty || 'Intermediate'}</span>
+        </div>
+        <div class="ex-library-muscle-tag" title="${ex.muscle}">
+          ${ex.muscle}
+        </div>
+        <h4 class="ex-library-title" onclick="showExerciseDetailModal('${ex.id}')" style="cursor: pointer;">
+          ${ex.name}
+        </h4>
+        <p class="ex-library-cues">${ex.cues || 'Maintain rigid kinetic alignment and focus on eccentric stretch.'}</p>
+        <div class="ex-library-tags-row">
+          <span class="tag-badge">${ex.equipment || 'Gym Equipment'}</span>
+          <span class="tag-badge">${ex.type || 'Compound'}</span>
+        </div>
+        <div class="ex-library-actions">
+          <button type="button" class="ex-btn-guide" onclick="showExerciseDetailModal('${ex.id}')">
+            <i data-lucide="book-open" style="width: 13px; height: 13px;"></i> Guide
+          </button>
+          <button type="button" class="ex-btn-add" onclick="quickAddExerciseToRoutine('${ex.id}')" title="Add to Today's Routine">
+            <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add to Routine
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  initIcons();
+}
+
+function showExerciseDetailModal(exId) {
+  const allExercises = window.fitSyncStore ? window.fitSyncStore.getExerciseLibrary() : [];
+  const ex = allExercises.find(item => item.id === exId) || allExercises[0];
+  if (!ex) return;
+
+  const titleEl = document.getElementById('exModalTitle');
+  const imgEl = document.getElementById('exModalImage');
+  const diffEl = document.getElementById('exModalDifficultyTag');
+  const muscleBadgeEl = document.getElementById('exModalMuscleBadge');
+  const typeBadgeEl = document.getElementById('exModalTypeBadge');
+  const equipBadgeEl = document.getElementById('exModalEquipBadge');
+  const cuesEl = document.getElementById('exModalCues');
+  const targetSetsEl = document.getElementById('exModalTargetSets');
+  const addBtn = document.getElementById('exModalAddBtn');
+
+  if (titleEl) titleEl.textContent = ex.name;
+  if (imgEl) {
+    imgEl.src = ex.image || 'assets/images/ex_bench.jpg';
+    imgEl.onerror = () => { imgEl.src = 'assets/images/ex_bench.jpg'; };
+  }
+  if (diffEl) {
+    diffEl.textContent = ex.difficulty || 'Intermediate';
+    diffEl.className = 'tag-badge ' + (ex.difficulty === 'Beginner' ? 'diff-beginner' : (ex.difficulty === 'Advanced' ? 'diff-advanced' : 'diff-intermediate'));
+  }
+  if (muscleBadgeEl) muscleBadgeEl.textContent = `Target: ${ex.muscle}`;
+  if (typeBadgeEl) typeBadgeEl.textContent = ex.type || 'Compound Movement';
+  if (equipBadgeEl) equipBadgeEl.textContent = ex.equipment || 'Free Weights';
+  if (cuesEl) cuesEl.textContent = ex.cues || 'Maintain proper form and control throughout.';
+  if (targetSetsEl) {
+    targetSetsEl.textContent = ex.type === 'Compound' ? '4 Sets • 6-10 Reps • 90-120s Rest' : '3-4 Sets • 10-15 Reps • 60s Rest';
+  }
+
+  if (addBtn) {
+    addBtn.onclick = () => {
+      quickAddExerciseToRoutine(ex.id);
+      closeModal('exerciseDetailModal');
+    };
+  }
+
+  openModal('exerciseDetailModal');
+  initIcons();
+}
+
+function quickAddExerciseToRoutine(exId) {
+  const allExercises = window.fitSyncStore ? window.fitSyncStore.getExerciseLibrary() : [];
+  const ex = allExercises.find(item => item.id === exId);
+  if (!ex) return;
+
+  const dayKey = currentWorkoutDay || 'tue';
+  const plan = window.fitSyncStore ? window.fitSyncStore.getWorkoutPlan(dayKey) : null;
+  if (!plan) return;
+
+  if (!plan.exercises) plan.exercises = [];
+
+  const defaultSets = [
+    { set: 1, reps: 10, weight: 50.0, done: false },
+    { set: 2, reps: 10, weight: 55.0, done: false },
+    { set: 3, reps: 8, weight: 60.0, done: false }
+  ];
+
+  plan.exercises.push({
+    id: `ex_${Date.now()}`,
+    name: ex.name,
+    muscle: ex.muscle,
+    equipment: ex.equipment,
+    image: ex.image || 'assets/images/bench_press.jpg',
+    target: `Target: 3 sets × 8–10 reps`,
+    sets: defaultSets
+  });
+
+  window.fitSyncStore.saveWorkoutPlan(dayKey, plan);
+  if (typeof renderWorkoutPlan === 'function') {
+    renderWorkoutPlan(plan);
+  }
+  showToast(`✅ Added "${ex.name}" to ${plan.dayName}'s Routine!`, 'success');
+}
+
+// Global exports for inline HTML handlers
+window.initExerciseLibraryModule = initExerciseLibraryModule;
+window.setAnatomyView = setAnatomyView;
+window.selectMuscle = selectMuscle;
+window.highlightMuscleOnDiagram = highlightMuscleOnDiagram;
+window.renderExerciseLibrary = renderExerciseLibrary;
+window.showExerciseDetailModal = showExerciseDetailModal;
+window.quickAddExerciseToRoutine = quickAddExerciseToRoutine;
