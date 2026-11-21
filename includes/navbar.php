@@ -68,6 +68,9 @@ $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
               <li><a class="dropdown-item text-danger" href="<?= url('logout.php') ?>"><i class="bi bi-box-arrow-right me-2"></i> Sign Out</a></li>
             </ul>
           </div>
+          <a href="<?= url('logout.php') ?>" class="btn btn-outline-danger btn-sm d-none d-md-inline-flex align-items-center gap-1" title="Sign Out">
+            <i class="bi bi-box-arrow-right"></i> Sign Out
+          </a>
         <?php else: ?>
           <a href="<?= url('login.php') ?>" class="btn btn-outline-fitness btn-sm px-3">
             <i class="bi bi-box-arrow-in-right me-1"></i> Login

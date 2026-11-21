@@ -395,7 +395,7 @@
             <span id="sidebarUserRole">Member · Premium</span>
           </div>
         </div>
-        <button type="button" class="btn-sidebar-user-logout" onclick="logoutUser()" title="Log Out">
+        <button type="button" class="btn-sidebar-user-logout" id="sidebarUserLogoutBtn" onclick="logoutUser()" title="Log Out">
           <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
         </button>
       </div>
@@ -498,7 +498,7 @@
           <i data-lucide="help-circle"></i>
           <span class="nav-label">Help & Support</span>
         </button>
-        <button class="sidebar-nav-item btn-sidebar-logout" onclick="logoutUser()" title="Log out of FitSync">
+        <button class="sidebar-nav-item btn-sidebar-logout" id="sidebarLogoutBtn" onclick="logoutUser()" title="Log out of FitSync">
           <i data-lucide="log-out"></i>
           <span class="nav-label">Log Out</span>
         </button>
@@ -2139,7 +2139,7 @@
                 </p>
               </div>
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button type="button" onclick="logoutUser()" class="btn-settings-logout">
+                <button type="button" onclick="logoutUser()" class="btn-settings-logout" id="settingsLogoutBtn">
                   <i data-lucide="log-out" style="width: 15px; height: 15px;"></i> Log Out
                 </button>
                 <button type="button" onclick="handleResetDatabase()" class="btn-settings-reset">

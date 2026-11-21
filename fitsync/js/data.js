@@ -1619,6 +1619,139 @@ class FitSyncStore {
     this.state.user = { ...this.state.user, ...profile };
     this.save();
   }
+
+  login(email, password, remember = true) {
+    if (!this.state.registeredUsers || this.state.registeredUsers.length === 0) {
+      this.state.registeredUsers = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.registeredUsers));
+    }
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const existing = this.state.registeredUsers.find(u => u.email.toLowerCase() === cleanEmail);
+
+    if (existing) {
+      this.state.user = {
+        ...this.state.user,
+        name: existing.name,
+        email: existing.email,
+        phone: existing.phone || this.state.user.phone,
+        role: existing.role === 'Gym Trainer' ? 'Trainer · Certified' : 'Member · Premium',
+        avatar: existing.avatar || 'assets/images/isha_avatar.jpg',
+        gender: existing.gender || 'Female',
+        age: existing.age || 24,
+        height: `${existing.height || 170} cm`,
+        weight: `${existing.weight || 65} kg`,
+        fitnessGoal: existing.goal || 'Build Muscle',
+        gymBranch: existing.gym ? `${existing.gym}${existing.branchLocation ? ' - ' + existing.branchLocation : ''}` : this.state.user.gymBranch
+      };
+      if (existing.weight) {
+        this.state.stats.weight.current = parseFloat(existing.weight);
+      }
+      if (existing.goal) {
+        this.state.goal.title = existing.goal;
+      }
+    } else if (cleanEmail) {
+      const namePart = cleanEmail.split('@')[0];
+      const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+      const newGuest = {
+        name: formattedName,
+        email: cleanEmail,
+        role: "Gym Member",
+        tag: "Athlete",
+        avatar: "assets/images/isha_avatar.jpg",
+        phone: "+91 98765 43210",
+        gym: "FitZone Fitness",
+        branchLocation: "Alkapuri, Vadodara • 1.2 km",
+        goal: "Build Muscle (Hypertrophy Surplus)",
+        gender: "Other",
+        age: 24,
+        height: 172,
+        weight: 68.0
+      };
+      this.state.registeredUsers.push(newGuest);
+      this.state.user = {
+        ...this.state.user,
+        name: newGuest.name,
+        email: newGuest.email,
+        role: 'Member · Premium',
+        gymBranch: `${newGuest.gym} - ${newGuest.branchLocation}`
+      };
+    }
+    this.state.isLoggedIn = true;
+    this.save();
+    return true;
+  }
+
+  register(userData) {
+    if (!this.state.registeredUsers) {
+      this.state.registeredUsers = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.registeredUsers));
+    }
+    const cleanEmail = (userData.email || '').trim().toLowerCase();
+    const existingIndex = this.state.registeredUsers.findIndex(u => u.email.toLowerCase() === cleanEmail);
+    const newProfile = {
+      name: userData.fullName || "FitSync Athlete",
+      email: cleanEmail,
+      role: userData.role === 'trainer' ? 'Gym Trainer' : 'Gym Member',
+      tag: userData.role === 'trainer' ? 'Coach' : 'Athlete',
+      avatar: userData.avatarUrl || (userData.gender === 'Female' ? 'assets/images/isha_avatar.jpg' : 'assets/images/aarav.jpg'),
+      phone: userData.phone || '+91 98765 43210',
+      gym: userData.gymBranch || 'FitZone Fitness',
+      branchLocation: userData.gymLocation || 'Alkapuri, Vadodara • 1.2 km',
+      goal: userData.goal || 'Build Muscle (Hypertrophy Surplus)',
+      activityLevel: userData.activityLevel || 'Moderately Active (1.55x BMR)',
+      gender: userData.gender || 'Male',
+      age: parseInt(userData.age, 10) || 24,
+      height: parseInt(userData.height, 10) || 175,
+      weight: parseFloat(userData.weight) || 70.0
+    };
+
+    if (existingIndex >= 0) {
+      this.state.registeredUsers[existingIndex] = newProfile;
+    } else {
+      this.state.registeredUsers.push(newProfile);
+    }
+
+    this.state.user = {
+      ...this.state.user,
+      name: newProfile.name,
+      email: newProfile.email,
+      phone: newProfile.phone,
+      role: newProfile.role === 'Gym Trainer' ? 'Trainer · Certified' : 'Member · Premium',
+      avatar: newProfile.avatar,
+      gender: newProfile.gender,
+      age: newProfile.age,
+      height: `${newProfile.height} cm`,
+      weight: `${newProfile.weight} kg`,
+      fitnessGoal: newProfile.goal,
+      gymBranch: `${newProfile.gym} - ${newProfile.branchLocation}`
+    };
+
+    if (newProfile.weight) {
+      this.state.stats.weight.current = newProfile.weight;
+    }
+    if (newProfile.goal) {
+      this.state.goal.title = newProfile.goal;
+    }
+    if (this.state.membership) {
+      this.state.membership.gymName = newProfile.gym;
+    }
+
+    this.state.isLoggedIn = true;
+    this.save();
+    return true;
+  }
+
+  logout() {
+    this.state.isLoggedIn = false;
+    this.save();
+  }
+
+  resetDatabase() {
+    try {
+      localStorage.removeItem(this.storageKey);
+    } catch(e) {}
+    this.state = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA));
+    this.state.isLoggedIn = false;
+    this.save();
+  }
 }
 
 const MUSCLE_BIOMECHANICS = {

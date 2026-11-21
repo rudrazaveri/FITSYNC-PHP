@@ -5,15 +5,9 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/config/session.php';
 
-// Auto demo-login for developer ease if visiting dashboard directly
 if (!isLoggedIn()) {
-    setCurrentUser([
-        'id' => '00000000-0000-0000-0000-000000000001',
-        'full_name' => 'Aarav Patel',
-        'email' => 'aarav.patel@fitsync.ai',
-        'role' => 'member',
-        'avatar_url' => asset('assets/aarav.jpg')
-    ]);
+    header('Location: ' . url('login.php'));
+    exit;
 }
 
 $user = getCurrentUser();
@@ -43,6 +37,9 @@ include __DIR__ . '/includes/header.php';
         </a>
         <a href="<?= url('attendance.php') ?>" class="btn btn-outline-light btn-sm px-3">
           <i class="bi bi-qr-code"></i> Check-in Pass
+        </a>
+        <a href="<?= url('logout.php') ?>" class="btn btn-outline-danger btn-sm px-3">
+          <i class="bi bi-box-arrow-right"></i> Log Out
         </a>
       </div>
     </div>

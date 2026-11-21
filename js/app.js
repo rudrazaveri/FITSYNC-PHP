@@ -95,6 +95,10 @@ function switchView(viewName) {
 function setupNavigation() {
   // Sidebar navigation items
   document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+    if (item.classList.contains('btn-sidebar-logout') || item.id === 'sidebarLogoutBtn') {
+      // Do not bind view routing to logout button
+      return;
+    }
     item.addEventListener('click', (e) => {
       e.preventDefault();
       const view = item.getAttribute('data-nav');
@@ -102,6 +106,23 @@ function setupNavigation() {
         switchView(view);
       }
     });
+  });
+
+  // Dedicated direct listeners for logout buttons
+  document.getElementById('sidebarLogoutBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    logoutUser();
+  });
+  document.getElementById('sidebarUserLogoutBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    logoutUser();
+  });
+  document.getElementById('settingsLogoutBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    logoutUser();
   });
 
   // In-page navigation links [data-switch-view]
@@ -1704,11 +1725,27 @@ function loginDemoAccount(key) {
 }
 
 function logoutUser() {
-  if (confirm('Are you sure you want to log out of FitSync?')) {
-    window.fitSyncStore.logout();
-    initAuthSystem();
-    switchAuthTab('signin');
-    showNotification('You have logged out safely.');
+  console.log('Logging out user from FitSync...');
+  try {
+    if (window.fitSyncStore) {
+      if (typeof window.fitSyncStore.logout === 'function') {
+        window.fitSyncStore.logout();
+      } else if (window.fitSyncStore.state) {
+        window.fitSyncStore.state.isLoggedIn = false;
+        if (typeof window.fitSyncStore.save === 'function') {
+          window.fitSyncStore.save();
+        }
+      }
+    }
+  } catch(e) {
+    console.warn('Error during logout:', e);
+  }
+
+  initAuthSystem();
+  switchAuthTab('signin');
+
+  if (typeof showNotification === 'function') {
+    showNotification('You have logged out safely. Enter your credentials or use 1-Click Demo.');
   }
 }
 
