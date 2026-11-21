@@ -59,7 +59,7 @@
       <!-- Glowing Logo & Header Branding -->
       <div class="auth-brand-header">
         <div class="auth-logo-badge">
-          <img src="assets/images/logo.jpg" alt="FitSync AI Logo" onerror="this.outerHTML='<i data-lucide=\'activity\' style=\'color:#10B981; width:28px; height:28px;\'></i>'">
+          <img src="assets/images/logo.jpg" alt="FitSync AI Logo" onerror="this.outerHTML='<i data-lucide=\'activity\' style=\'color:#155DFC; width:28px; height:28px;\'></i>'">
         </div>
         <h1 class="auth-brand-title">FitSync <span class="text-blue">AI</span></h1>
         <p class="auth-brand-subtitle">Personalized fitness intelligence for Gym Athletes and Certified Strength Trainers.</p>
@@ -2751,37 +2751,37 @@
 
   <!-- Modal: Where & How is Data Stored -->
   <div class="modal-overlay" id="dataStorageModal">
-    <div class="modal-card" style="max-width: 520px; background: #0D1628; border: 1px solid rgba(255,255,255,0.12); color: #F8FAFC;">
-      <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+    <div class="modal-card" style="max-width: 520px; background: #FFFFFF; border: 1px solid var(--border-color, #E2E8F0); color: var(--text-main, #0F172A); box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-color, #E2E8F0);">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="database" style="color: #10B981;"></i>
-          <h4 class="modal-title" style="color: #F8FAFC;">Where & How is Data Stored?</h4>
+          <i data-lucide="database" style="color: var(--primary-blue, #155DFC);"></i>
+          <h4 class="modal-title" style="color: var(--text-main, #0F172A);">Where & How is Data Stored?</h4>
         </div>
-        <button class="modal-close-btn" data-close-modal style="color: #94A3B8;">&times;</button>
+        <button class="modal-close-btn" data-close-modal style="color: var(--text-secondary, #64748B);">&times;</button>
       </div>
-      <div class="modal-body" style="font-size: 13.5px; line-height: 1.6; color: #CBD5E1;">
-        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-          <strong style="color: #10B981; display: flex; align-items: center; gap: 6px;">
+      <div class="modal-body" style="font-size: 13.5px; line-height: 1.6; color: var(--text-secondary, #475569);">
+        <div style="background: var(--light-blue-bg, #EFF6FF); border: 1px solid var(--light-blue, #DBEAFE); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+          <strong style="color: var(--primary-blue, #155DFC); display: flex; align-items: center; gap: 6px;">
             <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i> 100% Private, On-Device Browser Storage
           </strong>
-          <p style="margin: 6px 0 0; font-size: 12.5px; color: #94A3B8;">
+          <p style="margin: 6px 0 0; font-size: 12.5px; color: #1E40AF;">
             FitSync stores all user profiles, custom workout logs, sets, hydration logs, and fitness assessments exclusively in your browser's private LocalStorage sandbox.
           </p>
         </div>
 
-        <ul style="padding-left: 20px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px;">
+        <ul style="padding-left: 20px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; color: #334155;">
           <li><strong>Zero Cloud Tracking:</strong> No remote servers, No Supabase, No Firebase, and zero telemetry sent to third parties.</li>
           <li><strong>Complete Offline Capability:</strong> The entire application operates completely offline without internet once loaded.</li>
           <li><strong>Instant Zero-Latency:</strong> Logging reps, updating sets, or filling water renders in under 1 millisecond.</li>
           <li><strong>Full User Control:</strong> You can wipe or reset the local database anytime by clicking "Reset Database (Start from Scratch)".</li>
         </ul>
 
-        <div style="font-size: 12px; color: #64748B; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
-          Storage Key: <code style="background: rgba(15,23,42,0.8); padding: 2px 6px; border-radius: 4px; color: #10B981;">fitsync_master_platform_v2</code>
+        <div style="font-size: 12px; color: var(--text-muted, #94A3B8); border-top: 1px solid var(--border-color, #E2E8F0); padding-top: 12px;">
+          Storage Key: <code style="background: #F1F5F9; padding: 2px 6px; border-radius: 4px; color: var(--primary-blue, #155DFC);">fitsync_master_platform_v2</code>
         </div>
       </div>
-      <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.08);">
-        <button class="btn-secondary" data-close-modal style="background: rgba(255,255,255,0.06); color: #FFF; border: none;">Got it</button>
+      <div class="modal-footer" style="border-top: 1px solid var(--border-color, #E2E8F0);">
+        <button class="btn-primary-block" data-close-modal style="width: auto; padding: 8px 18px;">Got it</button>
       </div>
     </div>
   </div>
