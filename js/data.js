@@ -196,9 +196,9 @@ const DEFAULT_FITSYNC_DATA = {
           image: "assets/images/bench_press.jpg",
           target: "Target: 3 sets x 12 reps @ Bodyweight",
           sets: [
-            { set: 1, reps: 12, weight: 0.0, done: true },
-            { set: 2, reps: 12, weight: 0.0, done: true },
-            { set: 3, reps: 10, weight: 0.0, done: true }
+            { set: 1, reps: 12, weight: "Bodyweight", done: true },
+            { set: 2, reps: 12, weight: "Bodyweight", done: true },
+            { set: 3, reps: 10, weight: "Bodyweight", done: true }
           ]
         },
         {
@@ -351,11 +351,24 @@ const DEFAULT_FITSYNC_DATA = {
       dayKey: "thu",
       dayName: "Thursday",
       badge: "THURSDAY'S ROUTINE",
-      subBadge: "Past Session Completed",
+      subBadge: "Active Mobility & Recovery",
       title: "Active Mobility & Core Conditioning",
-      tagline: "Scapular Mechanics • Pelvic Stability & Core Bracing",
+      tagline: "Scapular Mechanics • Pelvic Stability & Thoracic Opener",
       duration: "35 mins",
       exercises: [
+        {
+          id: "ex_greatest_stretch",
+          name: "World's Greatest Stretch & Thoracic Opener",
+          muscle: "Hip Flexors, Hamstrings, Thoracic Spine, Groin • Yoga Mat",
+          equipment: "Yoga Mat / Bodyweight",
+          image: "assets/images/ex_squat.jpg",
+          target: "Target: 3 sets x 6 / side reps @ Bodyweight",
+          sets: [
+            { set: 1, reps: 6, weight: "Bodyweight", done: false },
+            { set: 2, reps: 6, weight: "Bodyweight", done: false },
+            { set: 3, reps: 6, weight: "Bodyweight", done: false }
+          ]
+        },
         {
           id: "ex_plank",
           name: "Weighted Core Plank",
@@ -364,10 +377,10 @@ const DEFAULT_FITSYNC_DATA = {
           image: "assets/images/bench_press.jpg",
           target: "Target: 4 sets x 60s Hold @ 10.0 kg",
           sets: [
-            { set: 1, reps: 60, weight: 0.0, done: true },
-            { set: 2, reps: 60, weight: 10.0, done: true },
-            { set: 3, reps: 60, weight: 10.0, done: true },
-            { set: 4, reps: 45, weight: 10.0, done: true }
+            { set: 1, reps: 60, weight: "Bodyweight", done: false },
+            { set: 2, reps: 60, weight: 10.0, done: false },
+            { set: 3, reps: 60, weight: 10.0, done: false },
+            { set: 4, reps: 45, weight: 10.0, done: false }
           ]
         },
         {
@@ -378,10 +391,10 @@ const DEFAULT_FITSYNC_DATA = {
           image: "assets/images/ex_deadlift.jpg",
           target: "Target: 4 sets x 15 reps @ 20.0 kg",
           sets: [
-            { set: 1, reps: 15, weight: 16.0, done: true },
-            { set: 2, reps: 15, weight: 20.0, done: true },
-            { set: 3, reps: 15, weight: 20.0, done: true },
-            { set: 4, reps: 15, weight: 24.0, done: true }
+            { set: 1, reps: 15, weight: 16.0, done: false },
+            { set: 2, reps: 15, weight: 20.0, done: false },
+            { set: 3, reps: 15, weight: 20.0, done: false },
+            { set: 4, reps: 15, weight: 24.0, done: false }
           ]
         }
       ]
@@ -521,9 +534,9 @@ const DEFAULT_FITSYNC_DATA = {
           image: "assets/images/bench_press.jpg",
           target: "Target: 3 sets x 3 mins Deep Rolling",
           sets: [
-            { set: 1, reps: 3, weight: 0.0, done: false },
-            { set: 2, reps: 3, weight: 0.0, done: false },
-            { set: 3, reps: 3, weight: 0.0, done: false }
+            { set: 1, reps: 3, weight: "Bodyweight", done: false },
+            { set: 2, reps: 3, weight: "Bodyweight", done: false },
+            { set: 3, reps: 3, weight: "Bodyweight", done: false }
           ]
         },
         {
@@ -534,7 +547,7 @@ const DEFAULT_FITSYNC_DATA = {
           image: "assets/images/ex_squat.jpg",
           target: "Target: 45 min Low-Intensity Aerobic Walk",
           sets: [
-            { set: 1, reps: 45, weight: 0.0, done: false }
+            { set: 1, reps: 45, weight: "Bodyweight", done: false }
           ]
         }
       ]
@@ -812,7 +825,11 @@ class FitSyncStore {
     try {
       const saved = localStorage.getItem(this.storageKey);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (!parsed.workoutPlans || !parsed.workoutPlans.thu || !parsed.workoutPlans.thu.exercises || parsed.workoutPlans.thu.exercises[0].id !== "ex_greatest_stretch") {
+          parsed.workoutPlans = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.workoutPlans));
+        }
+        return parsed;
       }
     } catch (e) {
       console.warn('LocalStorage load error, using default state:', e);
@@ -826,6 +843,25 @@ class FitSyncStore {
     } catch (e) {
       console.warn('Could not save to LocalStorage:', e);
     }
+  }
+
+  getWorkoutPlan(dayKey) {
+    if (!this.state.workoutPlans) {
+      this.state.workoutPlans = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.workoutPlans));
+    }
+    if (!this.state.workoutPlans[dayKey]) {
+      this.state.workoutPlans[dayKey] = DEFAULT_FITSYNC_DATA.workoutPlans[dayKey] || DEFAULT_FITSYNC_DATA.workoutPlans['tue'];
+    }
+    return this.state.workoutPlans[dayKey];
+  }
+
+  saveWorkoutPlan(dayKey, plan) {
+    if (!this.state.workoutPlans) {
+      this.state.workoutPlans = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.workoutPlans));
+    }
+    this.state.workoutPlans[dayKey] = plan;
+    this.save();
+    return plan;
   }
 
   addWater(amountInLiters) {
@@ -914,4 +950,7 @@ class FitSyncStore {
   }
 }
 
-window.fitSyncStore = new FitSyncStore();
+if (typeof window !== 'undefined') {
+  window.fitSyncStore = new FitSyncStore();
+  window.DEFAULT_FITSYNC_DATA = DEFAULT_FITSYNC_DATA;
+}

@@ -640,8 +640,14 @@ function selectWorkoutDay(dayKey) {
     }
   });
 
-  // Get plan data from store
-  const plan = window.fitSyncStore ? window.fitSyncStore.getWorkoutPlan(dayKey) : null;
+  // Get plan data from store or default fallback
+  let plan = null;
+  if (window.fitSyncStore && typeof window.fitSyncStore.getWorkoutPlan === 'function') {
+    plan = window.fitSyncStore.getWorkoutPlan(dayKey);
+  }
+  if (!plan && window.DEFAULT_FITSYNC_DATA && window.DEFAULT_FITSYNC_DATA.workoutPlans) {
+    plan = window.DEFAULT_FITSYNC_DATA.workoutPlans[dayKey];
+  }
   if (!plan) return;
 
   // Update routine titles and badges
@@ -686,7 +692,8 @@ function updateWorkoutStats(plan) {
         totalSets++;
         if (s.done) {
           completedSets++;
-          totalVolume += (s.reps || 0) * (s.weight || 0);
+          const numWeight = (s.weight === 'Bodyweight' || s.weight === 0 || s.weight === '0') ? 0 : (parseFloat(s.weight) || 0);
+          totalVolume += (s.reps || 0) * numWeight;
         }
       });
     }
@@ -725,13 +732,18 @@ function renderWorkoutExercises(plan) {
     (ex.sets || []).forEach(s => {
       if (s.done) {
         exCompletedSets++;
-        exVolume += (s.reps || 0) * (s.weight || 0);
+        const numWeight = (s.weight === 'Bodyweight' || s.weight === 0 || s.weight === '0') ? 0 : (parseFloat(s.weight) || 0);
+        exVolume += (s.reps || 0) * numWeight;
       }
     });
 
-    const rowsHtml = (ex.sets || []).map((set, setIdx) => `
+    const rowsHtml = (ex.sets || []).map((set, setIdx) => {
+      const isBw = set.weight === 'Bodyweight' || set.weight === 0 || set.weight === '0' || set.weight === '0.0 kg';
+      const displayWeight = isBw ? 'Bodyweight' : `${parseFloat(set.weight).toFixed(1)} kg`;
+
+      return `
       <tr class="${set.done ? 'set-completed' : ''}" id="row-${plan.dayKey}-${exIdx}-${setIdx}">
-        <td><span class="wk-set-tag">Set ${set.set}</span></td>
+        <td><span class="wk-set-pill">Set ${set.set}</span></td>
         <td>
           <div class="wk-stepper-box">
             <button type="button" class="wk-stepper-btn" onclick="stepReps(this, -1, '${plan.dayKey}', ${exIdx}, ${setIdx})">-</button>
@@ -743,7 +755,7 @@ function renderWorkoutExercises(plan) {
         <td>
           <div class="wk-stepper-box">
             <button type="button" class="wk-stepper-btn" onclick="stepWeight(this, -2.5, '${plan.dayKey}', ${exIdx}, ${setIdx})">-</button>
-            <span class="wk-step-input wk-weight-num" id="wt-val-${plan.dayKey}-${exIdx}-${setIdx}">${parseFloat(set.weight).toFixed(1)} kg</span>
+            <span class="wk-step-input wk-weight-num ${isBw ? 'wk-weight-bodyweight' : ''}" id="wt-val-${plan.dayKey}-${exIdx}-${setIdx}">${displayWeight}</span>
             <button type="button" class="wk-stepper-btn" onclick="stepWeight(this, 2.5, '${plan.dayKey}', ${exIdx}, ${setIdx})">+</button>
           </div>
         </td>
@@ -759,7 +771,7 @@ function renderWorkoutExercises(plan) {
           </div>
         </td>
       </tr>
-    `).join('');
+    `}).join('');
 
     return `
       <div class="wk-exercise-card">
@@ -878,15 +890,34 @@ function stepReps(btn, delta, dayKey, exIdx, setIdx) {
 }
 
 function stepWeight(btn, delta, dayKey, exIdx, setIdx) {
-  const plan = window.fitSyncStore.getWorkoutPlan(dayKey);
+  let plan = window.fitSyncStore && typeof window.fitSyncStore.getWorkoutPlan === 'function'
+    ? window.fitSyncStore.getWorkoutPlan(dayKey)
+    : (window.DEFAULT_FITSYNC_DATA?.workoutPlans[dayKey]);
   if (!plan || !plan.exercises[exIdx] || !plan.exercises[exIdx].sets[setIdx]) return;
 
   const setObj = plan.exercises[exIdx].sets[setIdx];
-  setObj.weight = Math.max(0, parseFloat(((setObj.weight || 0) + delta).toFixed(1)));
-  window.fitSyncStore.saveWorkoutPlan(dayKey, plan);
+  let cur = (setObj.weight === 'Bodyweight' || setObj.weight === 0 || setObj.weight === '0') ? 0 : (parseFloat(setObj.weight) || 0);
+  let next = cur + delta;
+  if (next <= 0) {
+    setObj.weight = 'Bodyweight';
+  } else {
+    setObj.weight = parseFloat(next.toFixed(1));
+  }
+
+  if (window.fitSyncStore && typeof window.fitSyncStore.saveWorkoutPlan === 'function') {
+    window.fitSyncStore.saveWorkoutPlan(dayKey, plan);
+  }
 
   const wtValEl = document.getElementById(`wt-val-${dayKey}-${exIdx}-${setIdx}`);
-  if (wtValEl) wtValEl.textContent = `${setObj.weight.toFixed(1)} kg`;
+  if (wtValEl) {
+    const isBw = setObj.weight === 'Bodyweight';
+    wtValEl.textContent = isBw ? 'Bodyweight' : `${setObj.weight.toFixed(1)} kg`;
+    if (isBw) {
+      wtValEl.classList.add('wk-weight-bodyweight');
+    } else {
+      wtValEl.classList.remove('wk-weight-bodyweight');
+    }
+  }
 
   updateWorkoutStats(plan);
 }

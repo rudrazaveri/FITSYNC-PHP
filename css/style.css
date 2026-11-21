@@ -1982,10 +1982,23 @@ body {
   background: #F0FDF4;
 }
 
-.wk-set-tag {
+.wk-set-tag, .wk-set-pill {
+  display: inline-block;
+  background: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 4px 12px;
   font-weight: 700;
-  color: var(--text-main);
   font-size: 13px;
+  color: var(--text-main);
+  min-width: 58px;
+  text-align: center;
+}
+
+.wk-weight-bodyweight {
+  color: var(--success-green) !important;
+  font-weight: 700;
+  min-width: 86px;
 }
 
 /* Stepper Pill Box */
