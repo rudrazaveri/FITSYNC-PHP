@@ -74,7 +74,7 @@ const DEFAULT_FITSYNC_DATA = {
       reviews: 320,
       status: "Active Membership",
       amenities: ["Olympic Platforms", "Steam & Sauna", "Crossfit Turf", "Biometric Turnstile"],
-      image: "assets/images/bench_press.jpg",
+      image: "assets/images/gym_fitzone.jpg",
       hours: "5:30 AM – 10:30 PM",
       phone: "+91 20 2544 1122"
     },
@@ -86,7 +86,7 @@ const DEFAULT_FITSYNC_DATA = {
       reviews: 245,
       status: "All-Access Included",
       amenities: ["Hammer Strength Iso-Lateral", "Recovery Lounge", "Boxing Ring"],
-      image: "assets/images/bench_press.jpg",
+      image: "assets/images/gym_powerhouse.jpg",
       hours: "6:00 AM – 11:00 PM",
       phone: "+91 20 2729 3344"
     },
@@ -98,7 +98,7 @@ const DEFAULT_FITSYNC_DATA = {
       reviews: 180,
       status: "All-Access Included",
       amenities: ["Rogue Rig", "Kettlebells", "Rowing Ergometers"],
-      image: "assets/images/bench_press.jpg",
+      image: "assets/images/gym_crossfit.jpg",
       hours: "6:00 AM – 10:00 PM",
       phone: "+91 20 2663 8899"
     },
@@ -110,7 +110,7 @@ const DEFAULT_FITSYNC_DATA = {
       reviews: 410,
       status: "All-Access Included",
       amenities: ["Eleiko Calibrated Plates", "Ice Baths", "Physio Clinic"],
-      image: "assets/images/bench_press.jpg",
+      image: "assets/images/gym_elite.jpg",
       hours: "24 Hours Open",
       phone: "+91 20 4122 7700"
     }
@@ -179,7 +179,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Barbell Incline Bench Press",
           muscle: "Chest (Upper Pectoralis), Front Delts",
           equipment: "Incline Bench, Olympic Barbell",
-          image: "assets/images/ex_bench.jpg",
+          image: "assets/images/ex_incline_bench.jpg",
           target: "Target: 4 sets x 8–10 reps @ 65.0 kg",
           sets: [
             { set: 1, reps: 10, weight: 60.0, done: true },
@@ -193,7 +193,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Parallel Bar Dips",
           muscle: "Lower Pectoralis, Anterior Delts, Triceps",
           equipment: "Dip Station",
-          image: "assets/images/bench_press.jpg",
+          image: "assets/images/ex_parallel_dips.jpg",
           target: "Target: 3 sets x 12 reps @ Bodyweight",
           sets: [
             { set: 1, reps: 12, weight: "Bodyweight", done: true },
@@ -206,7 +206,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Tricep Rope Pushdown",
           muscle: "Triceps Lateral & Medial Heads",
           equipment: "Cable Tower",
-          image: "assets/images/ex_lateral_raise.jpg",
+          image: "assets/images/ex_tricep_pushdown.jpg",
           target: "Target: 3 sets x 15 reps @ 25.0 kg",
           sets: [
             { set: 1, reps: 15, weight: 20.0, done: true },
@@ -258,7 +258,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Incline Dumbbell Bicep Curl",
           muscle: "Biceps Brachii (Long Head) • Dumbbells",
           equipment: "Dumbbells & 45° Bench",
-          image: "assets/images/ex_bicep.jpg",
+          image: "assets/images/ex_incline_curl.jpg",
           target: "Target: 3 sets x 12 reps @ 14.0 kg",
           sets: [
             { set: 1, reps: 12, weight: 12.0, done: false },
@@ -271,7 +271,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Seated Cable Row",
           muscle: "Rhomboids, Latissimus Dorsi, Mid Trapezius",
           equipment: "Low Pulley Cable",
-          image: "assets/images/ex_lat_pulldown.jpg",
+          image: "assets/images/ex_seated_row.jpg",
           target: "Target: 3 sets x 12 reps @ 50.0 kg",
           sets: [
             { set: 1, reps: 12, weight: 45.0, done: false },
@@ -284,7 +284,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Dumbbell Hammer Curls",
           muscle: "Brachialis & Brachioradialis • Free Weights",
           equipment: "Dumbbells",
-          image: "assets/images/ex_bicep.jpg",
+          image: "assets/images/ex_hammer_curl.jpg",
           target: "Target: 3 sets x 12 reps @ 16.0 kg",
           sets: [
             { set: 1, reps: 12, weight: 14.0, done: false },
@@ -308,7 +308,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Barbell Back Squat",
           muscle: "Quadriceps, Gluteus Maximus, Hamstrings",
           equipment: "Squat Rack, Olympic Barbell",
-          image: "assets/images/ex_squat.jpg",
+          image: "assets/images/ex_back_squat.jpg",
           target: "Target: 4 sets x 8 reps @ 80.0 kg",
           sets: [
             { set: 1, reps: 8, weight: 70.0, done: true },
@@ -322,7 +322,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Romanian Deadlift (RDL)",
           muscle: "Hamstrings, Glutes, Lower Back",
           equipment: "Olympic Barbell",
-          image: "assets/images/ex_deadlift.jpg",
+          image: "assets/images/ex_romanian_deadlift.jpg",
           target: "Target: 4 sets x 10 reps @ 65.0 kg",
           sets: [
             { set: 1, reps: 10, weight: 55.0, done: true },
@@ -336,7 +336,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Standing Calf Raises",
           muscle: "Gastrocnemius, Soleus",
           equipment: "Calf Raise Machine",
-          image: "assets/images/ex_squat.jpg",
+          image: "assets/images/ex_standing_calf_raise.jpg",
           target: "Target: 4 sets x 15 reps @ 50.0 kg",
           sets: [
             { set: 1, reps: 15, weight: 45.0, done: true },
@@ -361,7 +361,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "World's Greatest Stretch & Thoracic Opener",
           muscle: "Hip Flexors, Hamstrings, Thoracic Spine, Groin • Yoga Mat",
           equipment: "Yoga Mat / Bodyweight",
-          image: "assets/images/ex_squat.jpg",
+          image: "assets/images/ex_greatest_stretch.jpg",
           target: "Target: 3 sets x 6 / side reps @ Bodyweight",
           sets: [
             { set: 1, reps: 6, weight: "Bodyweight", done: false },
@@ -374,7 +374,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Weighted Core Plank",
           muscle: "Transverse Abdominis, Rectus Abdominis",
           equipment: "Weight Plate & Floor Mat",
-          image: "assets/images/bench_press.jpg",
+          image: "assets/images/ex_forearm_plank.jpg",
           target: "Target: 4 sets x 60s Hold @ 10.0 kg",
           sets: [
             { set: 1, reps: 60, weight: "Bodyweight", done: false },
@@ -388,7 +388,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Kettlebell Russian Swings",
           muscle: "Posterior Chain, Glutes & Hip Explosiveness",
           equipment: "Kettlebell",
-          image: "assets/images/ex_deadlift.jpg",
+          image: "assets/images/ex_russian_twist.jpg",
           target: "Target: 4 sets x 15 reps @ 20.0 kg",
           sets: [
             { set: 1, reps: 15, weight: 16.0, done: false },
@@ -413,7 +413,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Dumbbell Overhead Shoulder Press",
           muscle: "Anterior Deltoids, Lateral Delts, Triceps",
           equipment: "Dumbbells & 75° Incline Bench",
-          image: "assets/images/bench_press.jpg",
+          image: "assets/images/ex_dumbbell_press.jpg",
           target: "Target: 4 sets x 10 reps @ 20.0 kg",
           sets: [
             { set: 1, reps: 12, weight: 16.0, done: true },
@@ -441,7 +441,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Cable Face Pull with External Rotation",
           muscle: "Rear Deltoids, Rotator Cuff, Infraspinatus",
           equipment: "Cable Tower with Rope",
-          image: "assets/images/ex_lat_pulldown.jpg",
+          image: "assets/images/ex_face_pull.jpg",
           target: "Target: 3 sets x 15 reps @ 20.0 kg",
           sets: [
             { set: 1, reps: 15, weight: 15.0, done: true },
@@ -465,7 +465,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Incline Barbell Bench Press",
           muscle: "Upper Pectoralis, Anterior Deltoids, Triceps",
           equipment: "Incline Bench, Olympic Barbell",
-          image: "assets/images/ex_bench.jpg",
+          image: "assets/images/ex_incline_bench.jpg",
           target: "Target: 4 sets x 8–10 reps @ 65.0 kg",
           sets: [
             { set: 1, reps: 10, weight: 60.0, done: false },
@@ -507,7 +507,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Standing Dumbbell Bicep Curl",
           muscle: "Biceps Brachii, Brachialis",
           equipment: "Dumbbells",
-          image: "assets/images/ex_bicep.jpg",
+          image: "assets/images/ex_barbell_curl.jpg",
           target: "Target: 3 sets x 12 reps @ 14.0 kg",
           sets: [
             { set: 1, reps: 12, weight: 12.0, done: false },
@@ -531,7 +531,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Full Body Foam Rolling & Myofascial Release",
           muscle: "IT Band, Quads, Thoracic Spine, Lats",
           equipment: "High-Density Foam Roller",
-          image: "assets/images/bench_press.jpg",
+          image: "assets/images/ex_foam_rolling.jpg",
           target: "Target: 3 sets x 3 mins Deep Rolling",
           sets: [
             { set: 1, reps: 3, weight: "Bodyweight", done: false },
@@ -544,7 +544,7 @@ const DEFAULT_FITSYNC_DATA = {
           name: "Zone 1 Outdoor Recovery Walk",
           muscle: "Cardiovascular Flushing & Lymphatic Drainage",
           equipment: "Outdoor Trail / Treadmill",
-          image: "assets/images/ex_squat.jpg",
+          image: "assets/images/ex_recovery_walk.jpg",
           target: "Target: 45 min Low-Intensity Aerobic Walk",
           sets: [
             { set: 1, reps: 45, weight: "Bodyweight", done: false }
@@ -573,7 +573,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Set bench at 30°. Retract scapulae, lower bar under control to upper clavicle, press upward through mid-chest without flaring elbows.",
-      image: "assets/images/ex_bench.jpg"
+      image: "assets/images/ex_incline_bench.jpg"
     },
     {
       id: "ex-chest-flat-bb",
@@ -584,7 +584,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Maintain 5-point contact, arch lower back naturally, drive heels into floor. Touch mid-sternum with elbows tucked at 45°.",
-      image: "assets/images/bench_press.jpg"
+      image: "assets/images/ex_flat_bench.jpg"
     },
     {
       id: "ex-chest-db-fly",
@@ -595,7 +595,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Slight bend in elbows. Open arms in wide arc until deep pec stretch is felt, squeeze chest at top without clanking dumbbells.",
-      image: "assets/images/ex_bench.jpg"
+      image: "assets/images/ex_incline_fly.jpg"
     },
     {
       id: "ex-chest-dips",
@@ -606,7 +606,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Lean forward 30° to target pecs. Lower until upper arms are parallel to floor, push through palms to lockout.",
-      image: "assets/images/bench_press.jpg"
+      image: "assets/images/ex_parallel_dips.jpg"
     },
     {
       id: "ex-chest-cable-cross",
@@ -617,7 +617,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Set pulleys to lowest notch. Drive hands upward and inward in an upward scooping motion, squeeze upper chest for 1 second.",
-      image: "assets/images/ex_lateral_raise.jpg"
+      image: "assets/images/ex_cable_crossover.jpg"
     },
     {
       id: "ex-chest-pushups",
@@ -628,7 +628,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Compound",
       cues: "Full plank alignment with glutes engaged. Lower chest to 1 inch off floor, push actively away while spreading shoulder blades at top.",
-      image: "assets/images/bench_press.jpg"
+      image: "assets/images/ex_pushups.jpg"
     },
 
     // 2. BACK (Latissimus Dorsi, Rhomboids, Mid/Upper Back)
@@ -652,7 +652,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Advanced",
       type: "Compound",
       cues: "Hang with dead-hang extension. Initiate with back muscles, drive elbows down to ribs until chin clears the bar cleanly.",
-      image: "assets/images/ex_lat_pulldown.jpg"
+      image: "assets/images/ex_pullups.jpg"
     },
     {
       id: "ex-back-bb-row",
@@ -663,7 +663,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Hinge at 45° with rigid flat back. Pull bar toward belly button, squeeze shoulder blades together at apex.",
-      image: "assets/images/ex_deadlift.jpg"
+      image: "assets/images/ex_barbell_row.jpg"
     },
     {
       id: "ex-back-seated-row",
@@ -674,7 +674,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Compound",
       cues: "Sit tall with chest upright. Pull handle to lower abdomen, keep elbows tucked close to torso, control the stretch on release.",
-      image: "assets/images/ex_lat_pulldown.jpg"
+      image: "assets/images/ex_seated_row.jpg"
     },
     {
       id: "ex-back-db-row",
@@ -685,7 +685,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Compound",
       cues: "Support one knee on bench. Row dumbbell back towards hip pocket in a J-curve arc, preventing torso rotation.",
-      image: "assets/images/ex_lat_pulldown.jpg"
+      image: "assets/images/ex_dumbbell_row.jpg"
     },
 
     // 3. TRAPEZIUS & UPPER BACK (Traps)
@@ -698,7 +698,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Hold bar at hip level. Elevate shoulders straight up towards ears without rolling shoulders, hold peak contraction for 1 full second.",
-      image: "assets/images/ex_deadlift.jpg"
+      image: "assets/images/ex_shrugs.jpg"
     },
     {
       id: "ex-traps-face-pull",
@@ -709,7 +709,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Set pulley at eye height. Pull rope towards bridge of nose while externally rotating wrists so thumbs point backward.",
-      image: "assets/images/ex_lateral_raise.jpg"
+      image: "assets/images/ex_face_pull.jpg"
     },
     {
       id: "ex-traps-prone-y-raise",
@@ -720,7 +720,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Isolation",
       cues: "Lie face down on 30° incline. Raise arms in a 45° 'Y' position thumbs upward, squeezing lower shoulder blades down and back.",
-      image: "assets/images/ex_lateral_raise.jpg"
+      image: "assets/images/ex_prone_y_raise.jpg"
     },
 
     // 4. LOWER BACK (Erector Spinae)
@@ -744,7 +744,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Hips against pad edge. Lower torso smoothly, extend back until body forms straight diagonal line without hyperextending lumbar spine.",
-      image: "assets/images/ex_deadlift.jpg"
+      image: "assets/images/ex_hyperextensions.jpg"
     },
     {
       id: "ex-lowerback-goodmorning",
@@ -755,7 +755,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Bar rested on upper traps. Soft knee bend, hinge hips backward until torso is nearly parallel with floor, drive hips forward.",
-      image: "assets/images/ex_deadlift.jpg"
+      image: "assets/images/ex_good_mornings.jpg"
     },
 
     // 5. SHOULDERS (Deltoids - Anterior, Lateral, Posterior)
@@ -768,7 +768,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Advanced",
       type: "Compound",
       cues: "Tight glutes and braced core. Press bar in vertical path, tuck head through window at top for full overhead lockout.",
-      image: "assets/images/ex_bench.jpg"
+      image: "assets/images/ex_overhead_press.jpg"
     },
     {
       id: "ex-shoulders-db-press",
@@ -779,7 +779,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Compound",
       cues: "Set bench at 75-80°. Press dumbbells upward along natural arc, stopping just short of locking out elbows.",
-      image: "assets/images/ex_bench.jpg"
+      image: "assets/images/ex_dumbbell_press.jpg"
     },
     {
       id: "ex-shoulders-lat-raise",
@@ -801,7 +801,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Isolation",
       cues: "Cross cables behind back. Pull upwards and outwards to 45° angle, keeping constant tension through full range of motion.",
-      image: "assets/images/ex_lateral_raise.jpg"
+      image: "assets/images/ex_cable_lateral.jpg"
     },
     {
       id: "ex-shoulders-rear-pecdeck",
@@ -812,7 +812,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Chest flat against pad. Keep slight elbow bend, drive arms back horizontally using rear shoulders rather than mid-back.",
-      image: "assets/images/ex_lateral_raise.jpg"
+      image: "assets/images/ex_rear_pecdeck.jpg"
     },
 
     // 6. BICEPS (Biceps Brachii - Long & Short Heads, Brachialis)
@@ -825,7 +825,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Elbows pinned to sides of ribcage. Curl weight upward through full supination, control 3-second eccentric lowering phase.",
-      image: "assets/images/ex_bicep.jpg"
+      image: "assets/images/ex_barbell_curl.jpg"
     },
     {
       id: "ex-biceps-incline-curl",
@@ -836,7 +836,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Isolation",
       cues: "Arms hanging straight down behind torso. Curl dumbbells while maintaining shoulder extension to maximize long head stretch.",
-      image: "assets/images/ex_bicep.jpg"
+      image: "assets/images/ex_incline_curl.jpg"
     },
     {
       id: "ex-biceps-hammer",
@@ -847,7 +847,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Neutral thumbs-up grip. Curl dumbbells alternately or together toward front shoulders without swinging torso.",
-      image: "assets/images/ex_bicep.jpg"
+      image: "assets/images/ex_hammer_curl.jpg"
     },
     {
       id: "ex-biceps-preacher",
@@ -858,7 +858,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Isolation",
       cues: "Armpits snug over pad. Isolate biceps completely by eliminating momentum, curl upward to full flexion without lifting elbows.",
-      image: "assets/images/ex_bicep.jpg"
+      image: "assets/images/ex_preacher_curl.jpg"
     },
 
     // 7. TRICEPS (Triceps Brachii - Lateral, Long, Medial Heads)
@@ -871,7 +871,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Upper arms stationary by flanks. Push rope down, flaring rope ends outward at bottom for maximum tricep contraction.",
-      image: "assets/images/ex_lateral_raise.jpg"
+      image: "assets/images/ex_tricep_pushdown.jpg"
     },
     {
       id: "ex-triceps-skullcrusher",
@@ -882,7 +882,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Isolation",
       cues: "Arms angled 10° backward from vertical. Hinge at elbows, lower bar to hairline, extend triceps back to start position.",
-      image: "assets/images/bench_press.jpg"
+      image: "assets/images/ex_skullcrushers.jpg"
     },
     {
       id: "ex-triceps-overhead-ext",
@@ -893,7 +893,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Hold dumbbell with diamond cup grip overhead. Lower dumbbell deep behind head, flare elbows slightly, press straight up.",
-      image: "assets/images/bench_press.jpg"
+      image: "assets/images/ex_overhead_tricep.jpg"
     },
     {
       id: "ex-triceps-cg-bench",
@@ -904,7 +904,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Shoulder-width grip. Keep elbows tucked tightly against ribs, lower to lower sternum, press explosively through triceps.",
-      image: "assets/images/ex_bench.jpg"
+      image: "assets/images/ex_close_grip_bench.jpg"
     },
 
     // 8. FOREARMS & GRIP (Brachioradialis, Wrist Flexors & Extensors)
@@ -917,7 +917,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Pronated overhand grip. Rest forearms across thighs, curl wrists upward toward ceiling, hold for 1 second.",
-      image: "assets/images/ex_bicep.jpg"
+      image: "assets/images/ex_reverse_curl.jpg"
     },
     {
       id: "ex-forearms-farmers-walk",
@@ -928,7 +928,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Stand tall with ribs down and shoulders packed. Walk 40 meters with measured heel-to-toe steps without swaying sideways.",
-      image: "assets/images/ex_deadlift.jpg"
+      image: "assets/images/ex_farmers_walk.jpg"
     },
 
     // 9. QUADRICEPS (Rectus Femoris, Vastus Lateralis, Vastus Medialis)
@@ -941,7 +941,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Advanced",
       type: "Compound",
       cues: "Bar on upper traps. Deep diaphragmatic brace, break at hips and knees simultaneously, descend below parallel, drive up through midfoot.",
-      image: "assets/images/ex_squat.jpg"
+      image: "assets/images/ex_back_squat.jpg"
     },
     {
       id: "ex-quads-leg-ext",
@@ -952,7 +952,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Back against pad, knee joint aligned with machine pivot. Extend legs to full lockout, pause for 1 second, resist negative descent.",
-      image: "assets/images/ex_squat.jpg"
+      image: "assets/images/ex_leg_extension.jpg"
     },
     {
       id: "ex-quads-split-squat",
@@ -963,7 +963,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Rear foot elevated on bench. Keep front knee tracking over second toe, sink straight down until back knee hovers above floor.",
-      image: "assets/images/ex_squat.jpg"
+      image: "assets/images/ex_bulgarian_split.jpg"
     },
     {
       id: "ex-quads-hack-squat",
@@ -974,7 +974,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Feet shoulder-width on platform. Lower sled under strict 3-second control to 90° knee angle, drive through heels without knee hyperextension.",
-      image: "assets/images/ex_squat.jpg"
+      image: "assets/images/ex_hack_squat.jpg"
     },
 
     // 10. HAMSTRINGS (Biceps Femoris, Semitendinosus, Semimembranosus)
@@ -987,7 +987,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Soft knee bend throughout. Push hips straight back towards rear wall, slide bar down shins until deep hamstring stretch, drive hips through.",
-      image: "assets/images/ex_deadlift.jpg"
+      image: "assets/images/ex_romanian_deadlift.jpg"
     },
     {
       id: "ex-hamstrings-lying-curl",
@@ -998,7 +998,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Hips pressed firmly into bench. Curl pad toward glutes, dorsiflex toes slightly, control the lowering tempo to prevent hip lift.",
-      image: "assets/images/ex_deadlift.jpg"
+      image: "assets/images/ex_lying_leg_curl.jpg"
     },
     {
       id: "ex-hamstrings-seated-curl",
@@ -1009,7 +1009,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Adjust lap pad snugly. Curl heels down and back under seat, pause at peak flexion, emphasize 3-second controlled return.",
-      image: "assets/images/ex_deadlift.jpg"
+      image: "assets/images/ex_seated_leg_curl.jpg"
     },
 
     // 11. GLUTES (Gluteus Maximus, Medius & Minimus)
@@ -1022,7 +1022,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Compound",
       cues: "Upper back hinged across bench, bar over hips. Drive through heels to full hip extension, tuck chin, squeeze glutes hard for 1 second at top.",
-      image: "assets/images/ex_squat.jpg"
+      image: "assets/images/ex_hip_thrust.jpg"
     },
     {
       id: "ex-glutes-kickback",
@@ -1033,7 +1033,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Hinge torso slightly forward. Kick leg straight backward squeezing glute at top, avoid overarching lower spine.",
-      image: "assets/images/ex_squat.jpg"
+      image: "assets/images/ex_glute_kickback.jpg"
     },
     {
       id: "ex-glutes-abduction",
@@ -1044,7 +1044,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Sit slightly forward off backrest. Push knees wide against resistance pads, hold peak contraction, return slowly.",
-      image: "assets/images/ex_squat.jpg"
+      image: "assets/images/ex_hip_abduction.jpg"
     },
 
     // 12. CALVES (Gastrocnemius & Soleus)
@@ -1057,7 +1057,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Balls of feet on edge of block. Drop heels for full calf stretch, drive onto big toes for peak contraction, pause at apex.",
-      image: "assets/images/ex_deadlift.jpg"
+      image: "assets/images/ex_standing_calf_raise.jpg"
     },
     {
       id: "ex-calves-seated-raise",
@@ -1068,7 +1068,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Knees bent at 90° isolates soleus. Lower heels into deep stretch, drive up onto toes with a 2-second hold at peak.",
-      image: "assets/images/ex_deadlift.jpg"
+      image: "assets/images/ex_seated_calf_raise.jpg"
     },
 
     // 13. ABS & CORE (Rectus Abdominis, Obliques, Deep Transverse)
@@ -1081,7 +1081,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Isolation",
       cues: "Hang with engaged shoulders. Curl pelvis upward while lifting legs or knees to chest, avoid using body momentum.",
-      image: "assets/images/ex_lat_pulldown.jpg"
+      image: "assets/images/ex_hanging_leg_raise.jpg"
     },
     {
       id: "ex-abs-cable-crunch",
@@ -1092,7 +1092,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Isolation",
       cues: "Kneel facing cable. Hold rope by ears, curl spine downward bringing elbows towards thighs, squeeze abs without sitting back on heels.",
-      image: "assets/images/ex_lateral_raise.jpg"
+      image: "assets/images/ex_cable_crunch.jpg"
     },
     {
       id: "ex-abs-russian-twist",
@@ -1103,7 +1103,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Beginner",
       type: "Isolation",
       cues: "Sit with knees bent, torso reclined at 45°. Rotate torso side to side touching weight to floor with controlled cadence.",
-      image: "assets/images/ex_lateral_raise.jpg"
+      image: "assets/images/ex_russian_twist.jpg"
     },
     {
       id: "ex-abs-ab-wheel",
@@ -1114,7 +1114,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Advanced",
       type: "Compound",
       cues: "Start on knees with posterior pelvic tilt. Roll wheel forward while bracing core like a rock, pull back using abs without arching lower back.",
-      image: "assets/images/bench_press.jpg"
+      image: "assets/images/ex_ab_wheel.jpg"
     },
     {
       id: "ex-abs-plank",
@@ -1125,7 +1125,7 @@ const DEFAULT_FITSYNC_DATA = {
       difficulty: "Intermediate",
       type: "Isometric",
       cues: "Elbows under shoulders, pull elbows toward toes isometrically while squeezing glutes and quads. Keep hips level.",
-      image: "assets/images/bench_press.jpg"
+      image: "assets/images/ex_forearm_plank.jpg"
     }
   ],
   assessment: {
@@ -1165,16 +1165,16 @@ const DEFAULT_FITSYNC_DATA = {
       fat: { current: 58, target: 70, unit: "g" },
       fiber: { current: 28, target: 35, unit: "g" }
     },
-    meals: [
-      { time: "08:15 AM", category: "Breakfast", name: "Rolled Oats & Whey Bowl with Chia Seeds", calories: 480, protein: 36, carbs: 62, fat: 9 },
-      { time: "01:20 PM", category: "Lunch", name: "Grilled Paneer & Quinoa Power Bowl", calories: 640, protein: 38, carbs: 75, fat: 21 },
-      { time: "05:00 PM", category: "Post-Workout Snack", name: "Greek Yogurt with Banana & Honey", calories: 310, protein: 22, carbs: 48, fat: 4 },
-      { time: "08:30 PM", category: "Dinner", name: "Moong Dal Khichdi & Steamed Veggies", calories: 390, protein: 18, carbs: 64, fat: 6 }
+        meals: [
+      { time: "08:15 AM", category: "Breakfast", name: "Rolled Oats & Whey Bowl with Chia Seeds", calories: 480, protein: 36, carbs: 62, fat: 9, image: "assets/images/recipe_oats.jpg" },
+      { time: "01:20 PM", category: "Lunch", name: "Grilled Paneer & Quinoa Power Bowl", calories: 640, protein: 38, carbs: 75, fat: 21, image: "assets/images/recipe_paneer.jpg" },
+      { time: "05:00 PM", category: "Post-Workout Snack", name: "Greek Yogurt with Banana & Honey", calories: 310, protein: 22, carbs: 48, fat: 4, image: "assets/images/recipe_yogurt_parfait.jpg" },
+      { time: "08:30 PM", category: "Dinner", name: "Moong Dal Khichdi & Steamed Veggies", calories: 390, protein: 18, carbs: 64, fat: 6, image: "assets/images/recipe_dal.jpg" }
     ],
     allergies: ["Peanuts (Strict Allergen Conflict)", "Soy (Mild Intolerance)"],
     reactionNotes: "Mild bloating noted after consuming high-sodium meal on 12 Nov. Recovered with hydration."
   },
-  recipes: [
+    recipes: [
     {
       id: "rec-1",
       title: "High-Protein Rolled Oats & Whey Bowl",
@@ -1184,7 +1184,7 @@ const DEFAULT_FITSYNC_DATA = {
       protein: 36,
       carbs: 62,
       fat: 9,
-      image: "assets/images/healthy_meal.jpg",
+      image: "assets/images/recipe_oats.jpg",
       ingredients: ["60g Rolled Oats", "1 Scoop Whey Isolate", "150ml Skim Milk", "10g Chia Seeds", "Half sliced Banana"],
       instructions: "Simmer oats in milk for 5 mins. Remove from heat, stir in whey protein and chia seeds. Top with banana slices."
     },
@@ -1197,35 +1197,113 @@ const DEFAULT_FITSYNC_DATA = {
       protein: 38,
       carbs: 75,
       fat: 21,
-      image: "assets/images/healthy_meal.jpg",
+      image: "assets/images/recipe_paneer.jpg",
       ingredients: ["150g Low-Fat Paneer", "80g Cooked Quinoa", "Cucumber, Bell Peppers", "1 tbsp Olive Oil Lemon Dressing"],
       instructions: "Pan-sear paneer cubes with mild spices. Arrange over a bed of warm quinoa, diced bell peppers, and dress with olive oil and lemon."
     },
     {
       id: "rec-3",
-      title: "Post-Workout Berry Blast Shake",
-      category: "Snack",
+      title: "Post-Workout Berry Blast Recovery Shake",
+      category: "Post-Workout",
       prepTime: "5 mins",
       calories: 290,
       protein: 30,
       carbs: 35,
       fat: 3,
-      image: "assets/images/healthy_meal.jpg",
-      ingredients: ["1 Scoop Whey Isolate", "100g Frozen Blueberries", "200ml Almond Milk", "1 tsp Honey"],
+      image: "assets/images/recipe_shake.jpg",
+      ingredients: ["1 Scoop Whey Isolate", "100g Frozen Blueberries", "200ml Almond Milk", "1 tsp Raw Honey"],
       instructions: "Blend all ingredients at high speed until smooth and frothy. Serve immediately post-training."
     },
     {
       id: "rec-4",
-      title: "Moong Dal & Vegetable Protein Medley",
+      title: "Yellow Moong Dal & Spinach Protein Medley",
       category: "Dinner",
       prepTime: "25 mins",
       calories: 420,
       protein: 26,
       carbs: 64,
       fat: 7,
-      image: "assets/images/healthy_meal.jpg",
-      ingredients: ["100g Yellow Moong Dal", "Spinach, Tomatoes, Carrots", "Cumin, Turmeric, Ginger", "1 tsp Ghee"],
+      image: "assets/images/recipe_dal.jpg",
+      ingredients: ["100g Yellow Moong Dal", "Spinach, Tomatoes, Carrots", "Cumin, Turmeric, Ginger", "1 tsp Desi Ghee"],
       instructions: "Pressure cook moong dal with turmeric and ginger. Temper with cumin in ghee and stir in tender spinach leaves."
+    },
+    {
+      id: "rec-5",
+      title: "Herb-Grilled Chicken Breast & Brown Rice",
+      category: "Lunch",
+      prepTime: "25 mins",
+      calories: 520,
+      protein: 48,
+      carbs: 52,
+      fat: 8,
+      image: "assets/images/recipe_chicken_rice.jpg",
+      ingredients: ["180g Lean Chicken Breast", "1 Cup Steamed Brown Rice", "Steamed Broccoli & Carrots", "Rosemary & Garlic Marinade"],
+      instructions: "Grill chicken breast for 6 mins per side. Serve over steamed brown rice and crisp garlic-seasoned broccoli."
+    },
+    {
+      id: "rec-6",
+      title: "Pan-Seared Salmon Fillet with Asparagus",
+      category: "Dinner",
+      prepTime: "20 mins",
+      calories: 560,
+      protein: 42,
+      carbs: 24,
+      fat: 22,
+      image: "assets/images/recipe_salmon.jpg",
+      ingredients: ["160g Atlantic Salmon Fillet", "Bundle of Fresh Asparagus", "1 Baked Sweet Potato", "Lemon Herb Butter"],
+      instructions: "Sear salmon skin-side down until crispy. Roast asparagus with olive oil and serve with baked sweet potato."
+    },
+    {
+      id: "rec-7",
+      title: "Greek Yogurt Parfait with Walnuts & Honey",
+      category: "Breakfast",
+      prepTime: "5 mins",
+      calories: 320,
+      protein: 24,
+      carbs: 38,
+      fat: 8,
+      image: "assets/images/recipe_yogurt_parfait.jpg",
+      ingredients: ["200g Greek Yogurt", "Handful of Blueberries & Strawberries", "15g Crushed Walnuts", "1 tbsp Raw Honey"],
+      instructions: "Layer Greek yogurt with fresh berries and walnuts. Drizzle pure honey on top for immediate antioxidant fuel."
+    },
+    {
+      id: "rec-8",
+      title: "Poached Eggs & Smashed Avocado Toast",
+      category: "Breakfast",
+      prepTime: "12 mins",
+      calories: 410,
+      protein: 22,
+      carbs: 32,
+      fat: 18,
+      image: "assets/images/recipe_egg_avocado.jpg",
+      ingredients: ["2 Large Free-Range Eggs", "Half Ripe Hass Avocado", "1 Slice Artisan Sourdough", "Chili Flakes & Sea Salt"],
+      instructions: "Toast sourdough. Mash avocado with lemon juice. Poach eggs for 3 mins and place on avocado toast with chili flakes."
+    },
+    {
+      id: "rec-9",
+      title: "Crispy Tofu & Edamame Asian Power Bowl",
+      category: "Lunch",
+      prepTime: "22 mins",
+      calories: 460,
+      protein: 32,
+      carbs: 50,
+      fat: 14,
+      image: "assets/images/recipe_tofu_bowl.jpg",
+      ingredients: ["150g Extra-Firm Tofu", "60g Shelled Edamame", "Shredded Cabbage, Carrots", "Sesame Ginger Tamari Dressing"],
+      instructions: "Air-fry tofu cubes until golden and crunchy. Toss with steamed edamame, shredded slaw, and ginger dressing."
+    },
+    {
+      id: "rec-10",
+      title: "Golden Banana Protein Oat Pancakes",
+      category: "Breakfast",
+      prepTime: "15 mins",
+      calories: 440,
+      protein: 34,
+      carbs: 58,
+      fat: 6,
+      image: "assets/images/recipe_protein_pancakes.jpg",
+      ingredients: ["1 Ripe Banana", "1 Scoop Vanilla Whey", "50g Oat Flour", "2 Egg Whites", "Pure Maple Drizzle"],
+      instructions: "Blend all ingredients into a smooth batter. Cook on non-stick skillet for 2 mins per side until golden brown."
     }
   ],
   waterStation: {
@@ -1330,11 +1408,17 @@ class FitSyncStore {
       const saved = localStorage.getItem(this.storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (!parsed.workoutPlans || !parsed.workoutPlans.thu || !parsed.workoutPlans.thu.exercises || parsed.workoutPlans.thu.exercises[0].id !== "ex_greatest_stretch") {
+                if (!parsed.workoutPlans || !parsed.workoutPlans.thu || !parsed.workoutPlans.thu.exercises || parsed.workoutPlans.thu.exercises[0].id !== "ex_greatest_stretch" || !parsed.workoutPlans.mon.exercises[0].image.includes('ex_incline_bench')) {
           parsed.workoutPlans = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.workoutPlans));
         }
-        if (!parsed.exerciseLibrary || parsed.exerciseLibrary.length < 30) {
+        if (!parsed.exerciseLibrary || parsed.exerciseLibrary.length < 30 || parsed.exerciseLibrary[0].image.includes('ex_bench.jpg')) {
           parsed.exerciseLibrary = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.exerciseLibrary));
+        }
+        if (!parsed.recipes || parsed.recipes.length < 8 || parsed.recipes[0].image.includes('healthy_meal.jpg')) {
+          parsed.recipes = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.recipes));
+        }
+        if (!parsed.nutrition || !parsed.nutrition.meals || !parsed.nutrition.meals[0].image) {
+          parsed.nutrition = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.nutrition));
         }
         return parsed;
       }

@@ -1327,7 +1327,7 @@ function renderExerciseLibrary(filterMuscle = 'all', searchQuery = '') {
     html += `
       <div class="ex-library-card">
         <div class="ex-library-card-img-wrap" onclick="showExerciseDetailModal('${ex.id}')">
-          <img src="${ex.image || 'assets/images/ex_bench.jpg'}" class="ex-library-card-img" alt="${ex.name}" onerror="this.src='assets/images/ex_bench.jpg'">
+          <img src="${ex.image || 'assets/images/ex_flat_bench.jpg'}" class="ex-library-card-img" alt="${ex.name}" onerror="this.src='assets/images/ex_flat_bench.jpg'">
           <span class="ex-library-diff-badge ${diffClass}">${ex.difficulty || 'Intermediate'}</span>
         </div>
         <div class="ex-library-muscle-tag" title="${ex.muscle}">
@@ -1374,8 +1374,8 @@ function showExerciseDetailModal(exId) {
 
   if (titleEl) titleEl.textContent = ex.name;
   if (imgEl) {
-    imgEl.src = ex.image || 'assets/images/ex_bench.jpg';
-    imgEl.onerror = () => { imgEl.src = 'assets/images/ex_bench.jpg'; };
+    imgEl.src = ex.image || 'assets/images/ex_flat_bench.jpg';
+    imgEl.onerror = () => { imgEl.src = 'assets/images/ex_flat_bench.jpg'; };
   }
   if (diffEl) {
     diffEl.textContent = ex.difficulty || 'Intermediate';
@@ -1422,7 +1422,7 @@ function quickAddExerciseToRoutine(exId) {
     name: ex.name,
     muscle: ex.muscle,
     equipment: ex.equipment,
-    image: ex.image || 'assets/images/bench_press.jpg',
+    image: ex.image || 'assets/images/ex_flat_bench.jpg',
     target: `Target: 3 sets × 8–10 reps`,
     sets: defaultSets
   });
