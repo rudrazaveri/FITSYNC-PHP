@@ -4,7 +4,10 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. Initial State Render
+  // 1. Check Authentication & Session State
+  initAuthSystem();
+
+  // 1b. Initial State Render
   updateDashboardUI();
 
   // 2. Setup Routing & Cross-page navigation
@@ -114,6 +117,7 @@ function setupNavigation() {
 // Update UI from Store State
 function updateDashboardUI() {
   const state = window.fitSyncStore.state;
+  syncUserProfileUI();
 
   // 1. Stats Cards
   const weightVal = document.getElementById('statWeightValue');
@@ -1442,3 +1446,309 @@ window.highlightMuscleOnDiagram = highlightMuscleOnDiagram;
 window.renderExerciseLibrary = renderExerciseLibrary;
 window.showExerciseDetailModal = showExerciseDetailModal;
 window.quickAddExerciseToRoutine = quickAddExerciseToRoutine;
+
+
+// ==========================================================================
+// FitSync AI — Authentication & Session Controller
+// ==========================================================================
+
+function initAuthSystem() {
+  const store = window.fitSyncStore;
+  if (!store) return;
+
+  const authOverlay = document.getElementById('authDashboardOverlay');
+  const appLayout = document.querySelector('.app-layout');
+
+  if (!authOverlay) return;
+
+  if (store.state.isLoggedIn === false) {
+    // Show Auth Dashboard, hide app layout
+    authOverlay.style.display = 'flex';
+    if (appLayout) appLayout.style.display = 'none';
+    renderRegisteredAccountsChips();
+    initIcons();
+  } else {
+    // Show App Layout, hide auth dashboard
+    authOverlay.style.display = 'none';
+    if (appLayout) appLayout.style.display = 'flex';
+    syncUserProfileUI();
+  }
+}
+
+function syncUserProfileUI() {
+  const user = window.fitSyncStore?.state?.user;
+  if (!user) return;
+
+  // Sidebar User Badge
+  const sbName = document.getElementById('sidebarUserName');
+  const sbRole = document.getElementById('sidebarUserRole');
+  const sbAvatar = document.getElementById('sidebarAvatarImg');
+  if (sbName) sbName.textContent = user.name;
+  if (sbRole) sbRole.textContent = user.role || 'Member · Premium';
+  if (sbAvatar && user.avatar) sbAvatar.src = user.avatar;
+
+  // Dashboard Welcome Greeting
+  const dashGreeting = document.getElementById('dashboardGreetingName');
+  if (dashGreeting) {
+    const firstName = user.name.split(' ')[0] || user.name;
+    dashGreeting.textContent = firstName;
+  }
+
+  // Settings View Fields
+  const setFullName = document.getElementById('setFullName');
+  const setEmail = document.getElementById('setEmail');
+  const setPhone = document.getElementById('setPhone');
+  const setAvatar = document.getElementById('settingsAvatarImg');
+  const setUserName = document.getElementById('settingsUserName');
+  const setSessionUser = document.getElementById('settingsSessionUser');
+  const setSessionEmail = document.getElementById('settingsSessionEmail');
+
+  if (setFullName) setFullName.value = user.name;
+  if (setEmail) setEmail.value = user.email;
+  if (setPhone && user.phone) setPhone.value = user.phone;
+  if (setAvatar && user.avatar) setAvatar.src = user.avatar;
+  if (setUserName) setUserName.textContent = user.name;
+  if (setSessionUser) setSessionUser.textContent = user.name;
+  if (setSessionEmail) setSessionEmail.textContent = user.email;
+}
+
+function switchAuthTab(tab) {
+  const signInBtn = document.getElementById('authTabBtnSignIn');
+  const registerBtn = document.getElementById('authTabBtnRegister');
+  const demoBtn = document.getElementById('authTabBtnDemo');
+
+  const signInPane = document.getElementById('authSignInPane');
+  const registerPane = document.getElementById('authRegisterPane');
+  const demoPane = document.getElementById('authDemoPane');
+  const container = document.getElementById('authCardContainer');
+
+  [signInBtn, registerBtn, demoBtn].forEach(b => b?.classList.remove('active'));
+  if (signInPane) signInPane.style.display = 'none';
+  if (registerPane) registerPane.style.display = 'none';
+  if (demoPane) demoPane.style.display = 'none';
+
+  if (tab === 'signin') {
+    signInBtn?.classList.add('active');
+    if (signInPane) signInPane.style.display = 'block';
+    container?.classList.remove('auth-container-wide');
+  } else if (tab === 'register') {
+    registerBtn?.classList.add('active');
+    if (registerPane) registerPane.style.display = 'block';
+    container?.classList.add('auth-container-wide');
+  } else if (tab === 'demo') {
+    demoBtn?.classList.add('active');
+    if (demoPane) demoPane.style.display = 'block';
+    container?.classList.remove('auth-container-wide');
+  }
+  initIcons();
+}
+
+function selectRegisterRole(role) {
+  const roleInput = document.getElementById('regRoleInput');
+  const memberCard = document.getElementById('roleCardMember');
+  const trainerCard = document.getElementById('roleCardTrainer');
+  const submitBtn = document.getElementById('regSubmitBtn');
+
+  if (roleInput) roleInput.value = role;
+
+  if (role === 'trainer') {
+    trainerCard?.classList.add('active');
+    memberCard?.classList.remove('active');
+    if (submitBtn) {
+      submitBtn.innerHTML = 'Create Trainer Profile & Enter FitSync <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>';
+    }
+  } else {
+    memberCard?.classList.add('active');
+    trainerCard?.classList.remove('active');
+    if (submitBtn) {
+      submitBtn.innerHTML = 'Create Athlete Profile & Enter FitSync <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>';
+    }
+  }
+  initIcons();
+}
+
+function selectHomeGym(branchName, location, index) {
+  document.getElementById('regGymBranchInput').value = branchName;
+  document.getElementById('regGymLocationInput').value = location;
+  for (let i = 0; i < 3; i++) {
+    const card = document.getElementById(`gymBranch${i}`);
+    if (card) {
+      if (i === index) card.classList.add('active');
+      else card.classList.remove('active');
+    }
+  }
+  initIcons();
+}
+
+function renderRegisteredAccountsChips() {
+  const list = document.getElementById('registeredAccountsList');
+  if (!list) return;
+
+  const users = window.fitSyncStore?.state?.registeredUsers || [];
+  if (users.length === 0) {
+    list.innerHTML = '<span style="font-size:12px; color:#64748B;">No accounts saved yet. Register below.</span>';
+    return;
+  }
+
+  list.innerHTML = users.map((u, idx) => {
+    const icon = u.role === 'Gym Trainer' ? 'award' : 'user';
+    const tag = u.tag || (u.role === 'Gym Trainer' ? 'Trainer' : 'Athlete');
+    const shortName = u.name.split(' ')[0].toLowerCase();
+    const isActive = idx === 0 ? 'active' : '';
+    return `<button type="button" class="auth-account-chip ${isActive}" onclick="quickSelectAccount('${u.email}')">
+      <i data-lucide="${icon}" style="width:13px; height:13px;"></i> ${shortName} (${tag})
+    </button>`;
+  }).join('');
+
+  initIcons();
+}
+
+function quickSelectAccount(email) {
+  const emailInput = document.getElementById('authEmailInput');
+  const passwordInput = document.getElementById('authPasswordInput');
+  if (emailInput) emailInput.value = email;
+  if (passwordInput) passwordInput.value = 'password123';
+
+  // Highlight chip
+  document.querySelectorAll('.auth-account-chip').forEach(chip => {
+    if (chip.textContent.toLowerCase().includes(email.split('@')[0].split('.')[0].toLowerCase())) {
+      chip.classList.add('active');
+    } else {
+      chip.classList.remove('active');
+    }
+  });
+}
+
+function quickFillAccount(type) {
+  if (type === 'athlete') {
+    quickSelectAccount('ritika@fitsync.health');
+  } else if (type === 'coach') {
+    quickSelectAccount('coach@fitsync.health');
+  }
+}
+
+function handleSignInSubmit(e) {
+  if (e) e.preventDefault();
+  const email = document.getElementById('authEmailInput')?.value;
+  const password = document.getElementById('authPasswordInput')?.value;
+  const remember = document.getElementById('authStaySignedIn')?.checked;
+
+  if (!email) {
+    alert('Please enter your email address.');
+    return;
+  }
+
+  window.fitSyncStore.login(email, password, remember);
+  initAuthSystem();
+  updateDashboardUI();
+  showNotification(`Welcome back to FitSync AI, ${window.fitSyncStore.state.user.name}!`);
+}
+
+function handleRegisterSubmit(e) {
+  if (e) e.preventDefault();
+  const fullName = document.getElementById('regFullName')?.value;
+  const email = document.getElementById('regEmail')?.value;
+  const phone = document.getElementById('regPhone')?.value;
+  const avatarUrl = document.getElementById('regAvatarUrl')?.value;
+  const password = document.getElementById('regPassword')?.value;
+  const confirmPassword = document.getElementById('regConfirmPassword')?.value;
+  const role = document.getElementById('regRoleInput')?.value;
+  const gender = document.getElementById('regGender')?.value;
+  const age = document.getElementById('regAge')?.value;
+  const height = document.getElementById('regHeight')?.value;
+  const weight = document.getElementById('regWeight')?.value;
+  const goal = document.getElementById('regGoal')?.value;
+  const activityLevel = document.getElementById('regActivity')?.value;
+  const gymBranch = document.getElementById('regGymBranchInput')?.value;
+  const gymLocation = document.getElementById('regGymLocationInput')?.value;
+
+  if (password !== confirmPassword) {
+    alert('Passwords do not match. Please verify your password.');
+    return;
+  }
+
+  window.fitSyncStore.register({
+    fullName,
+    email,
+    phone,
+    avatarUrl,
+    role,
+    gender,
+    age,
+    height,
+    weight,
+    goal,
+    activityLevel,
+    gymBranch,
+    gymLocation
+  });
+
+  initAuthSystem();
+  updateDashboardUI();
+  showNotification(`Profile created! Welcome to FitSync AI, ${fullName}.`);
+}
+
+function loginDemoAccount(key) {
+  if (key === 'ritika') {
+    window.fitSyncStore.login('ritika@fitsync.health', 'password123');
+  } else if (key === 'coach') {
+    window.fitSyncStore.login('coach@fitsync.health', 'password123');
+  } else if (key === 'aarav') {
+    window.fitSyncStore.login('aarav@fitsync.health', 'password123');
+  } else {
+    window.fitSyncStore.login('isha.kulkarni@fitsync.com', 'password123');
+  }
+  initAuthSystem();
+  updateDashboardUI();
+  showNotification(`Signed in as ${window.fitSyncStore.state.user.name}!`);
+}
+
+function logoutUser() {
+  if (confirm('Are you sure you want to log out of FitSync?')) {
+    window.fitSyncStore.logout();
+    initAuthSystem();
+    switchAuthTab('signin');
+    showNotification('You have logged out safely.');
+  }
+}
+
+function handleResetDatabase() {
+  if (confirm('Wipe local database and start completely fresh? All custom logs will be cleared.')) {
+    window.fitSyncStore.resetDatabase();
+    initAuthSystem();
+    switchAuthTab('signin');
+    const banner = document.getElementById('cleanDbBanner');
+    if (banner) banner.style.display = 'flex';
+    showNotification('Local database has been wiped. Clean Mode active.');
+  }
+}
+
+function dismissCleanBanner() {
+  const banner = document.getElementById('cleanDbBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+function handleForgotPassword() {
+  alert('Demo Password Reset: All accounts use "password123", or you can 1-Click Demo Sign In anytime!');
+}
+
+function openDataStorageModal() {
+  openModal('dataStorageModal');
+}
+
+// Export Auth Functions
+window.initAuthSystem = initAuthSystem;
+window.syncUserProfileUI = syncUserProfileUI;
+window.switchAuthTab = switchAuthTab;
+window.selectRegisterRole = selectRegisterRole;
+window.selectHomeGym = selectHomeGym;
+window.quickSelectAccount = quickSelectAccount;
+window.quickFillAccount = quickFillAccount;
+window.handleSignInSubmit = handleSignInSubmit;
+window.handleRegisterSubmit = handleRegisterSubmit;
+window.loginDemoAccount = loginDemoAccount;
+window.logoutUser = logoutUser;
+window.handleResetDatabase = handleResetDatabase;
+window.dismissCleanBanner = dismissCleanBanner;
+window.handleForgotPassword = handleForgotPassword;
+window.openDataStorageModal = openDataStorageModal;

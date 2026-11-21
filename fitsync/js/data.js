@@ -4,6 +4,73 @@
  */
 
 const DEFAULT_FITSYNC_DATA = {
+  isLoggedIn: true,
+  registeredUsers: [
+    {
+      name: "Ritika Sharma",
+      email: "ritika@fitsync.health",
+      role: "Gym Member",
+      tag: "Athlete",
+      avatar: "assets/images/isha_avatar.jpg",
+      phone: "+91 98765 43210",
+      gym: "FitZone Fitness",
+      branchLocation: "Alkapuri, Vadodara • 1.2 km",
+      goal: "Build Muscle (Hypertrophy Surplus)",
+      activityLevel: "Moderately Active (1.55x BMR)",
+      gender: "Female",
+      age: 24,
+      height: 168,
+      weight: 58.5
+    },
+    {
+      name: "Isha Kulkarni",
+      email: "isha.kulkarni@fitsync.com",
+      role: "Gym Member",
+      tag: "Athlete",
+      avatar: "assets/images/isha_avatar.jpg",
+      phone: "+91 98765 43210",
+      gym: "FitZone Gym",
+      branchLocation: "Kothrud, Pune",
+      goal: "Build Muscle",
+      activityLevel: "Moderately Active (1.55x BMR)",
+      gender: "Female",
+      age: 24,
+      height: 168,
+      weight: 62.5
+    },
+    {
+      name: "Coach Raj Malhotra",
+      email: "coach@fitsync.health",
+      role: "Gym Trainer",
+      tag: "Coach",
+      avatar: "assets/images/raj.jpg",
+      phone: "+91 98111 22334",
+      gym: "FitZone Fitness",
+      branchLocation: "Alkapuri, Vadodara",
+      goal: "Athletic Strength & Conditioning",
+      activityLevel: "Very Active (1.725x BMR)",
+      gender: "Male",
+      age: 32,
+      height: 182,
+      weight: 84.0
+    },
+    {
+      name: "Aarav Patel",
+      email: "aarav@fitsync.health",
+      role: "Gym Member",
+      tag: "Athlete",
+      avatar: "assets/images/aarav.jpg",
+      phone: "+91 98234 56789",
+      gym: "PowerHouse Gym",
+      branchLocation: "SG Highway, Ahmedabad • 84 km",
+      goal: "Fat Loss & Lean Definition",
+      activityLevel: "Moderately Active (1.55x BMR)",
+      gender: "Male",
+      age: 26,
+      height: 178,
+      weight: 74.0
+    }
+  ],
   user: {
     name: "Isha Kulkarni",
     initials: "IK",
@@ -1408,6 +1475,12 @@ class FitSyncStore {
       const saved = localStorage.getItem(this.storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
+        if (parsed.isLoggedIn === undefined) {
+          parsed.isLoggedIn = true;
+        }
+        if (!parsed.registeredUsers || parsed.registeredUsers.length === 0) {
+          parsed.registeredUsers = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.registeredUsers));
+        }
                 if (!parsed.workoutPlans || !parsed.workoutPlans.thu || !parsed.workoutPlans.thu.exercises || parsed.workoutPlans.thu.exercises[0].id !== "ex_greatest_stretch" || !parsed.workoutPlans.mon.exercises[0].image.includes('ex_incline_bench')) {
           parsed.workoutPlans = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.workoutPlans));
         }

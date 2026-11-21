@@ -48,6 +48,327 @@
   <!-- Sidebar Overlay for Mobile -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+  
+  <!-- ====================================================================
+       AUTHENTICATION & ONBOARDING DASHBOARD OVERLAY
+       Exact Match to User Reference Designs
+       ==================================================================== -->
+  <div id="authDashboardOverlay" class="auth-dashboard-overlay" style="display: none;">
+    <div class="auth-card-container" id="authCardContainer">
+      
+      <!-- Glowing Logo & Header Branding -->
+      <div class="auth-brand-header">
+        <div class="auth-logo-badge">
+          <img src="assets/images/logo.jpg" alt="FitSync AI Logo" onerror="this.outerHTML='<i data-lucide=\'activity\' style=\'color:#10B981; width:28px; height:28px;\'></i>'">
+        </div>
+        <h1 class="auth-brand-title">FitSync <span class="text-blue">AI</span></h1>
+        <p class="auth-brand-subtitle">Personalized fitness intelligence for Gym Athletes and Certified Strength Trainers.</p>
+      </div>
+
+      <!-- Main Auth Card -->
+      <div class="auth-card">
+        
+        <!-- Segmented Tab Navigation -->
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab-btn active" id="authTabBtnSignIn" onclick="switchAuthTab('signin')">
+            Sign In
+          </button>
+          <button type="button" class="auth-tab-btn" id="authTabBtnRegister" onclick="switchAuthTab('register')">
+            Register (New)
+          </button>
+          <button type="button" class="auth-tab-btn" id="authTabBtnDemo" onclick="switchAuthTab('demo')">
+            ⚡ 1-Click Demo
+          </button>
+        </div>
+
+        <!-- -------------------------------------------------------------
+             PANE 1: SIGN IN FORM
+             ------------------------------------------------------------- -->
+        <div id="authSignInPane">
+          <form id="authSignInForm" onsubmit="handleSignInSubmit(event)">
+            
+            <div class="auth-form-group">
+              <label class="auth-label">
+                <i data-lucide="mail"></i> Email Address
+              </label>
+              <input type="email" id="authEmailInput" class="auth-input" placeholder="e.g. athlete@fitsync.health or coach@fitsync.health" value="ritika@fitsync.health" required>
+            </div>
+
+            <div class="auth-form-group">
+              <div class="auth-label-row">
+                <label class="auth-label">
+                  <i data-lucide="key"></i> Password
+                </label>
+                <a href="javascript:void(0)" onclick="handleForgotPassword()" class="auth-forgot-link">Forgot Password?</a>
+              </div>
+              <input type="password" id="authPasswordInput" class="auth-input" placeholder="••••••••" value="password123" required>
+            </div>
+
+            <!-- Registered Accounts on this Device -->
+            <div class="auth-registered-label">Registered accounts on this device:</div>
+            <div class="auth-registered-chips" id="registeredAccountsList">
+              <button type="button" class="auth-account-chip active" onclick="quickSelectAccount('ritika@fitsync.health')">
+                <i data-lucide="user" style="width:13px; height:13px;"></i> ritika (Athlete)
+              </button>
+              <button type="button" class="auth-account-chip" onclick="quickSelectAccount('coach@fitsync.health')">
+                <i data-lucide="award" style="width:13px; height:13px;"></i> coach (Trainer)
+              </button>
+              <button type="button" class="auth-account-chip" onclick="quickSelectAccount('isha.kulkarni@fitsync.com')">
+                <i data-lucide="user" style="width:13px; height:13px;"></i> isha (Athlete)
+              </button>
+            </div>
+
+            <!-- Checkbox and Quick Fill Options -->
+            <div class="auth-meta-row">
+              <label class="auth-checkbox-label">
+                <input type="checkbox" id="authStaySignedIn" checked> Stay signed in
+              </label>
+              <div class="auth-quick-fills">
+                <button type="button" class="auth-quick-btn" onclick="quickFillAccount('athlete')">⚡ Athlete Fill</button>
+                <span>•</span>
+                <button type="button" class="auth-quick-btn" onclick="quickFillAccount('coach')">🏆 Coach Fill</button>
+              </div>
+            </div>
+
+            <!-- Primary Sign In Button -->
+            <button type="submit" class="auth-submit-btn">
+              Sign In to FitSync <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+            </button>
+          </form>
+        </div>
+
+        <!-- -------------------------------------------------------------
+             PANE 2: REGISTER (NEW) FORM
+             ------------------------------------------------------------- -->
+        <div id="authRegisterPane" style="display: none;">
+          <form id="authRegisterForm" onsubmit="handleRegisterSubmit(event)">
+            
+            <!-- SELECT FITSYNC ROLE -->
+            <div class="auth-step-title">
+              <i data-lucide="shield-check"></i> SELECT YOUR FITSYNC ROLE
+            </div>
+            <div class="auth-role-grid">
+              <div class="auth-role-card active" id="roleCardMember" onclick="selectRegisterRole('member')">
+                <div class="auth-role-icon">🏃</div>
+                <div class="auth-role-info">
+                  <strong>Gym Member</strong>
+                  <span>Workout & nutrition athlete</span>
+                </div>
+              </div>
+              <div class="auth-role-card" id="roleCardTrainer" onclick="selectRegisterRole('trainer')">
+                <div class="auth-role-icon">🏋️</div>
+                <div class="auth-role-info">
+                  <strong>Gym Trainer</strong>
+                  <span>Coach assigned athletes</span>
+                </div>
+              </div>
+            </div>
+            <input type="hidden" id="regRoleInput" value="member">
+
+            <!-- STEP 1: PERSONAL ACCOUNT DETAILS -->
+            <div class="auth-step-title">
+              <i data-lucide="user"></i> STEP 1: PERSONAL ACCOUNT DETAILS
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label class="auth-label">Full Name *</label>
+                <input type="text" id="regFullName" class="auth-input" placeholder="e.g. Rohan Sharma" required>
+              </div>
+              <div>
+                <label class="auth-label">Email Address *</label>
+                <input type="email" id="regEmail" class="auth-input" placeholder="rohan@example.com" required>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label class="auth-label">Mobile Number *</label>
+                <input type="tel" id="regPhone" class="auth-input" placeholder="+91 98765 43210" value="+91 98765 43210" required>
+              </div>
+              <div>
+                <label class="auth-label">Profile Picture URL (Optional)</label>
+                <input type="url" id="regAvatarUrl" class="auth-input" placeholder="https://... (or leave blank)">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+              <div>
+                <label class="auth-label">Password *</label>
+                <input type="password" id="regPassword" class="auth-input" placeholder="At least 6 characters" required minlength="6">
+              </div>
+              <div>
+                <label class="auth-label">Confirm Password *</label>
+                <input type="password" id="regConfirmPassword" class="auth-input" placeholder="Repeat password" required minlength="6">
+              </div>
+            </div>
+
+            <!-- STEP 2: MEMBER BIOMETRICS & GOAL -->
+            <div class="auth-step-title">
+              <i data-lucide="scale"></i> STEP 2: MEMBER BIOMETRICS & GOAL
+            </div>
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+              <div>
+                <label class="auth-label">Gender</label>
+                <select id="regGender" class="auth-select">
+                  <option value="Male" selected>Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="auth-label">Age</label>
+                <input type="number" id="regAge" class="auth-input" value="24" min="14" max="95">
+              </div>
+              <div>
+                <label class="auth-label">Height (cm)</label>
+                <input type="number" id="regHeight" class="auth-input" value="175" min="100" max="240">
+              </div>
+              <div>
+                <label class="auth-label">Weight (kg)</label>
+                <input type="number" id="regWeight" class="auth-input" value="70" step="0.5" min="30" max="250">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+              <div>
+                <label class="auth-label">Primary Goal</label>
+                <select id="regGoal" class="auth-select">
+                  <option value="Build Muscle (Hypertrophy Surplus)" selected>Build Muscle (Hypertrophy Surplus)</option>
+                  <option value="Fat Loss & Lean Definition">Fat Loss & Lean Definition</option>
+                  <option value="Athletic Strength & Conditioning">Athletic Strength & Conditioning</option>
+                  <option value="Endurance & Cardiovascular Health">Endurance & Cardiovascular Health</option>
+                  <option value="General Health & Functional Mobility">General Health & Functional Mobility</option>
+                </select>
+              </div>
+              <div>
+                <label class="auth-label">Activity Level</label>
+                <select id="regActivity" class="auth-select">
+                  <option value="Moderately Active (1.55x BMR)" selected>Moderately Active (1.55x BMR)</option>
+                  <option value="Sedentary (1.2x BMR)">Sedentary (1.2x BMR)</option>
+                  <option value="Lightly Active (1.375x BMR)">Lightly Active (1.375x BMR)</option>
+                  <option value="Very Active (1.725x BMR)">Very Active (1.725x BMR)</option>
+                  <option value="Extremely Active (1.9x BMR)">Extremely Active (1.9x BMR)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- STEP 3: SELECT HOME GYM BRANCH -->
+            <div class="auth-step-title">
+              <i data-lucide="building-2"></i> STEP 3: SELECT HOME GYM BRANCH
+            </div>
+            <div class="auth-gym-card active" id="gymBranch0" onclick="selectHomeGym('FitZone Fitness', 'Alkapuri, Vadodara • 1.2 km', 0)">
+              <div class="auth-gym-info">
+                <strong>FitZone Fitness <span class="auth-gym-rating">4.9 ★</span></strong>
+                <span>Alkapuri, Vadodara • 1.2 km</span>
+              </div>
+              <div class="auth-gym-check"><i data-lucide="check" style="width:13px; height:13px;"></i></div>
+            </div>
+
+            <div class="auth-gym-card" id="gymBranch1" onclick="selectHomeGym('PowerHouse Gym', 'SG Highway, Ahmedabad • 84 km', 1)">
+              <div class="auth-gym-info">
+                <strong>PowerHouse Gym <span class="auth-gym-rating">4.8 ★</span></strong>
+                <span>SG Highway, Ahmedabad • 84 km</span>
+              </div>
+              <div class="auth-gym-check"><i data-lucide="check" style="width:13px; height:13px;"></i></div>
+            </div>
+
+            <div class="auth-gym-card" id="gymBranch2" onclick="selectHomeGym('Elite Fitness Studio', 'Vesu, Surat • 142 km', 2)">
+              <div class="auth-gym-info">
+                <strong>Elite Fitness Studio <span class="auth-gym-rating">4.7 ★</span></strong>
+                <span>Vesu, Surat • 142 km</span>
+              </div>
+              <div class="auth-gym-check"><i data-lucide="check" style="width:13px; height:13px;"></i></div>
+            </div>
+            <input type="hidden" id="regGymBranchInput" value="FitZone Fitness">
+            <input type="hidden" id="regGymLocationInput" value="Alkapuri, Vadodara • 1.2 km">
+
+            <!-- Primary Register Button -->
+            <button type="submit" class="auth-submit-btn" id="regSubmitBtn" style="margin-top: 14px;">
+              Create Athlete Profile & Enter FitSync <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+            </button>
+          </form>
+        </div>
+
+        <!-- -------------------------------------------------------------
+             PANE 3: 1-CLICK DEMO ACCOUNTS
+             ------------------------------------------------------------- -->
+        <div id="authDemoPane" style="display: none;">
+          <div class="auth-step-title" style="margin-top: 0;">
+            <i data-lucide="zap"></i> INSTANT ACCESS PROFILES
+          </div>
+          <div class="auth-demo-grid">
+            <div class="auth-demo-card" onclick="loginDemoAccount('ritika')">
+              <div class="auth-demo-card-left">
+                <img src="assets/images/isha_avatar.jpg" class="auth-demo-avatar" alt="Ritika">
+                <div class="auth-demo-info">
+                  <strong>Ritika Sharma</strong>
+                  <span>Gym Member • 24y Female • 58.5 kg • FitZone</span>
+                </div>
+              </div>
+              <div class="auth-demo-arrow">Enter &rarr;</div>
+            </div>
+
+            <div class="auth-demo-card" onclick="loginDemoAccount('isha')">
+              <div class="auth-demo-card-left">
+                <img src="assets/images/aarav.jpg" class="auth-demo-avatar" alt="Isha">
+                <div class="auth-demo-info">
+                  <strong>Isha Kulkarni</strong>
+                  <span>Member · Premium • 24y Female • 62.5 kg</span>
+                </div>
+              </div>
+              <div class="auth-demo-arrow">Enter &rarr;</div>
+            </div>
+
+            <div class="auth-demo-card" onclick="loginDemoAccount('coach')">
+              <div class="auth-demo-card-left">
+                <img src="assets/images/raj.jpg" class="auth-demo-avatar" alt="Coach Raj">
+                <div class="auth-demo-info">
+                  <strong>Coach Raj Malhotra</strong>
+                  <span>Certified Strength Coach & Trainer</span>
+                </div>
+              </div>
+              <div class="auth-demo-arrow">Enter &rarr;</div>
+            </div>
+
+            <div class="auth-demo-card" onclick="loginDemoAccount('aarav')">
+              <div class="auth-demo-card-left">
+                <img src="assets/images/aarav.jpg" class="auth-demo-avatar" alt="Aarav">
+                <div class="auth-demo-info">
+                  <strong>Aarav Patel</strong>
+                  <span>Gym Member • 26y Male • 74.0 kg • PowerHouse</span>
+                </div>
+              </div>
+              <div class="auth-demo-arrow">Enter &rarr;</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared Clean Database Mode Active Banner -->
+        <div class="auth-banner" id="cleanDbBanner">
+          <div class="auth-banner-left">
+            <i data-lucide="check-circle" class="auth-banner-icon"></i>
+            <div>
+              <strong>Clean Database Mode Active</strong>
+              <p>All pre-defined demo data has been wiped. Register a real Athlete or Coach below to start from scratch.</p>
+            </div>
+          </div>
+          <button type="button" class="auth-banner-close" onclick="dismissCleanBanner()" aria-label="Dismiss">&times;</button>
+        </div>
+
+        <!-- Shared Card Footer Actions -->
+        <div class="auth-card-footer">
+          <button type="button" class="btn-auth-reset-db" onclick="handleResetDatabase()">
+            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> 🧹 Reset Database (Start from Scratch)
+          </button>
+          <a href="javascript:void(0)" onclick="openDataStorageModal()" class="auth-data-storage-link">
+            <i data-lucide="database" style="width: 14px; height: 14px;"></i> Where & How is Data Stored?
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <div class="app-layout">
     
     <!-- ====================================================================
@@ -66,12 +387,17 @@
       </a>
 
       <!-- User Profile Badge (Clicking navigates to Settings) -->
-      <div class="sidebar-user" onclick="switchView('settings')" title="Click to view Settings & Profile">
-        <img src="assets/images/isha_avatar.jpg" class="user-avatar-circle" alt="IK" onerror="this.outerHTML='<div class=\'user-avatar-circle\'>IK</div>'">
-        <div class="user-meta">
-          <h4>Isha Kulkarni</h4>
-          <span>Member · Premium</span>
+      <div class="sidebar-user" title="View Settings & Profile">
+        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0; cursor:pointer;" onclick="switchView('settings')">
+          <img src="assets/images/isha_avatar.jpg" id="sidebarAvatarImg" class="user-avatar-circle" alt="IK" onerror="this.outerHTML='<div class=\'user-avatar-circle\' id=\'sidebarAvatarFallback\'>IK</div>'">
+          <div class="user-meta" style="min-width:0; overflow:hidden;">
+            <h4 id="sidebarUserName" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Isha Kulkarni</h4>
+            <span id="sidebarUserRole">Member · Premium</span>
+          </div>
         </div>
+        <button type="button" class="btn-sidebar-user-logout" onclick="logoutUser()" title="Log Out">
+          <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+        </button>
       </div>
 
       <!-- 14 Ordered Navigation Links -->
@@ -171,6 +497,10 @@
         <button class="sidebar-nav-item" data-nav="help">
           <i data-lucide="help-circle"></i>
           <span class="nav-label">Help & Support</span>
+        </button>
+        <button class="sidebar-nav-item btn-sidebar-logout" onclick="logoutUser()" title="Log out of FitSync">
+          <i data-lucide="log-out"></i>
+          <span class="nav-label">Log Out</span>
         </button>
       </div>
     </aside>
@@ -1798,6 +2128,28 @@
           </div>
         </div>
 
+                  <div class="fs-card" style="margin-top: 20px; border-color: rgba(239, 68, 68, 0.25); background: linear-gradient(180deg, #ffffff 0%, rgba(254, 242, 242, 0.35) 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+              <div>
+                <h3 class="card-title" style="color: #dc2626; display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="shield-alert" style="width: 18px; height: 18px;"></i> Session & Account Security
+                </h3>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                  Currently active session: <strong id="settingsSessionUser" style="color: var(--text-main);">Isha Kulkarni</strong> (<span id="settingsSessionEmail">isha.kulkarni@fitsync.com</span>). Data is securely persisted in your local browser sandbox.
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" onclick="logoutUser()" class="btn-settings-logout">
+                  <i data-lucide="log-out" style="width: 15px; height: 15px;"></i> Log Out
+                </button>
+                <button type="button" onclick="handleResetDatabase()" class="btn-settings-reset">
+                  <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Reset Database
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ================================================================
              MODULE 16: HELP & SUPPORT
              ================================================================ -->
@@ -2395,6 +2747,44 @@
   <script src="js/data.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/app.js"></script>
+
+
+  <!-- Modal: Where & How is Data Stored -->
+  <div class="modal-overlay" id="dataStorageModal">
+    <div class="modal-card" style="max-width: 520px; background: #0D1628; border: 1px solid rgba(255,255,255,0.12); color: #F8FAFC;">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="database" style="color: #10B981;"></i>
+          <h4 class="modal-title" style="color: #F8FAFC;">Where & How is Data Stored?</h4>
+        </div>
+        <button class="modal-close-btn" data-close-modal style="color: #94A3B8;">&times;</button>
+      </div>
+      <div class="modal-body" style="font-size: 13.5px; line-height: 1.6; color: #CBD5E1;">
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+          <strong style="color: #10B981; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i> 100% Private, On-Device Browser Storage
+          </strong>
+          <p style="margin: 6px 0 0; font-size: 12.5px; color: #94A3B8;">
+            FitSync stores all user profiles, custom workout logs, sets, hydration logs, and fitness assessments exclusively in your browser's private LocalStorage sandbox.
+          </p>
+        </div>
+
+        <ul style="padding-left: 20px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px;">
+          <li><strong>Zero Cloud Tracking:</strong> No remote servers, No Supabase, No Firebase, and zero telemetry sent to third parties.</li>
+          <li><strong>Complete Offline Capability:</strong> The entire application operates completely offline without internet once loaded.</li>
+          <li><strong>Instant Zero-Latency:</strong> Logging reps, updating sets, or filling water renders in under 1 millisecond.</li>
+          <li><strong>Full User Control:</strong> You can wipe or reset the local database anytime by clicking "Reset Database (Start from Scratch)".</li>
+        </ul>
+
+        <div style="font-size: 12px; color: #64748B; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+          Storage Key: <code style="background: rgba(15,23,42,0.8); padding: 2px 6px; border-radius: 4px; color: #10B981;">fitsync_master_platform_v2</code>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.08);">
+        <button class="btn-secondary" data-close-modal style="background: rgba(255,255,255,0.06); color: #FFF; border: none;">Got it</button>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
