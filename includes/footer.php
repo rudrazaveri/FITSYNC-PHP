@@ -16,7 +16,7 @@
       </div>
       <div class="col-md-6 text-center text-md-end">
         <p class="text-secondary small mb-1">
-          <strong>Minor Project</strong> • HTML5 • CSS3/Bootstrap • PHP • Supabase (PostgreSQL) • JavaScript
+          <strong>Minor Project</strong> • HTML5 • CSS3 • JavaScript • PHP Engine
         </p>
         <span class="text-secondary" style="font-size: 11px;">
           &copy; <?= date('Y') ?> FitSync AI Platform. All rights reserved.

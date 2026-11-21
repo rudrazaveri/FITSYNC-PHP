@@ -38,11 +38,6 @@ $rootDir = dirname(__DIR__);
 loadEnv($rootDir . '/.env.local');
 loadEnv($rootDir . '/.env');
 
-// Supabase credentials
-define('SUPABASE_URL', getenv('NEXT_PUBLIC_SUPABASE_URL') ?: 'https://fitsync-ai.supabase.co');
-define('SUPABASE_ANON_KEY', getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY') ?: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_anon_key');
-define('SUPABASE_SERVICE_ROLE_KEY', getenv('SUPABASE_SERVICE_ROLE_KEY') ?: '');
-
 // Detect Base URL
 function getBaseUrl() {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";

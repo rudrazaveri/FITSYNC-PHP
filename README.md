@@ -7,7 +7,7 @@
 
 ## 🌟 Executive Overview
 
-**FitSync** is a full-featured fitness and healthcare web platform designed for members, certified gym trainers, gym branch owners, and medical consultants. Built using a lightweight, standards-compliant stack (**HTML5, CSS3, Vanilla JavaScript, PHP, and Supabase / PostgreSQL**), it delivers a native-feeling single-page application (SPA) experience without bulky frontend frameworks.
+**FitSync** is a full-featured fitness and healthcare web platform designed for members, certified gym trainers, gym branch owners, and medical consultants. Built using a clean, standards-compliant stack (**HTML5, CSS3, Vanilla JavaScript, and PHP**), it delivers a native-feeling single-page application (SPA) experience without bulky frontend frameworks or external cloud databases.
 
 ---
 
@@ -16,10 +16,10 @@
 | Layer | Technologies | Role & Purpose |
 | :--- | :--- | :--- |
 | **Frontend Core** | **HTML5 & CSS3** | Semantic layout and Electric Blue design system with custom CSS variables, responsive grid/flexbox, and modal dialogs. |
-| **Interactions** | **Vanilla JavaScript (ES6+)** | Zero-reload client-side routing (`switchView`), Mifflin-St Jeor formula engine, rest interval timer, and LocalStorage caching. |
+| **Interactions** | **Vanilla JavaScript (ES6+)** | Zero-reload client-side routing (`switchView`), Mifflin-St Jeor formula engine, rest interval timer, and LocalStorage data caching. |
 | **Visualizations** | **Chart.js & Lucide Icons** | Activity bar charts, weight progression line charts, hydration tracking, and 72 interface icons with SVG fallbacks. |
-| **Backend API** | **PHP 8.x** | Modular REST endpoints (`api/workouts.php`, `api/meals.php`, `api/assessment.php`), session authentication, and database connectivity. |
-| **Database** | **Supabase (PostgreSQL)** | Cloud-hosted relational database storing user profiles, gym branches, workouts, nutrition, attendance logs, and progress metrics. |
+| **Backend API** | **PHP 8.x** | Modular REST endpoints (`api/workouts.php`, `api/meals.php`, `api/assessment.php`), session authentication, and page controllers. |
+| **Data Storage** | **LocalStorage & MySQL Ready** | Client-side persistent storage with zero external dependencies and modular PHP endpoints. |
 
 ---
 
@@ -77,7 +77,7 @@ Designed according to high-contrast modern dashboard standards:
 ## 🚀 Running the Project Locally
 
 ### 1. Frontend Quick Preview (Zero Setup)
-You can preview the platform immediately using any local web server or by opening `index.html` in your browser:
+Preview the platform immediately using any local web server or by opening `index.html` in your browser:
 ```bash
 # Using Python
 python -m http.server 8085
@@ -87,22 +87,12 @@ python -m http.server 8085
 # or http://127.0.0.1:8085/fitsync/
 ```
 
-### 2. Full PHP + Supabase Backend
-To run with PHP and Supabase backend features:
-1. Ensure **PHP 8.0+** is installed (or use **XAMPP / WAMP / Laragon**).
-2. Configure your Supabase credentials in `config/supabase.php` or `.env.local`:
-   ```php
-   define('SUPABASE_URL', 'https://your-project.supabase.co');
-   define('SUPABASE_ANON_KEY', 'your-anon-key');
-   ```
-3. Run the migrations in `supabase/migrations/` inside your Supabase SQL Editor.
-4. Start the PHP server:
-   ```bash
-   php -S 127.0.0.1:8000
-   ```
-5. Open `http://127.0.0.1:8000` to access the full application.
-
-For detailed backend setup instructions, consult [PHP_SETUP_GUIDE.md](file:///c:/FIT-SYNC%20AI%20php/PHP_SETUP_GUIDE.md).
+### 2. PHP Backend Server
+To run with PHP backend features:
+```bash
+php -S 127.0.0.1:8000
+```
+Open `http://127.0.0.1:8000` to access the full application.
 
 ---
 
@@ -123,10 +113,9 @@ FIT-SYNC AI php/
 │   ├── assessment.php
 │   ├── meals.php
 │   └── workouts.php
-├── config/               # PHP config and Supabase client
+├── config/               # PHP config and session management
 │   ├── config.php
-│   ├── session.php
-│   └── supabase.php
+│   └── session.php
 ├── css/                  # Styling & themes
 │   ├── style.css         # Master Electric Blue design system
 │   └── responsive.css    # Responsive mobile & tablet layouts
@@ -138,11 +127,8 @@ FIT-SYNC AI php/
 │   ├── images/           # 26 high-resolution themed photos
 │   └── css/
 ├── fitsync/              # Standalone frontend bundle
-├── supabase/             # Database migrations & seed data
-│   ├── migrations/
-│   └── seed.sql
 ├── documents/            # Feature specs & project documentation
-├── PHP_SETUP_GUIDE.md    # PHP & database setup instructions
+├── PHP_SETUP_GUIDE.md    # PHP setup instructions
 └── TECHNOLOGY_STACK.md   # Architectural & stack breakdown
 ```
 

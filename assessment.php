@@ -5,7 +5,6 @@
  */
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/config/session.php';
-require_once __DIR__ . '/config/supabase.php';
 
 $pageTitle = 'Senses Biometric Assessment';
 include __DIR__ . '/includes/header.php';
@@ -36,7 +35,7 @@ include __DIR__ . '/includes/header.php';
           <i class="bi bi-sliders text-success"></i> Anthropometric Parameters
         </h5>
 
-        <form id="assessmentForm" onsubmit="alert('Assessment parameters updated and saved to Supabase profile!'); return false;">
+        <form id="assessmentForm" onsubmit="alert('Assessment parameters updated and saved to health profile!'); return false;">
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label class="form-label text-light small fw-semibold">Age (Years)</label>

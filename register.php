@@ -4,7 +4,6 @@
  */
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/config/session.php';
-require_once __DIR__ . '/config/supabase.php';
 
 if (isLoggedIn()) {
     header('Location: ' . url('dashboard.php'));
@@ -24,15 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen($password) < 6) {
         $error = 'Password must be at least 6 characters.';
     } else {
-        // Try Supabase Sign Up
-        $res = Supabase::auth()->signUp($email, $password, [
-            'full_name' => $fullName,
-            'role' => $role
-        ]);
-
-        // Login session
+        // Create session user
         setCurrentUser([
-            'id' => $res['data']['user']['id'] ?? uniqid(),
+            'id' => uniqid(),
             'full_name' => $fullName,
             'email' => $email,
             'role' => $role

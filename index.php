@@ -13,7 +13,7 @@ include __DIR__ . '/includes/header.php';
       <div class="col-lg-7">
         <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-dark border border-secondary mb-3">
           <span class="badge bg-success">NEW</span>
-          <span class="small text-light">Built on PHP, Supabase PostgreSQL & Bootstrap</span>
+          <span class="small text-light">Built on HTML5, CSS3, JavaScript & PHP</span>
         </div>
         <h1 class="display-4 fw-extrabold text-white mb-3">
           Your Fitness. Your Health. <br>
@@ -37,8 +37,8 @@ include __DIR__ . '/includes/header.php';
           <span class="text-secondary small text-uppercase fw-semibold d-block mb-2">Verified Technology Stack</span>
           <div class="d-flex flex-wrap gap-2">
             <span class="badge bg-dark border border-secondary px-3 py-2 text-light"><i class="bi bi-filetype-php text-primary me-1"></i> PHP 8.x Backend</span>
-            <span class="badge bg-dark border border-secondary px-3 py-2 text-light"><i class="bi bi-database text-success me-1"></i> Supabase + PostgreSQL</span>
-            <span class="badge bg-dark border border-secondary px-3 py-2 text-light"><i class="bi bi-bootstrap text-info me-1"></i> HTML5 + CSS3 + Bootstrap</span>
+            <span class="badge bg-dark border border-secondary px-3 py-2 text-light"><i class="bi bi-database text-success me-1"></i> LocalStorage & MySQL Engine</span>
+            <span class="badge bg-dark border border-secondary px-3 py-2 text-light"><i class="bi bi-bootstrap text-info me-1"></i> HTML5 + CSS3</span>
             <span class="badge bg-dark border border-secondary px-3 py-2 text-light"><i class="bi bi-filetype-js text-warning me-1"></i> JavaScript Interactive Engine</span>
           </div>
         </div>

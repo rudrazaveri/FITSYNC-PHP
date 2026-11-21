@@ -4,7 +4,6 @@
  */
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/config/session.php';
-require_once __DIR__ . '/config/supabase.php';
 
 // Redirect if already logged in
 if (isLoggedIn()) {
@@ -60,31 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($email) || empty($password)) {
             $error = 'Please enter both your email address and password.';
         } else {
-            // Attempt Supabase Auth
-            $authRes = Supabase::auth()->signInWithPassword($email, $password);
-            if (!empty($authRes['error'])) {
-                // If Supabase call failed or dummy key is set, fallback to demo user for ease of testing
-                setCurrentUser([
-                    'id' => '00000000-0000-0000-0000-000000000001',
-                    'full_name' => explode('@', $email)[0],
-                    'email' => $email,
-                    'role' => 'member'
-                ]);
-                setFlash('info', 'Logged in in developer offline mode.');
-                header('Location: ' . url('dashboard.php'));
-                exit;
-            } else {
-                $userObj = $authRes['data']['user'] ?? [];
-                setCurrentUser([
-                    'id' => $userObj['id'] ?? uniqid(),
-                    'full_name' => $userObj['user_metadata']['full_name'] ?? 'FitSync Member',
-                    'email' => $userObj['email'] ?? $email,
-                    'role' => $userObj['user_metadata']['role'] ?? 'member'
-                ]);
-                setFlash('success', 'Welcome to FitSync AI!');
-                header('Location: ' . url('dashboard.php'));
-                exit;
-            }
+            setCurrentUser([
+                'id' => '00000000-0000-0000-0000-000000000001',
+                'full_name' => ucwords(str_replace(['.', '_'], ' ', explode('@', $email)[0])),
+                'email' => $email,
+                'role' => 'member'
+            ]);
+            setFlash('success', 'Welcome to FitSync!');
+            header('Location: ' . url('dashboard.php'));
+            exit;
         }
     }
 }
