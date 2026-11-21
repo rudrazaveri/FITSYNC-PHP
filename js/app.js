@@ -731,19 +731,19 @@ function renderWorkoutExercises(plan) {
 
     const rowsHtml = (ex.sets || []).map((set, setIdx) => `
       <tr class="${set.done ? 'set-completed' : ''}" id="row-${plan.dayKey}-${exIdx}-${setIdx}">
-        <td style="font-weight: 700; color: var(--text-main);">Set ${set.set}</td>
+        <td><span class="wk-set-tag">Set ${set.set}</span></td>
         <td>
           <div class="wk-stepper-box">
             <button type="button" class="wk-stepper-btn" onclick="stepReps(this, -1, '${plan.dayKey}', ${exIdx}, ${setIdx})">-</button>
             <span class="wk-step-input" id="rep-val-${plan.dayKey}-${exIdx}-${setIdx}">${set.reps}</span>
             <button type="button" class="wk-stepper-btn" onclick="stepReps(this, 1, '${plan.dayKey}', ${exIdx}, ${setIdx})">+</button>
-            <span style="font-size: 11px; color: var(--text-secondary);">reps</span>
+            <span class="wk-unit-label">reps</span>
           </div>
         </td>
         <td>
           <div class="wk-stepper-box">
             <button type="button" class="wk-stepper-btn" onclick="stepWeight(this, -2.5, '${plan.dayKey}', ${exIdx}, ${setIdx})">-</button>
-            <span class="wk-step-input" id="wt-val-${plan.dayKey}-${exIdx}-${setIdx}">${parseFloat(set.weight).toFixed(1)} kg</span>
+            <span class="wk-step-input wk-weight-num" id="wt-val-${plan.dayKey}-${exIdx}-${setIdx}">${parseFloat(set.weight).toFixed(1)} kg</span>
             <button type="button" class="wk-stepper-btn" onclick="stepWeight(this, 2.5, '${plan.dayKey}', ${exIdx}, ${setIdx})">+</button>
           </div>
         </td>
@@ -753,7 +753,7 @@ function renderWorkoutExercises(plan) {
               <i data-lucide="${set.done ? 'check-circle' : 'circle'}" style="width: 13px; height: 13px;"></i>
               <span>${set.done ? 'Completed ✓' : 'Mark Done'}</span>
             </button>
-            <button type="button" class="wk-stepper-btn" style="border: none; background: transparent; color: var(--text-muted);" onclick="deleteSet('${plan.dayKey}', ${exIdx}, ${setIdx})" title="Remove Set">
+            <button type="button" class="wk-trash-btn" onclick="deleteSet('${plan.dayKey}', ${exIdx}, ${setIdx})" title="Remove Set">
               <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
             </button>
           </div>
@@ -773,13 +773,13 @@ function renderWorkoutExercises(plan) {
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
-            <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px; display: inline-flex; align-items: center; gap: 4px;" onclick="openModal('bookAppointmentModal')">
+            <button type="button" class="wk-pill-btn" onclick="openModal('bookAppointmentModal')">
               <i data-lucide="message-square" style="width: 12px; height: 12px;"></i> Ask Trainer
             </button>
-            <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px; display: inline-flex; align-items: center; gap: 4px;" onclick="switchView('exercises')">
+            <button type="button" class="wk-pill-btn" onclick="switchView('exercises')">
               <i data-lucide="help-circle" style="width: 12px; height: 12px;"></i> Exercise Guide
             </button>
-            <button class="wk-stepper-btn" style="border: none; background: transparent; color: var(--text-muted);" onclick="deleteExercise('${plan.dayKey}', ${exIdx})" title="Remove Exercise">
+            <button type="button" class="wk-trash-btn" onclick="deleteExercise('${plan.dayKey}', ${exIdx})" title="Remove Exercise">
               <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
             </button>
           </div>
@@ -800,11 +800,13 @@ function renderWorkoutExercises(plan) {
         </table>
 
         <div class="wk-ex-footer">
-          <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="addSetToExercise('${plan.dayKey}', ${exIdx})">
-            + Add Set ${(ex.sets || []).length + 1}
+          <button type="button" class="wk-btn-add-set" onclick="addSetToExercise('${plan.dayKey}', ${exIdx})">
+            <i data-lucide="plus" style="width: 13px; height: 13px;"></i> Add Set ${(ex.sets || []).length + 1}
           </button>
-          <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600;" id="ex-summary-${plan.dayKey}-${exIdx}">
-            Sets: <strong style="color: var(--primary-blue);">${exCompletedSets}/${(ex.sets || []).length}</strong> • Volume: <strong style="color: var(--primary-blue);">${Math.round(exVolume).toLocaleString()} kg</strong>
+          <div class="wk-ex-footer-stats" id="ex-summary-${plan.dayKey}-${exIdx}">
+            <span>Sets: <strong>${exCompletedSets}/${(ex.sets || []).length}</strong></span>
+            <span style="margin: 0 6px; color: var(--border-color);">•</span>
+            <span>Volume: <strong>${Math.round(exVolume).toLocaleString()} kg</strong></span>
           </div>
         </div>
       </div>
@@ -855,7 +857,7 @@ function toggleSetDone(btn, dayKey, exIdx, setIdx) {
   });
   const summaryEl = document.getElementById(`ex-summary-${dayKey}-${exIdx}`);
   if (summaryEl) {
-    summaryEl.innerHTML = `Sets: <strong style="color: var(--primary-blue);">${exCompletedSets}/${plan.exercises[exIdx].sets.length}</strong> • Volume: <strong style="color: var(--primary-blue);">${Math.round(exVolume).toLocaleString()} kg</strong>`;
+    summaryEl.innerHTML = `<span>Sets: <strong>${exCompletedSets}/${plan.exercises[exIdx].sets.length}</strong></span><span style="margin: 0 6px; color: var(--border-color);">•</span><span>Volume: <strong>${Math.round(exVolume).toLocaleString()} kg</strong></span>`;
   }
 
   initIcons();

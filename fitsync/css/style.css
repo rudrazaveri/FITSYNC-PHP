@@ -1508,64 +1508,85 @@ body {
 }
 
 /* ==========================================================================
-   ADVANCED WORKOUT PLANNER & DAY TRAVELLER (Past & Future)
+   FITSYNC ADVANCED WORKOUT SPLIT PLANNER & DAY TRAVELLER (Matching Reference)
    ========================================================================== */
-.workout-subnav-tabs {
+
+/* 1. Subnav Tabs Bar */
+.wk-subnav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   flex-wrap: wrap;
   gap: 12px;
 }
 
-.wk-tabs-group {
+.wk-subnav-links {
   display: flex;
   gap: 8px;
-  background: #EFF6FF;
-  padding: 4px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  align-items: center;
 }
 
 .wk-tab-btn {
-  padding: 8px 16px;
+  padding: 8px 18px;
   font-size: 13px;
   font-weight: 600;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: transparent;
+  border-radius: 24px;
+  border: 1px solid var(--border-color);
+  background: #FFFFFF;
   color: var(--text-secondary);
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   transition: all 0.2s ease;
+}
+
+.wk-tab-btn:hover {
+  background: var(--light-blue-bg);
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
 }
 
 .wk-tab-btn.active {
   background: var(--primary-blue);
+  border-color: var(--primary-blue);
   color: #FFFFFF;
-  box-shadow: 0 2px 6px rgba(21, 93, 252, 0.25);
+  box-shadow: 0 2px 8px rgba(21, 93, 252, 0.25);
 }
 
-/* 7-Day Day Selector Strip */
-.workout-day-strip-card {
+.wk-tab-btn.active i,
+.wk-tab-btn.active svg {
+  color: #FFFFFF;
+}
+
+.wk-scheduled-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: #F1F5F9;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+}
+
+/* 2. Master Planner Container Card */
+.wk-planner-container {
   background: #FFFFFF;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 18px 20px;
+  padding: 22px 24px;
   margin-bottom: 20px;
 }
 
-.wk-strip-header {
+.wk-planner-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
 }
 
-.wk-strip-title {
+.wk-planner-title {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1574,10 +1595,29 @@ body {
   color: var(--text-main);
 }
 
-.wk-days-row {
+.wk-planner-title i,
+.wk-planner-title svg {
+  width: 16px;
+  height: 16px;
+  color: var(--primary-blue);
+}
+
+.wk-today-indicator {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.wk-today-indicator strong {
+  color: var(--success-green);
+  font-weight: 700;
+}
+
+/* 3. 7-Day Day Selector Strip */
+.wk-days-strip {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 10px;
+  margin-bottom: 22px;
 }
 
 .wk-day-btn {
@@ -1585,13 +1625,16 @@ body {
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 12px 6px;
+  min-height: 48px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 2px;
+  outline: none;
 }
 
 .wk-day-btn:hover {
@@ -1599,89 +1642,83 @@ body {
   background: var(--light-blue-bg);
 }
 
-.wk-day-btn.active {
-  background: var(--primary-blue) !important;
-  border-color: var(--primary-blue) !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 4px 12px rgba(21, 93, 252, 0.28);
-}
-
-.wk-day-btn.active .wk-day-name,
-.wk-day-btn.active .wk-day-sub {
-  color: #FFFFFF !important;
-}
-
-.wk-day-name {
+.wk-day-btn .day-lbl {
   font-size: 14px;
   font-weight: 700;
   color: var(--text-main);
+  transition: color 0.15s ease;
 }
 
-.wk-day-sub {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
+.wk-day-btn.active {
+  background: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  box-shadow: 0 4px 12px rgba(21, 93, 252, 0.28);
+}
+
+.wk-day-btn.active .day-lbl {
+  color: #FFFFFF !important;
+}
+
+.wk-day-btn .day-today-tag {
+  font-size: 9px;
+  font-weight: 800;
   letter-spacing: 0.5px;
-  color: var(--text-secondary);
+  text-transform: uppercase;
+  color: var(--success-green);
+  line-height: 1;
 }
 
-.wk-day-btn.is-today .wk-day-sub {
-  color: var(--success-green);
-}
-.wk-day-btn.active.is-today .wk-day-sub {
+.wk-day-btn.active .day-today-tag {
   color: #BBF7D0 !important;
 }
 
-/* Selected Routine Header */
-.wk-routine-header-card {
-  background: #FFFFFF;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 20px 22px;
-  margin-bottom: 20px;
-}
-
-.wk-routine-top-row {
+/* 4. Routine Details Bar & Header Controls */
+.wk-routine-details {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #F1F5F9;
 }
 
-.wk-routine-badge-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-  align-items: center;
+.wk-routine-info {
+  flex: 1;
+  min-width: 280px;
 }
 
-.wk-badge-day {
+.wk-badge-pill {
   background: #DBEAFE;
   color: var(--primary-blue);
   font-size: 11px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  display: inline-block;
 }
 
-.wk-badge-preview {
+.wk-badge-sub {
   background: #F1F5F9;
   color: var(--text-secondary);
   font-size: 11px;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  display: inline-block;
 }
 
 .wk-routine-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--text-main);
+  margin-top: 6px;
   margin-bottom: 4px;
+  line-height: 1.2;
 }
 
 .wk-routine-tagline {
@@ -1689,14 +1726,14 @@ body {
   color: var(--text-secondary);
 }
 
-/* Rest Timer Box in Routine Header */
 .wk-header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
+/* Header Rest Timer Box */
 .wk-rest-timer-box {
   display: flex;
   align-items: center;
@@ -1704,23 +1741,24 @@ body {
   background: #F8FAFC;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 6px 12px;
+  padding: 6px 14px;
 }
 
 .wk-timer-label {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 9px;
+  font-weight: 800;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  line-height: 1;
 }
 
 .wk-timer-clock {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
   color: var(--text-main);
   font-variant-numeric: tabular-nums;
-  min-width: 42px;
+  min-width: 44px;
 }
 
 .wk-timer-chips {
@@ -1732,12 +1770,14 @@ body {
   background: #FFFFFF;
   border: 1px solid var(--border-color);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-secondary);
-  padding: 3px 6px;
+  padding: 4px 7px;
   border-radius: 4px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
+
 .wk-chip-btn:hover {
   background: var(--light-blue-bg);
   color: var(--primary-blue);
@@ -1748,14 +1788,19 @@ body {
   background: var(--primary-blue);
   color: #FFFFFF;
   border: none;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
+  transition: background 0.15s ease;
+}
+
+.wk-timer-control-btn:hover {
+  background: #0D4AD9;
 }
 
 .wk-timer-reset-btn {
@@ -1763,12 +1808,17 @@ body {
   color: var(--text-secondary);
   border: none;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 4px;
   display: flex;
   align-items: center;
+  border-radius: 4px;
 }
 
-/* 3 Summary Stats Cards */
+.wk-timer-reset-btn:hover {
+  color: var(--text-main);
+}
+
+/* 5. 3 Summary Mini Stats Cards */
 .wk-stats-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1779,7 +1829,12 @@ body {
   background: #F8FAFC;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 14px 16px;
+  padding: 16px 18px;
+  transition: border-color 0.2s ease;
+}
+
+.wk-stat-mini-card:hover {
+  border-color: var(--primary-blue);
 }
 
 .wk-stat-mini-label {
@@ -1790,10 +1845,11 @@ body {
 }
 
 .wk-stat-mini-val {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--text-main);
   margin-bottom: 2px;
+  letter-spacing: -0.3px;
 }
 
 .wk-stat-mini-sub {
@@ -1801,26 +1857,27 @@ body {
   color: var(--text-secondary);
 }
 
-/* Exercise Cards List */
+/* 6. Exercise Cards & Set Tables */
 .wk-exercise-card {
   background: #FFFFFF;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 20px;
-  margin-bottom: 16px;
+  padding: 22px 24px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .wk-exercise-card:hover {
   border-color: var(--primary-blue);
-  box-shadow: 0 4px 16px rgba(21, 93, 252, 0.06);
+  box-shadow: 0 6px 20px rgba(21, 93, 252, 0.07);
 }
 
 .wk-ex-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -1840,7 +1897,7 @@ body {
 }
 
 .wk-ex-title {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--text-main);
   margin-bottom: 2px;
@@ -1853,16 +1910,54 @@ body {
 }
 
 .wk-ex-target-pill {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--primary-blue);
   font-weight: 600;
 }
 
-/* Set Table */
+.wk-pill-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+  background: #FFFFFF;
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.wk-pill-btn:hover {
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+  background: var(--light-blue-bg);
+}
+
+.wk-trash-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.wk-trash-btn:hover {
+  color: #DC2626;
+}
+
+/* Set Table Styling */
 .wk-set-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .wk-set-table th {
@@ -1870,13 +1965,14 @@ body {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
   color: var(--text-secondary);
   padding: 8px 12px;
   border-bottom: 1px solid var(--border-color);
 }
 
 .wk-set-table td {
-  padding: 10px 12px;
+  padding: 12px;
   font-size: 13px;
   border-bottom: 1px solid #F1F5F9;
   vertical-align: middle;
@@ -1886,16 +1982,27 @@ body {
   background: #F0FDF4;
 }
 
+.wk-set-tag {
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 13px;
+}
+
+/* Stepper Pill Box */
 .wk-stepper-box {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  background: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 3px 6px;
 }
 
 .wk-stepper-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
   border: 1px solid var(--border-color);
   background: #FFFFFF;
   color: var(--text-main);
@@ -1903,26 +2010,41 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
+  line-height: 1;
   transition: all 0.15s ease;
 }
+
 .wk-stepper-btn:hover {
-  background: var(--light-blue-bg);
+  background: var(--primary-blue);
   border-color: var(--primary-blue);
-  color: var(--primary-blue);
+  color: #FFFFFF;
 }
 
 .wk-step-input {
   font-weight: 700;
   font-size: 13px;
-  min-width: 32px;
+  min-width: 28px;
   text-align: center;
+  color: var(--text-main);
 }
 
+.wk-weight-num {
+  color: var(--primary-blue);
+  min-width: 58px;
+}
+
+.wk-unit-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+
+/* Mark Done Button */
 .btn-mark-done {
   padding: 6px 14px;
-  border-radius: var(--radius-sm);
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -1947,13 +2069,53 @@ body {
   color: #FFFFFF;
 }
 
+.btn-mark-done.completed i,
+.btn-mark-done.completed svg {
+  color: #FFFFFF;
+}
+
+/* Exercise Card Footer */
 .wk-ex-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid #F1F5F9;
+  flex-wrap: wrap;
+  gap: 10px;
 }
+
+.wk-btn-add-set {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px dashed var(--border-color);
+  background: #FFFFFF;
+  color: var(--primary-blue);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.wk-btn-add-set:hover {
+  border-color: var(--primary-blue);
+  background: var(--light-blue-bg);
+}
+
+.wk-ex-footer-stats {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.wk-ex-footer-stats strong {
+  color: var(--primary-blue);
+  font-weight: 700;
+}
+
 .glass-station-wrapper {
   position: relative;
   width: 96px;
