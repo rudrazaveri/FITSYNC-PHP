@@ -461,6 +461,7 @@ class FitSyncStore {
       note: "Quick logged hydration"
     });
     this.save();
+    window.fitSyncSupabase?.syncWaterLog(amountInLiters * 1000);
     return this.state.stats.water;
   }
 
@@ -480,6 +481,7 @@ class FitSyncStore {
       fat: fat
     });
     this.save();
+    window.fitSyncSupabase?.syncMealLog({ foodName: name, timing: category, cal: calories, protein, carbs, fat });
     return this.state.nutrition;
   }
 
@@ -497,6 +499,7 @@ class FitSyncStore {
       thigh: 54.0
     });
     this.save();
+    window.fitSyncSupabase?.syncWeightLog(val);
     return this.state.stats.weight;
   }
 
@@ -509,6 +512,7 @@ class FitSyncStore {
     this.state.nutrition.macros.carbs.target = data.targetCarbs;
     this.state.nutrition.macros.fat.target = data.targetFat;
     this.save();
+    window.fitSyncSupabase?.syncAssessment(data);
   }
 
   recordAttendance() {
@@ -522,6 +526,7 @@ class FitSyncStore {
       status: "Verified"
     });
     this.save();
+    window.fitSyncSupabase?.syncAttendance(this.state.membership.gymName);
   }
 
   updateUserProfile(profile) {
