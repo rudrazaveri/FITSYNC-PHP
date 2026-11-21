@@ -204,34 +204,40 @@ CREATE TABLE IF NOT EXISTS public.appointments (
 );
 
 -- ----------------------------------------------------------------------------
--- 3. ROW LEVEL SECURITY (RLS) POLICIES
--- Allows anonymous and authenticated client read/write for web & API integration
+-- 3. ROW LEVEL SECURITY (RLS) POLICIES & ROLE GRANTS
+-- Grants full table permissions and permissive RLS policies to anon & authenticated
 -- ----------------------------------------------------------------------------
-ALTER TABLE public.gyms ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.trainers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.member_health_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.exercises ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.workouts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.nutrition_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.water_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.progress_metrics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.turnstile_attendance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 
-DO $$ BEGIN
-  CREATE POLICY "Public Read Gyms" ON public.gyms FOR SELECT USING (true);
-  CREATE POLICY "Public Read Trainers" ON public.trainers FOR SELECT USING (true);
-  CREATE POLICY "Public Read Exercises" ON public.exercises FOR SELECT USING (true);
-  CREATE POLICY "Public Full Profiles" ON public.user_profiles FOR ALL USING (true);
-  CREATE POLICY "Public Full Health Profiles" ON public.member_health_profiles FOR ALL USING (true);
-  CREATE POLICY "Public Full Workouts" ON public.workouts FOR ALL USING (true);
-  CREATE POLICY "Public Full Nutrition" ON public.nutrition_logs FOR ALL USING (true);
-  CREATE POLICY "Public Full Water" ON public.water_logs FOR ALL USING (true);
-  CREATE POLICY "Public Full Progress" ON public.progress_metrics FOR ALL USING (true);
-  CREATE POLICY "Public Full Attendance" ON public.turnstile_attendance FOR ALL USING (true);
-  CREATE POLICY "Public Full Appointments" ON public.appointments FOR ALL USING (true);
-EXCEPTION WHEN duplicate_object THEN null; END $$;
+-- A. Grant schema usage and table privileges to Supabase API roles
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO postgres, anon, authenticated, service_role;
+
+-- B. Enable RLS and create open access policies for all platform tables
+DO $$ 
+DECLARE 
+    t text;
+    tables text[] := ARRAY[
+      'gyms', 'membership_plans', 'gym_memberships', 'user_profiles', 
+      'trainers', 'member_health_profiles', 'exercises', 'workouts', 
+      'nutrition_logs', 'water_logs', 'progress_metrics', 
+      'turnstile_attendance', 'appointments'
+    ];
+BEGIN 
+    FOREACH t IN ARRAY tables LOOP
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = t) THEN
+            EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY;', t);
+            EXECUTE format('DROP POLICY IF EXISTS "Public Full Access" ON public.%I;', t);
+            EXECUTE format('CREATE POLICY "Public Full Access" ON public.%I FOR ALL TO public USING (true) WITH CHECK (true);', t);
+            EXECUTE format('GRANT ALL ON TABLE public.%I TO anon, authenticated, service_role;', t);
+        END IF;
+    END LOOP;
+END $$;
 
 -- ----------------------------------------------------------------------------
 -- 4. SEED SAMPLE DATA
