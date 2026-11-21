@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   setupRestTimer();
   setupAssessmentLiveCalculator();
+  initWorkoutPlannerModule();
+  setupHeaderRestTimer();
 });
 
 // Robust Icon Initializer (Lucide + Instant Inline SVG Fallback)
@@ -601,3 +603,482 @@ window.closeModal = closeModal;
 window.showToast = showToast;
 window.initIcons = initIcons;
 window.triggerWaterFillAnimation = triggerWaterFillAnimation;
+
+// =========================================================================
+// 7-DAY WORKOUT SPLIT PLANNER & DAY TRAVELLER CONTROLLER
+// =========================================================================
+
+let currentWorkoutDay = 'tue'; // Default to Tuesday matching reference preview
+let headerRestSeconds = 90;
+let headerTimerRunning = false;
+let headerTimerInterval = null;
+
+function initWorkoutPlannerModule() {
+  const dayButtons = document.querySelectorAll('#wkDaysStrip .wk-day-btn');
+  dayButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const day = btn.getAttribute('data-day');
+      if (day) {
+        selectWorkoutDay(day);
+      }
+    });
+  });
+
+  // Initial load
+  selectWorkoutDay(currentWorkoutDay);
+}
+
+function selectWorkoutDay(dayKey) {
+  currentWorkoutDay = dayKey;
+
+  // Update 7-day strip active classes
+  document.querySelectorAll('#wkDaysStrip .wk-day-btn').forEach(btn => {
+    if (btn.getAttribute('data-day') === dayKey) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Get plan data from store
+  const plan = window.fitSyncStore ? window.fitSyncStore.getWorkoutPlan(dayKey) : null;
+  if (!plan) return;
+
+  // Update routine titles and badges
+  const badgeEl = document.getElementById('wkRoutineBadge');
+  const subBadgeEl = document.getElementById('wkRoutineSubBadge');
+  const titleEl = document.getElementById('wkRoutineTitle');
+  const taglineEl = document.getElementById('wkRoutineTagline');
+  const scheduledBadgeEl = document.getElementById('wkScheduledBadge');
+  const statTargetEl = document.getElementById('wkStatTarget');
+  const statDurationEl = document.getElementById('wkStatDuration');
+
+  if (badgeEl) badgeEl.textContent = plan.badge || `${dayKey.toUpperCase()}'S ROUTINE`;
+  if (subBadgeEl) subBadgeEl.textContent = plan.subBadge || 'Daily Routine Preview';
+  if (titleEl) titleEl.textContent = plan.title || 'Workout Session';
+  if (taglineEl) taglineEl.textContent = plan.tagline || '';
+  
+  const exCount = plan.exercises ? plan.exercises.length : 0;
+  if (scheduledBadgeEl) scheduledBadgeEl.textContent = `${exCount} Exercises Scheduled`;
+  if (statTargetEl) statTargetEl.textContent = `${exCount} Exercises`;
+  if (statDurationEl) statDurationEl.textContent = `Estimated Duration: ${plan.duration || '45 mins'}`;
+
+  // Render Exercise Cards
+  renderWorkoutExercises(plan);
+
+  // Update stats summary cards
+  updateWorkoutStats(plan);
+
+  // Initialize Lucide icons inside newly rendered exercise cards
+  initIcons();
+}
+
+function updateWorkoutStats(plan) {
+  if (!plan || !plan.exercises) return;
+
+  let totalVolume = 0;
+  let totalSets = 0;
+  let completedSets = 0;
+
+  plan.exercises.forEach(ex => {
+    if (ex.sets) {
+      ex.sets.forEach(s => {
+        totalSets++;
+        if (s.done) {
+          completedSets++;
+          totalVolume += (s.reps || 0) * (s.weight || 0);
+        }
+      });
+    }
+  });
+
+  const volEl = document.getElementById('wkStatVolume');
+  const setsEl = document.getElementById('wkStatSets');
+  const setsSubEl = document.getElementById('wkStatSetsSub');
+
+  if (volEl) volEl.textContent = `${Math.round(totalVolume).toLocaleString()} kg`;
+  if (setsEl) setsEl.textContent = `${completedSets} / ${totalSets} sets`;
+  if (setsSubEl) {
+    const pct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+    setsSubEl.textContent = `${pct}% of routine completed`;
+  }
+}
+
+function renderWorkoutExercises(plan) {
+  const container = document.getElementById('wkExercisesContainer');
+  if (!container) return;
+
+  if (!plan.exercises || plan.exercises.length === 0) {
+    container.innerHTML = `
+      <div class="fs-card" style="text-align: center; padding: 32px; color: var(--text-secondary);">
+        <i data-lucide="coffee" style="width: 32px; height: 32px; margin-bottom: 8px; color: var(--primary-blue);"></i>
+        <h4 style="font-size: 16px; font-weight: 700; color: var(--text-main);">Rest & Muscle Recovery Day</h4>
+        <p style="font-size: 13px; margin-top: 4px;">No intense lifting scheduled for ${plan.dayName}. Focus on hydration, mobility, and recovery nutrition.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = plan.exercises.map((ex, exIdx) => {
+    let exCompletedSets = 0;
+    let exVolume = 0;
+    (ex.sets || []).forEach(s => {
+      if (s.done) {
+        exCompletedSets++;
+        exVolume += (s.reps || 0) * (s.weight || 0);
+      }
+    });
+
+    const rowsHtml = (ex.sets || []).map((set, setIdx) => `
+      <tr class="${set.done ? 'set-completed' : ''}" id="row-${plan.dayKey}-${exIdx}-${setIdx}">
+        <td style="font-weight: 700; color: var(--text-main);">Set ${set.set}</td>
+        <td>
+          <div class="wk-stepper-box">
+            <button type="button" class="wk-stepper-btn" onclick="stepReps(this, -1, '${plan.dayKey}', ${exIdx}, ${setIdx})">-</button>
+            <span class="wk-step-input" id="rep-val-${plan.dayKey}-${exIdx}-${setIdx}">${set.reps}</span>
+            <button type="button" class="wk-stepper-btn" onclick="stepReps(this, 1, '${plan.dayKey}', ${exIdx}, ${setIdx})">+</button>
+            <span style="font-size: 11px; color: var(--text-secondary);">reps</span>
+          </div>
+        </td>
+        <td>
+          <div class="wk-stepper-box">
+            <button type="button" class="wk-stepper-btn" onclick="stepWeight(this, -2.5, '${plan.dayKey}', ${exIdx}, ${setIdx})">-</button>
+            <span class="wk-step-input" id="wt-val-${plan.dayKey}-${exIdx}-${setIdx}">${parseFloat(set.weight).toFixed(1)} kg</span>
+            <button type="button" class="wk-stepper-btn" onclick="stepWeight(this, 2.5, '${plan.dayKey}', ${exIdx}, ${setIdx})">+</button>
+          </div>
+        </td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn-mark-done ${set.done ? 'completed' : ''}" id="btn-done-${plan.dayKey}-${exIdx}-${setIdx}" onclick="toggleSetDone(this, '${plan.dayKey}', ${exIdx}, ${setIdx})">
+              <i data-lucide="${set.done ? 'check-circle' : 'circle'}" style="width: 13px; height: 13px;"></i>
+              <span>${set.done ? 'Completed ✓' : 'Mark Done'}</span>
+            </button>
+            <button type="button" class="wk-stepper-btn" style="border: none; background: transparent; color: var(--text-muted);" onclick="deleteSet('${plan.dayKey}', ${exIdx}, ${setIdx})" title="Remove Set">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    return `
+      <div class="wk-exercise-card">
+        <div class="wk-ex-header">
+          <div class="wk-ex-left">
+            <img src="${ex.image || 'assets/images/bench_press.jpg'}" alt="${ex.name}" class="wk-ex-thumb" onerror="this.src='assets/images/bench_press.jpg'">
+            <div>
+              <h4 class="wk-ex-title">${ex.name}</h4>
+              <p class="wk-ex-subtitle">${ex.muscle} • ${ex.equipment}</p>
+              <span class="wk-ex-target-pill">${ex.target || 'Target: 4 sets × 10-12 reps'}</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px; display: inline-flex; align-items: center; gap: 4px;" onclick="openModal('bookAppointmentModal')">
+              <i data-lucide="message-square" style="width: 12px; height: 12px;"></i> Ask Trainer
+            </button>
+            <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px; display: inline-flex; align-items: center; gap: 4px;" onclick="switchView('exercises')">
+              <i data-lucide="help-circle" style="width: 12px; height: 12px;"></i> Exercise Guide
+            </button>
+            <button class="wk-stepper-btn" style="border: none; background: transparent; color: var(--text-muted);" onclick="deleteExercise('${plan.dayKey}', ${exIdx})" title="Remove Exercise">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+            </button>
+          </div>
+        </div>
+
+        <table class="wk-set-table">
+          <thead>
+            <tr>
+              <th style="width: 15%;">Set</th>
+              <th style="width: 32%;">Reps</th>
+              <th style="width: 33%;">Weight</th>
+              <th style="width: 20%;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <div class="wk-ex-footer">
+          <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="addSetToExercise('${plan.dayKey}', ${exIdx})">
+            + Add Set ${(ex.sets || []).length + 1}
+          </button>
+          <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600;" id="ex-summary-${plan.dayKey}-${exIdx}">
+            Sets: <strong style="color: var(--primary-blue);">${exCompletedSets}/${(ex.sets || []).length}</strong> • Volume: <strong style="color: var(--primary-blue);">${Math.round(exVolume).toLocaleString()} kg</strong>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleSetDone(btn, dayKey, exIdx, setIdx) {
+  const plan = window.fitSyncStore.getWorkoutPlan(dayKey);
+  if (!plan || !plan.exercises[exIdx] || !plan.exercises[exIdx].sets[setIdx]) return;
+
+  const setObj = plan.exercises[exIdx].sets[setIdx];
+  setObj.done = !setObj.done;
+
+  window.fitSyncStore.saveWorkoutPlan(dayKey, plan);
+
+  const row = document.getElementById(`row-${dayKey}-${exIdx}-${setIdx}`);
+  const doneBtn = document.getElementById(`btn-done-${dayKey}-${exIdx}-${setIdx}`);
+
+  if (setObj.done) {
+    if (row) row.classList.add('set-completed');
+    if (doneBtn) {
+      doneBtn.classList.add('completed');
+      doneBtn.innerHTML = '<i data-lucide="check-circle" style="width: 13px; height: 13px;"></i> <span>Completed ✓</span>';
+    }
+    // Automatically launch rest timer countdown!
+    startHeaderRestTimer(90);
+    showToast(`🎉 Set ${setObj.set} marked complete! Rest timer countdown (90s) started.`, 'success');
+  } else {
+    if (row) row.classList.remove('set-completed');
+    if (doneBtn) {
+      doneBtn.classList.remove('completed');
+      doneBtn.innerHTML = '<i data-lucide="circle" style="width: 13px; height: 13px;"></i> <span>Mark Done</span>';
+    }
+  }
+
+  // Update summary stats
+  updateWorkoutStats(plan);
+
+  // Update exercise footer
+  let exCompletedSets = 0;
+  let exVolume = 0;
+  plan.exercises[exIdx].sets.forEach(s => {
+    if (s.done) {
+      exCompletedSets++;
+      exVolume += (s.reps || 0) * (s.weight || 0);
+    }
+  });
+  const summaryEl = document.getElementById(`ex-summary-${dayKey}-${exIdx}`);
+  if (summaryEl) {
+    summaryEl.innerHTML = `Sets: <strong style="color: var(--primary-blue);">${exCompletedSets}/${plan.exercises[exIdx].sets.length}</strong> • Volume: <strong style="color: var(--primary-blue);">${Math.round(exVolume).toLocaleString()} kg</strong>`;
+  }
+
+  initIcons();
+}
+
+function stepReps(btn, delta, dayKey, exIdx, setIdx) {
+  const plan = window.fitSyncStore.getWorkoutPlan(dayKey);
+  if (!plan || !plan.exercises[exIdx] || !plan.exercises[exIdx].sets[setIdx]) return;
+
+  const setObj = plan.exercises[exIdx].sets[setIdx];
+  setObj.reps = Math.max(1, (setObj.reps || 10) + delta);
+  window.fitSyncStore.saveWorkoutPlan(dayKey, plan);
+
+  const repValEl = document.getElementById(`rep-val-${dayKey}-${exIdx}-${setIdx}`);
+  if (repValEl) repValEl.textContent = setObj.reps;
+
+  updateWorkoutStats(plan);
+}
+
+function stepWeight(btn, delta, dayKey, exIdx, setIdx) {
+  const plan = window.fitSyncStore.getWorkoutPlan(dayKey);
+  if (!plan || !plan.exercises[exIdx] || !plan.exercises[exIdx].sets[setIdx]) return;
+
+  const setObj = plan.exercises[exIdx].sets[setIdx];
+  setObj.weight = Math.max(0, parseFloat(((setObj.weight || 0) + delta).toFixed(1)));
+  window.fitSyncStore.saveWorkoutPlan(dayKey, plan);
+
+  const wtValEl = document.getElementById(`wt-val-${dayKey}-${exIdx}-${setIdx}`);
+  if (wtValEl) wtValEl.textContent = `${setObj.weight.toFixed(1)} kg`;
+
+  updateWorkoutStats(plan);
+}
+
+function addSetToExercise(dayKey, exIdx) {
+  const plan = window.fitSyncStore.getWorkoutPlan(dayKey);
+  if (!plan || !plan.exercises[exIdx]) return;
+
+  const ex = plan.exercises[exIdx];
+  const lastSet = ex.sets && ex.sets.length > 0 ? ex.sets[ex.sets.length - 1] : { reps: 10, weight: 50 };
+  const newSetNum = (ex.sets ? ex.sets.length : 0) + 1;
+
+  ex.sets.push({
+    set: newSetNum,
+    reps: lastSet.reps,
+    weight: lastSet.weight,
+    done: false
+  });
+
+  window.fitSyncStore.saveWorkoutPlan(dayKey, plan);
+  selectWorkoutDay(dayKey);
+  showToast(`Added Set ${newSetNum} to ${ex.name}`, 'info');
+}
+
+function deleteSet(dayKey, exIdx, setIdx) {
+  const plan = window.fitSyncStore.getWorkoutPlan(dayKey);
+  if (!plan || !plan.exercises[exIdx]) return;
+
+  plan.exercises[exIdx].sets.splice(setIdx, 1);
+  // Re-number sets
+  plan.exercises[exIdx].sets.forEach((s, idx) => {
+    s.set = idx + 1;
+  });
+
+  window.fitSyncStore.saveWorkoutPlan(dayKey, plan);
+  selectWorkoutDay(dayKey);
+  showToast('Set removed.', 'info');
+}
+
+function deleteExercise(dayKey, exIdx) {
+  const plan = window.fitSyncStore.getWorkoutPlan(dayKey);
+  if (!plan || !plan.exercises) return;
+
+  const removed = plan.exercises.splice(exIdx, 1);
+  window.fitSyncStore.saveWorkoutPlan(dayKey, plan);
+  selectWorkoutDay(dayKey);
+  showToast(`Removed exercise: ${removed[0]?.name || ''}`, 'info');
+}
+
+function resetWorkoutSets() {
+  const plan = window.fitSyncStore.getWorkoutPlan(currentWorkoutDay);
+  if (!plan || !plan.exercises) return;
+
+  plan.exercises.forEach(ex => {
+    (ex.sets || []).forEach(s => {
+      s.done = false;
+    });
+  });
+
+  window.fitSyncStore.saveWorkoutPlan(currentWorkoutDay, plan);
+  selectWorkoutDay(currentWorkoutDay);
+  showToast(`All sets reset to 0 for ${plan.badge || 'this routine'}.`, 'info');
+}
+
+function promptAddExercise() {
+  const name = prompt('Enter exercise name to add to this routine (e.g. Standing Overhead Press):');
+  if (!name || !name.trim()) return;
+
+  const plan = window.fitSyncStore.getWorkoutPlan(currentWorkoutDay);
+  if (!plan) return;
+
+  if (!plan.exercises) plan.exercises = [];
+  plan.exercises.push({
+    id: 'ex_' + Date.now(),
+    name: name.trim(),
+    muscle: 'Full Body Compound',
+    equipment: 'Free Weights / Machine',
+    image: 'assets/images/bench_press.jpg',
+    target: 'Target: 4 sets × 10 reps @ 50.0 kg',
+    sets: [
+      { set: 1, reps: 10, weight: 40.0, done: false },
+      { set: 2, reps: 10, weight: 45.0, done: false },
+      { set: 3, reps: 8, weight: 50.0, done: false }
+    ]
+  });
+
+  window.fitSyncStore.saveWorkoutPlan(currentWorkoutDay, plan);
+  selectWorkoutDay(currentWorkoutDay);
+  showToast(`Added ${name} to routine!`, 'success');
+}
+
+// Routine Header Rest Timer Engine
+function setupHeaderRestTimer() {
+  updateHeaderTimerDisplay();
+}
+
+function updateHeaderTimerDisplay() {
+  const clock = document.getElementById('wkHeaderTimerDisplay');
+  if (!clock) return;
+  const mins = Math.floor(headerRestSeconds / 60);
+  const secs = headerRestSeconds % 60;
+  clock.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function toggleHeaderRestTimer() {
+  if (headerTimerRunning) {
+    pauseHeaderRestTimer();
+  } else {
+    resumeHeaderRestTimer();
+  }
+}
+
+function resumeHeaderRestTimer() {
+  if (headerTimerRunning) return;
+  headerTimerRunning = true;
+
+  const btn = document.getElementById('wkHeaderTimerToggle');
+  if (btn) btn.innerHTML = '<i data-lucide="pause" style="width: 12px; height: 12px;"></i>';
+  initIcons();
+
+  headerTimerInterval = setInterval(() => {
+    if (headerRestSeconds > 0) {
+      headerRestSeconds--;
+      updateHeaderTimerDisplay();
+    } else {
+      pauseHeaderRestTimer();
+      headerRestSeconds = 90;
+      updateHeaderTimerDisplay();
+      showToast('🔔 Rest Interval Complete! Begin your next set.', 'info');
+    }
+  }, 1000);
+}
+
+function pauseHeaderRestTimer() {
+  clearInterval(headerTimerInterval);
+  headerTimerRunning = false;
+  const btn = document.getElementById('wkHeaderTimerToggle');
+  if (btn) btn.innerHTML = '<i data-lucide="play" style="width: 12px; height: 12px;"></i>';
+  initIcons();
+}
+
+function startHeaderRestTimer(seconds = 90) {
+  clearInterval(headerTimerInterval);
+  headerRestSeconds = seconds;
+  updateHeaderTimerDisplay();
+  resumeHeaderRestTimer();
+}
+
+function setHeaderRestPreset(seconds) {
+  clearInterval(headerTimerInterval);
+  headerTimerRunning = false;
+  headerRestSeconds = seconds;
+  const btn = document.getElementById('wkHeaderTimerToggle');
+  if (btn) btn.innerHTML = '<i data-lucide="play" style="width: 12px; height: 12px;"></i>';
+  updateHeaderTimerDisplay();
+  initIcons();
+}
+
+function resetHeaderRestTimer() {
+  clearInterval(headerTimerInterval);
+  headerTimerRunning = false;
+  headerRestSeconds = 90;
+  const btn = document.getElementById('wkHeaderTimerToggle');
+  if (btn) btn.innerHTML = '<i data-lucide="play" style="width: 12px; height: 12px;"></i>';
+  updateHeaderTimerDisplay();
+  initIcons();
+}
+
+// Reset Water Intake Action
+function resetWaterIntake() {
+  if (window.fitSyncStore && typeof window.fitSyncStore.resetWater === 'function') {
+    window.fitSyncStore.resetWater();
+  }
+  updateDashboardUI();
+  const stationWaterFill = document.getElementById('stationWaterFill');
+  if (stationWaterFill) {
+    stationWaterFill.style.height = '0%';
+  }
+  showToast('💧 Water intake reset to 0.0 L for today.', 'info');
+}
+
+// Global functions for inline HTML event handlers
+window.initWorkoutPlannerModule = initWorkoutPlannerModule;
+window.selectWorkoutDay = selectWorkoutDay;
+window.toggleSetDone = toggleSetDone;
+window.stepReps = stepReps;
+window.stepWeight = stepWeight;
+window.addSetToExercise = addSetToExercise;
+window.deleteSet = deleteSet;
+window.deleteExercise = deleteExercise;
+window.resetWorkoutSets = resetWorkoutSets;
+window.promptAddExercise = promptAddExercise;
+window.toggleHeaderRestTimer = toggleHeaderRestTimer;
+window.setHeaderRestPreset = setHeaderRestPreset;
+window.resetHeaderRestTimer = resetHeaderRestTimer;
+window.startHeaderRestTimer = startHeaderRestTimer;
+window.resetWaterIntake = resetWaterIntake;

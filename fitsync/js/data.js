@@ -164,6 +164,382 @@ const DEFAULT_FITSYNC_DATA = {
       { id: "e6", name: "Parallel Bar Bodyweight Dips", sets: "3 Sets", reps: "To failure", weight: "Bodyweight", completed: false }
     ]
   },
+  workoutPlans: {
+    mon: {
+      dayKey: "mon",
+      dayName: "Monday",
+      badge: "MONDAY'S ROUTINE",
+      subBadge: "Past Session Completed",
+      title: "Chest & Triceps Hypertrophy",
+      tagline: "Horizontal Push Pattern • Upper Pec Density & Lockout Power • Intermediate",
+      duration: "45 mins",
+      exercises: [
+        {
+          id: "ex_bench",
+          name: "Barbell Incline Bench Press",
+          muscle: "Chest (Upper Pectoralis), Front Delts",
+          equipment: "Incline Bench, Olympic Barbell",
+          image: "assets/images/ex_bench.jpg",
+          target: "Target: 4 sets x 8–10 reps @ 65.0 kg",
+          sets: [
+            { set: 1, reps: 10, weight: 60.0, done: true },
+            { set: 2, reps: 10, weight: 65.0, done: true },
+            { set: 3, reps: 8, weight: 65.0, done: true },
+            { set: 4, reps: 8, weight: 70.0, done: true }
+          ]
+        },
+        {
+          id: "ex_dips",
+          name: "Parallel Bar Dips",
+          muscle: "Lower Pectoralis, Anterior Delts, Triceps",
+          equipment: "Dip Station",
+          image: "assets/images/bench_press.jpg",
+          target: "Target: 3 sets x 12 reps @ Bodyweight",
+          sets: [
+            { set: 1, reps: 12, weight: 0.0, done: true },
+            { set: 2, reps: 12, weight: 0.0, done: true },
+            { set: 3, reps: 10, weight: 0.0, done: true }
+          ]
+        },
+        {
+          id: "ex_tricep",
+          name: "Tricep Rope Pushdown",
+          muscle: "Triceps Lateral & Medial Heads",
+          equipment: "Cable Tower",
+          image: "assets/images/ex_lateral_raise.jpg",
+          target: "Target: 3 sets x 15 reps @ 25.0 kg",
+          sets: [
+            { set: 1, reps: 15, weight: 20.0, done: true },
+            { set: 2, reps: 12, weight: 25.0, done: true },
+            { set: 3, reps: 12, weight: 25.0, done: true }
+          ]
+        }
+      ]
+    },
+    tue: {
+      dayKey: "tue",
+      dayName: "Tuesday",
+      badge: "TUESDAY'S ROUTINE",
+      subBadge: "Daily Routine Preview",
+      title: "Back & Biceps Power",
+      tagline: "Pull Movement Pattern • V-Taper & Arm Thickness • Intermediate",
+      duration: "50 mins",
+      exercises: [
+        {
+          id: "ex_lat",
+          name: "Wide-Grip Lat Pulldown",
+          muscle: "Latissimus Dorsi, Teres Major, Biceps • Cable Pulldown Machine",
+          equipment: "Cable Machine",
+          image: "assets/images/ex_lat_pulldown.jpg",
+          target: "Target: 4 sets x 10–12 reps @ 60.0 kg",
+          sets: [
+            { set: 1, reps: 12, weight: 55.0, done: false },
+            { set: 2, reps: 10, weight: 60.0, done: false },
+            { set: 3, reps: 10, weight: 60.0, done: false },
+            { set: 4, reps: 8, weight: 65.0, done: false }
+          ]
+        },
+        {
+          id: "ex_deadlift",
+          name: "Conventional Deadlift",
+          muscle: "Hamstrings, Glutes, Erector Spinae • Olympic Barbell",
+          equipment: "Olympic Barbell",
+          image: "assets/images/ex_deadlift.jpg",
+          target: "Target: 4 sets x 6–8 reps @ 85.0 kg",
+          sets: [
+            { set: 1, reps: 8, weight: 70.0, done: false },
+            { set: 2, reps: 8, weight: 80.0, done: false },
+            { set: 3, reps: 6, weight: 85.0, done: false },
+            { set: 4, reps: 6, weight: 90.0, done: false }
+          ]
+        },
+        {
+          id: "ex_curl",
+          name: "Incline Dumbbell Bicep Curl",
+          muscle: "Biceps Brachii (Long Head) • Dumbbells",
+          equipment: "Dumbbells & 45° Bench",
+          image: "assets/images/ex_bicep.jpg",
+          target: "Target: 3 sets x 12 reps @ 14.0 kg",
+          sets: [
+            { set: 1, reps: 12, weight: 12.0, done: false },
+            { set: 2, reps: 12, weight: 14.0, done: false },
+            { set: 3, reps: 10, weight: 14.0, done: false }
+          ]
+        },
+        {
+          id: "ex_row",
+          name: "Seated Cable Row",
+          muscle: "Rhomboids, Latissimus Dorsi, Mid Trapezius",
+          equipment: "Low Pulley Cable",
+          image: "assets/images/ex_lat_pulldown.jpg",
+          target: "Target: 3 sets x 12 reps @ 50.0 kg",
+          sets: [
+            { set: 1, reps: 12, weight: 45.0, done: false },
+            { set: 2, reps: 12, weight: 50.0, done: false },
+            { set: 3, reps: 10, weight: 55.0, done: false }
+          ]
+        },
+        {
+          id: "ex_hammer",
+          name: "Dumbbell Hammer Curls",
+          muscle: "Brachialis & Brachioradialis • Free Weights",
+          equipment: "Dumbbells",
+          image: "assets/images/ex_bicep.jpg",
+          target: "Target: 3 sets x 12 reps @ 16.0 kg",
+          sets: [
+            { set: 1, reps: 12, weight: 14.0, done: false },
+            { set: 2, reps: 12, weight: 16.0, done: false },
+            { set: 3, reps: 10, weight: 16.0, done: false }
+          ]
+        }
+      ]
+    },
+    wed: {
+      dayKey: "wed",
+      dayName: "Wednesday",
+      badge: "WEDNESDAY'S ROUTINE",
+      subBadge: "Past Session Completed",
+      title: "Lower Body & Core Dominance",
+      tagline: "Knee-Dominant & Hinge Patterns • Quad Tear-Drop & Glute Activation",
+      duration: "55 mins",
+      exercises: [
+        {
+          id: "ex_squat",
+          name: "Barbell Back Squat",
+          muscle: "Quadriceps, Gluteus Maximus, Hamstrings",
+          equipment: "Squat Rack, Olympic Barbell",
+          image: "assets/images/ex_squat.jpg",
+          target: "Target: 4 sets x 8 reps @ 80.0 kg",
+          sets: [
+            { set: 1, reps: 8, weight: 70.0, done: true },
+            { set: 2, reps: 8, weight: 75.0, done: true },
+            { set: 3, reps: 8, weight: 80.0, done: true },
+            { set: 4, reps: 6, weight: 85.0, done: true }
+          ]
+        },
+        {
+          id: "ex_rdl",
+          name: "Romanian Deadlift (RDL)",
+          muscle: "Hamstrings, Glutes, Lower Back",
+          equipment: "Olympic Barbell",
+          image: "assets/images/ex_deadlift.jpg",
+          target: "Target: 4 sets x 10 reps @ 65.0 kg",
+          sets: [
+            { set: 1, reps: 10, weight: 55.0, done: true },
+            { set: 2, reps: 10, weight: 60.0, done: true },
+            { set: 3, reps: 10, weight: 65.0, done: true },
+            { set: 4, reps: 8, weight: 70.0, done: true }
+          ]
+        },
+        {
+          id: "ex_calves",
+          name: "Standing Calf Raises",
+          muscle: "Gastrocnemius, Soleus",
+          equipment: "Calf Raise Machine",
+          image: "assets/images/ex_squat.jpg",
+          target: "Target: 4 sets x 15 reps @ 50.0 kg",
+          sets: [
+            { set: 1, reps: 15, weight: 45.0, done: true },
+            { set: 2, reps: 15, weight: 50.0, done: true },
+            { set: 3, reps: 15, weight: 50.0, done: true },
+            { set: 4, reps: 12, weight: 55.0, done: true }
+          ]
+        }
+      ]
+    },
+    thu: {
+      dayKey: "thu",
+      dayName: "Thursday",
+      badge: "THURSDAY'S ROUTINE",
+      subBadge: "Past Session Completed",
+      title: "Active Mobility & Core Conditioning",
+      tagline: "Scapular Mechanics • Pelvic Stability & Core Bracing",
+      duration: "35 mins",
+      exercises: [
+        {
+          id: "ex_plank",
+          name: "Weighted Core Plank",
+          muscle: "Transverse Abdominis, Rectus Abdominis",
+          equipment: "Weight Plate & Floor Mat",
+          image: "assets/images/bench_press.jpg",
+          target: "Target: 4 sets x 60s Hold @ 10.0 kg",
+          sets: [
+            { set: 1, reps: 60, weight: 0.0, done: true },
+            { set: 2, reps: 60, weight: 10.0, done: true },
+            { set: 3, reps: 60, weight: 10.0, done: true },
+            { set: 4, reps: 45, weight: 10.0, done: true }
+          ]
+        },
+        {
+          id: "ex_kettlebell",
+          name: "Kettlebell Russian Swings",
+          muscle: "Posterior Chain, Glutes & Hip Explosiveness",
+          equipment: "Kettlebell",
+          image: "assets/images/ex_deadlift.jpg",
+          target: "Target: 4 sets x 15 reps @ 20.0 kg",
+          sets: [
+            { set: 1, reps: 15, weight: 16.0, done: true },
+            { set: 2, reps: 15, weight: 20.0, done: true },
+            { set: 3, reps: 15, weight: 20.0, done: true },
+            { set: 4, reps: 15, weight: 24.0, done: true }
+          ]
+        }
+      ]
+    },
+    fri: {
+      dayKey: "fri",
+      dayName: "Friday",
+      badge: "FRIDAY'S ROUTINE",
+      subBadge: "Yesterday's Session",
+      title: "Shoulders & Upper Body Push",
+      tagline: "Vertical Push • 3D Deltoid Roundness & Scapular Elevation",
+      duration: "45 mins",
+      exercises: [
+        {
+          id: "ex_ohp",
+          name: "Dumbbell Overhead Shoulder Press",
+          muscle: "Anterior Deltoids, Lateral Delts, Triceps",
+          equipment: "Dumbbells & 75° Incline Bench",
+          image: "assets/images/bench_press.jpg",
+          target: "Target: 4 sets x 10 reps @ 20.0 kg",
+          sets: [
+            { set: 1, reps: 12, weight: 16.0, done: true },
+            { set: 2, reps: 10, weight: 18.0, done: true },
+            { set: 3, reps: 10, weight: 20.0, done: true },
+            { set: 4, reps: 8, weight: 22.0, done: true }
+          ]
+        },
+        {
+          id: "ex_lat_raise",
+          name: "Dumbbell Lateral Deltoid Raise",
+          muscle: "Lateral Deltoid Head (Side Delts)",
+          equipment: "Dumbbells",
+          image: "assets/images/ex_lateral_raise.jpg",
+          target: "Target: 4 sets x 15 reps @ 9.0 kg",
+          sets: [
+            { set: 1, reps: 15, weight: 8.0, done: true },
+            { set: 2, reps: 15, weight: 9.0, done: true },
+            { set: 3, reps: 15, weight: 9.0, done: true },
+            { set: 4, reps: 12, weight: 10.0, done: true }
+          ]
+        },
+        {
+          id: "ex_face_pull",
+          name: "Cable Face Pull with External Rotation",
+          muscle: "Rear Deltoids, Rotator Cuff, Infraspinatus",
+          equipment: "Cable Tower with Rope",
+          image: "assets/images/ex_lat_pulldown.jpg",
+          target: "Target: 3 sets x 15 reps @ 20.0 kg",
+          sets: [
+            { set: 1, reps: 15, weight: 15.0, done: true },
+            { set: 2, reps: 15, weight: 20.0, done: true },
+            { set: 3, reps: 15, weight: 20.0, done: true }
+          ]
+        }
+      ]
+    },
+    sat: {
+      dayKey: "sat",
+      dayName: "Saturday",
+      badge: "SATURDAY'S ROUTINE",
+      subBadge: "Today's Active Session",
+      title: "Upper Body Strength & Hypertrophy",
+      tagline: "Compound Chest & Back Overload • Peak Performance Session",
+      duration: "45 mins",
+      exercises: [
+        {
+          id: "ex_incline",
+          name: "Incline Barbell Bench Press",
+          muscle: "Upper Pectoralis, Anterior Deltoids, Triceps",
+          equipment: "Incline Bench, Olympic Barbell",
+          image: "assets/images/ex_bench.jpg",
+          target: "Target: 4 sets x 8–10 reps @ 65.0 kg",
+          sets: [
+            { set: 1, reps: 10, weight: 60.0, done: false },
+            { set: 2, reps: 8, weight: 65.0, done: false },
+            { set: 3, reps: 8, weight: 65.0, done: false },
+            { set: 4, reps: 6, weight: 70.0, done: false }
+          ]
+        },
+        {
+          id: "ex_pulldown_sat",
+          name: "Neutral-Grip Lat Pulldown",
+          muscle: "Latissimus Dorsi, Teres Major, Biceps",
+          equipment: "Cable Pulldown Machine",
+          image: "assets/images/ex_lat_pulldown.jpg",
+          target: "Target: 4 sets x 10–12 reps @ 60.0 kg",
+          sets: [
+            { set: 1, reps: 12, weight: 55.0, done: false },
+            { set: 2, reps: 10, weight: 60.0, done: false },
+            { set: 3, reps: 10, weight: 60.0, done: false },
+            { set: 4, reps: 8, weight: 65.0, done: false }
+          ]
+        },
+        {
+          id: "ex_lateral_sat",
+          name: "Dumbbell Lateral Deltoid Raise",
+          muscle: "Lateral Deltoid Head (Side Delts)",
+          equipment: "Dumbbells",
+          image: "assets/images/ex_lateral_raise.jpg",
+          target: "Target: 4 sets x 15 reps @ 9.0 kg",
+          sets: [
+            { set: 1, reps: 15, weight: 8.0, done: false },
+            { set: 2, reps: 15, weight: 9.0, done: false },
+            { set: 3, reps: 15, weight: 9.0, done: false },
+            { set: 4, reps: 12, weight: 10.0, done: false }
+          ]
+        },
+        {
+          id: "ex_curls_sat",
+          name: "Standing Dumbbell Bicep Curl",
+          muscle: "Biceps Brachii, Brachialis",
+          equipment: "Dumbbells",
+          image: "assets/images/ex_bicep.jpg",
+          target: "Target: 3 sets x 12 reps @ 14.0 kg",
+          sets: [
+            { set: 1, reps: 12, weight: 12.0, done: false },
+            { set: 2, reps: 12, weight: 14.0, done: false },
+            { set: 3, reps: 10, weight: 14.0, done: false }
+          ]
+        }
+      ]
+    },
+    sun: {
+      dayKey: "sun",
+      dayName: "Sunday",
+      badge: "SUNDAY'S ROUTINE",
+      subBadge: "Rest & Cellular Recovery",
+      title: "Full Rest & Recovery Protocol",
+      tagline: "Active Recovery • Light 5,000 Step Walk • Foam Rolling & Hydration",
+      duration: "30 mins",
+      exercises: [
+        {
+          id: "ex_foam",
+          name: "Full Body Foam Rolling & Myofascial Release",
+          muscle: "IT Band, Quads, Thoracic Spine, Lats",
+          equipment: "High-Density Foam Roller",
+          image: "assets/images/bench_press.jpg",
+          target: "Target: 3 sets x 3 mins Deep Rolling",
+          sets: [
+            { set: 1, reps: 3, weight: 0.0, done: false },
+            { set: 2, reps: 3, weight: 0.0, done: false },
+            { set: 3, reps: 3, weight: 0.0, done: false }
+          ]
+        },
+        {
+          id: "ex_walk",
+          name: "Zone 1 Outdoor Recovery Walk",
+          muscle: "Cardiovascular Flushing & Lymphatic Drainage",
+          equipment: "Outdoor Trail / Treadmill",
+          image: "assets/images/ex_squat.jpg",
+          target: "Target: 45 min Low-Intensity Aerobic Walk",
+          sets: [
+            { set: 1, reps: 45, weight: 0.0, done: false }
+          ]
+        }
+      ]
+    }
+  },
   workoutSchedule: [
     { day: "Monday", focus: "Upper Body Push & Delts", exercises: 6, duration: "50 min", status: "Completed" },
     { day: "Tuesday", focus: "Lower Body Quad & Calves", exercises: 5, duration: "55 min", status: "Completed" },
@@ -460,6 +836,14 @@ class FitSyncStore {
       amount: `${Math.round(amountInLiters * 1000)} ml`,
       note: "Quick logged hydration"
     });
+    this.save();
+    return this.state.stats.water;
+  }
+
+  resetWater() {
+    this.state.stats.water.current = 0.0;
+    this.state.waterStation.current = 0.0;
+    this.state.waterStation.logs = [];
     this.save();
     return this.state.stats.water;
   }

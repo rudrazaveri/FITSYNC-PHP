@@ -1501,9 +1501,459 @@ body {
   margin-left: auto;
 }
 
+.btn-reset-water:hover {
+  background: #FEE2E2 !important;
+  color: #DC2626 !important;
+  border-color: #FCA5A5 !important;
+}
+
 /* ==========================================================================
-   DRINKING WATER GLASS & FLUID ANIMATION
+   ADVANCED WORKOUT PLANNER & DAY TRAVELLER (Past & Future)
    ========================================================================== */
+.workout-subnav-tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.wk-tabs-group {
+  display: flex;
+  gap: 8px;
+  background: #EFF6FF;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.wk-tab-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.wk-tab-btn.active {
+  background: var(--primary-blue);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(21, 93, 252, 0.25);
+}
+
+/* 7-Day Day Selector Strip */
+.workout-day-strip-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.wk-strip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.wk-strip-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.wk-days-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+
+.wk-day-btn {
+  background: #F8FAFC;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.wk-day-btn:hover {
+  border-color: var(--primary-blue);
+  background: var(--light-blue-bg);
+}
+
+.wk-day-btn.active {
+  background: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(21, 93, 252, 0.28);
+}
+
+.wk-day-btn.active .wk-day-name,
+.wk-day-btn.active .wk-day-sub {
+  color: #FFFFFF !important;
+}
+
+.wk-day-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.wk-day-sub {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.wk-day-btn.is-today .wk-day-sub {
+  color: var(--success-green);
+}
+.wk-day-btn.active.is-today .wk-day-sub {
+  color: #BBF7D0 !important;
+}
+
+/* Selected Routine Header */
+.wk-routine-header-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.wk-routine-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.wk-routine-badge-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.wk-badge-day {
+  background: #DBEAFE;
+  color: var(--primary-blue);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.wk-badge-preview {
+  background: #F1F5F9;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.wk-routine-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.wk-routine-tagline {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Rest Timer Box in Routine Header */
+.wk-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wk-rest-timer-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+}
+
+.wk-timer-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wk-timer-clock {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  min-width: 42px;
+}
+
+.wk-timer-chips {
+  display: flex;
+  gap: 4px;
+}
+
+.wk-chip-btn {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.wk-chip-btn:hover {
+  background: var(--light-blue-bg);
+  color: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+
+.wk-timer-control-btn {
+  background: var(--primary-blue);
+  color: #FFFFFF;
+  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.wk-timer-reset-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  display: flex;
+  align-items: center;
+}
+
+/* 3 Summary Stats Cards */
+.wk-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.wk-stat-mini-card {
+  background: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+
+.wk-stat-mini-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.wk-stat-mini-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.wk-stat-mini-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Exercise Cards List */
+.wk-exercise-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wk-exercise-card:hover {
+  border-color: var(--primary-blue);
+  box-shadow: 0 4px 16px rgba(21, 93, 252, 0.06);
+}
+
+.wk-ex-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.wk-ex-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wk-ex-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+}
+
+.wk-ex-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.wk-ex-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.wk-ex-target-pill {
+  font-size: 11px;
+  color: var(--primary-blue);
+  font-weight: 600;
+}
+
+/* Set Table */
+.wk-set-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+}
+
+.wk-set-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.wk-set-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.wk-set-table tr.set-completed {
+  background: #F0FDF4;
+}
+
+.wk-stepper-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wk-stepper-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: #FFFFFF;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+.wk-stepper-btn:hover {
+  background: var(--light-blue-bg);
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+}
+
+.wk-step-input {
+  font-weight: 700;
+  font-size: 13px;
+  min-width: 32px;
+  text-align: center;
+}
+
+.btn-mark-done {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: #FFFFFF;
+  color: var(--text-main);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-mark-done:hover {
+  background: var(--light-blue-bg);
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+}
+
+.btn-mark-done.completed {
+  background: var(--success-green);
+  border-color: var(--success-green);
+  color: #FFFFFF;
+}
+
+.wk-ex-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid #F1F5F9;
+}
 .glass-station-wrapper {
   position: relative;
   width: 96px;

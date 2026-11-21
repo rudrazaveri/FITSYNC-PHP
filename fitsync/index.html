@@ -207,7 +207,12 @@
             <div class="fs-card stat-card" onclick="switchView('progress')" title="Click to view full Progress Tracking">
               <div class="stat-card-top">
                 <div class="stat-icon-box stat-icon-blue">
-                  <i data-lucide="scale"></i>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="weight-scale-icon">
+                    <rect width="18" height="18" x="3" y="3" rx="4"></rect>
+                    <circle cx="12" cy="8" r="2.5"></circle>
+                    <path d="M12 7v1"></path>
+                    <path d="M7 16h10"></path>
+                  </svg>
                 </div>
                 <span class="stat-label">Current Weight</span>
               </div>
@@ -587,57 +592,114 @@
             </button>
           </div>
 
-          <!-- Active Protocol Card -->
-          <div class="fs-card" style="margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <span class="stat-badge-pill badge-healthy" style="margin-bottom: 6px;">WEEK 3 OF 12</span>
-                <h3 style="font-size: 18px; font-weight: 800;">12-Week Hypertrophy & Strength Split</h3>
-                <p style="font-size: 13px; color: var(--text-secondary);">Prescribed by Coach Raj Malhotra • Target: Lean Muscle Mass</p>
+          <!-- Subnav Tabs Bar -->
+          <div class="wk-subnav">
+            <div class="wk-subnav-links">
+              <button class="wk-tab-btn active" id="wkTabRoutine">
+                <i data-lucide="dumbbell"></i> Today's Routine
+              </button>
+              <button class="wk-tab-btn" onclick="switchView('exercises')">
+                <i data-lucide="search"></i> Exercise Library
+              </button>
+              <button class="wk-tab-btn" onclick="switchView('analytics')">
+                <i data-lucide="calendar"></i> Workout History
+              </button>
+            </div>
+            <div class="wk-scheduled-badge" id="wkScheduledBadge">
+              5 Exercises Scheduled
+            </div>
+          </div>
+
+          <!-- Master 7-Day Workout Split Planner Container -->
+          <div class="fs-card wk-planner-container">
+            <!-- Header with Title & Current Day -->
+            <div class="wk-planner-header">
+              <div class="wk-planner-title">
+                <i data-lucide="calendar"></i> Daily Workout Split (7 Days)
               </div>
-              <div style="display: flex; gap: 8px;">
-                <button class="btn-primary-block" style="width: auto; padding: 8px 18px;" onclick="openModal('workoutModal')">
-                  <i data-lucide="play" style="width: 14px; height: 14px;"></i> Launch Set & Rest Tracker
+              <div class="wk-today-indicator">
+                Today: <strong id="wkCurrentDayText">Saturday</strong>
+              </div>
+            </div>
+
+            <!-- 7-Day Traveling Selector Strip -->
+            <div class="wk-days-strip" id="wkDaysStrip">
+              <button class="wk-day-btn" data-day="mon">Mon</button>
+              <button class="wk-day-btn active" data-day="tue">Tue</button>
+              <button class="wk-day-btn" data-day="wed">Wed</button>
+              <button class="wk-day-btn" data-day="thu">Thu</button>
+              <button class="wk-day-btn" data-day="fri">Fri</button>
+              <button class="wk-day-btn is-today" data-day="sat">
+                <span class="day-lbl">Sat</span>
+                <span class="day-today-tag">TODAY</span>
+              </button>
+              <button class="wk-day-btn" data-day="sun">Sun</button>
+            </div>
+
+            <!-- Routine Details Bar & Live Rest Timer Controls -->
+            <div class="wk-routine-details">
+              <div class="wk-routine-info">
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                  <span class="wk-badge-pill" id="wkRoutineBadge">TUESDAY'S ROUTINE</span>
+                  <span class="wk-badge-sub" id="wkRoutineSubBadge">Daily Routine Preview</span>
+                </div>
+                <h3 class="wk-routine-title" id="wkRoutineTitle">Back & Biceps Power</h3>
+                <p class="wk-routine-tagline" id="wkRoutineTagline">Pull Movement Pattern • V-Taper & Arm Thickness • Intermediate</p>
+              </div>
+
+              <div class="wk-header-actions">
+                <button class="btn-secondary" id="wkResetSetsBtn" onclick="resetWorkoutSets()" title="Reset set checkboxes for this routine" style="padding: 7px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                  <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i> Reset Sets
                 </button>
-                <button class="btn-secondary" onclick="switchView('exercises')">Browse Exercise Guide &rarr;</button>
+                <button class="btn-primary-block" style="width: auto; padding: 7px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;" onclick="promptAddExercise()">
+                  <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Exercise
+                </button>
+
+                <!-- Rest Timer Box in Routine Header -->
+                <div class="wk-rest-timer-box">
+                  <i data-lucide="clock" style="width: 14px; height: 14px; color: var(--text-secondary);"></i>
+                  <div style="display: flex; flex-direction: column;">
+                    <span class="wk-timer-label">REST TIMER</span>
+                    <span class="wk-timer-clock" id="wkHeaderTimerDisplay">01:30</span>
+                  </div>
+                  <div class="wk-timer-chips">
+                    <button class="wk-chip-btn" onclick="setHeaderRestPreset(60)">60s</button>
+                    <button class="wk-chip-btn" onclick="setHeaderRestPreset(90)">90s</button>
+                    <button class="wk-chip-btn" onclick="setHeaderRestPreset(120)">120s</button>
+                  </div>
+                  <button class="wk-timer-control-btn" id="wkHeaderTimerToggle" onclick="toggleHeaderRestTimer()" title="Start / Pause Rest Timer">
+                    <i data-lucide="play" id="wkHeaderTimerIcon" style="width: 12px; height: 12px;"></i>
+                  </button>
+                  <button class="wk-timer-reset-btn" onclick="resetHeaderRestTimer()" title="Reset Rest Timer">
+                    <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3 Summary Stats Cards -->
+            <div class="wk-stats-row">
+              <div class="wk-stat-mini-card">
+                <div class="wk-stat-mini-label">Total Volume Moved</div>
+                <div class="wk-stat-mini-val" id="wkStatVolume">0 kg</div>
+                <div class="wk-stat-mini-sub">Sum of completed sets × reps × weight</div>
+              </div>
+              <div class="wk-stat-mini-card">
+                <div class="wk-stat-mini-label">Sets Completed</div>
+                <div class="wk-stat-mini-val" id="wkStatSets">0 / 17 sets</div>
+                <div class="wk-stat-mini-sub" id="wkStatSetsSub">0% of routine completed</div>
+              </div>
+              <div class="wk-stat-mini-card">
+                <div class="wk-stat-mini-label">Target Routine</div>
+                <div class="wk-stat-mini-val" id="wkStatTarget">5 Exercises</div>
+                <div class="wk-stat-mini-sub" id="wkStatDuration">Estimated Duration: 50 mins</div>
               </div>
             </div>
           </div>
 
-          <!-- Weekly Schedule Grid -->
-          <h3 class="card-title" style="margin-bottom: 14px;">Weekly Workout Schedule</h3>
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <div class="fs-card" style="padding: 14px 18px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <strong style="color: var(--text-main);">Monday: Upper Body Push & Delts</strong>
-                <div style="font-size: 12px; color: var(--text-secondary);">6 Exercises • 50 min duration</div>
-              </div>
-              <span class="badge-active">Completed ✓</span>
-            </div>
-
-            <div class="fs-card" style="padding: 14px 18px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <strong style="color: var(--text-main);">Tuesday: Lower Body Quad & Calves</strong>
-                <div style="font-size: 12px; color: var(--text-secondary);">5 Exercises • 55 min duration</div>
-              </div>
-              <span class="badge-active">Completed ✓</span>
-            </div>
-
-            <div class="fs-card" style="padding: 14px 18px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <strong style="color: var(--text-main);">Wednesday: Upper Body Pull & Lats</strong>
-                <div style="font-size: 12px; color: var(--text-secondary);">6 Exercises • 50 min duration</div>
-              </div>
-              <span class="badge-active">Completed ✓</span>
-            </div>
-
-            <div class="fs-card" style="padding: 14px 18px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border-color: var(--primary-blue); background: var(--light-blue-bg);">
-              <div>
-                <strong style="color: var(--primary-blue);">Friday: Chest & Triceps Hypertrophy (Today)</strong>
-                <div style="font-size: 12px; color: var(--text-secondary);">6 Exercises • 45 min duration • 90s Rest Intervals</div>
-              </div>
-              <button class="btn-primary-block" style="width: auto; padding: 6px 14px;" onclick="openModal('workoutModal')">Start Today</button>
-            </div>
+          <!-- Dynamic Exercise Cards Container -->
+          <div id="wkExercisesContainer" style="margin-top: 18px;">
+            <!-- Rendered dynamically by JavaScript -->
           </div>
         </div>
 
@@ -1093,6 +1155,11 @@
               <div style="font-size: 26px; font-weight: 800; color: var(--text-main);" id="stationWaterCurrent">2.1 L</div>
               <span style="font-size: 12px; color: var(--text-secondary);">Target: 3.0 Liters</span>
               <div style="font-size: 11px; color: var(--primary-blue); font-weight: 600; margin-top: 4px;">Remaining: <span id="stationWaterRem">0.9 L</span></div>
+              <div style="margin-top: 14px;">
+                <button type="button" class="btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; padding: 7px 12px; color: #DC2626;" onclick="resetWaterIntake()">
+                  <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i> Reset Today's Water
+                </button>
+              </div>
             </div>
 
             <!-- Quick Add Station -->
@@ -1749,9 +1816,14 @@
             <input type="number" id="customWaterInput" class="form-input" placeholder="e.g. 350" min="50" max="2000" step="50">
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
-          <button type="submit" class="btn-primary-block" style="width: auto;">Add to Daily Total</button>
+        <div class="modal-footer" style="justify-content: space-between;">
+          <button type="button" class="btn-secondary" style="color: #DC2626; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" onclick="resetWaterIntake(); closeModal('addWaterModal');">
+            <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i> Reset to 0 L
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
+            <button type="submit" class="btn-primary-block" style="width: auto;">Add to Daily Total</button>
+          </div>
         </div>
       </form>
     </div>
@@ -1819,7 +1891,12 @@
     <div class="modal-card">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="trending-up" style="color: var(--primary-blue);"></i>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-blue);">
+            <rect width="18" height="18" x="3" y="3" rx="4"></rect>
+            <circle cx="12" cy="8" r="2.5"></circle>
+            <path d="M12 7v1"></path>
+            <path d="M7 16h10"></path>
+          </svg>
           <h4 class="modal-title">Record Body Metrics</h4>
         </div>
         <button class="modal-close-btn" data-close-modal>&times;</button>
