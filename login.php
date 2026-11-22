@@ -1,78 +1,54 @@
 <?php
 /**
- * FitSync AI — Login Page
+ * FitSync AI — Database-Backed Login Page
+ *
+ * Authenticates users against MySQL using prepared statements,
+ * validates CSRF tokens, verifies bcrypt password hashes, and routes by role.
  */
-require_once __DIR__ . '/config/config.php';
-require_once __DIR__ . '/config/session.php';
 
-// Redirect if already logged in
+declare(strict_types=1);
+
+require_once __DIR__ . '/config/bootstrap.php';
+
+// Redirect if already authenticated
 if (isLoggedIn()) {
-    header('Location: ' . url('dashboard.php'));
-    exit;
+    redirectByRole();
 }
 
 $error = null;
+$flash = getFlash();
 
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireCsrfToken();
     $action = $_POST['action'] ?? 'login';
 
-    // 1-Click Demo Logins
     if ($action === 'demo_member') {
-        setCurrentUser([
-            'id' => '00000000-0000-0000-0000-000000000001',
-            'full_name' => 'Aarav Patel',
-            'email' => 'aarav.patel@fitsync.ai',
-            'role' => 'member',
-            'avatar_url' => asset('assets/aarav.jpg')
-        ]);
-        setFlash('success', 'Welcome back, Aarav! Logged in as Member.');
-        header('Location: ' . url('dashboard.php'));
-        exit;
+        $result = authenticateUser('aarav.patel@fitsync.ai', 'password123');
     } elseif ($action === 'demo_trainer') {
-        setCurrentUser([
-            'id' => '00000000-0000-0000-0000-000000000002',
-            'full_name' => 'Coach Raj Malhotra',
-            'email' => 'raj.malhotra@fitsync.ai',
-            'role' => 'trainer',
-            'avatar_url' => asset('assets/trainer_raj.jpg')
-        ]);
-        setFlash('success', 'Logged in to Trainer Coaching Hub.');
-        header('Location: ' . url('dashboard.php'));
-        exit;
+        $result = authenticateUser('coach@fitsync.health', 'password123');
+    } elseif ($action === 'demo_owner') {
+        $result = authenticateUser('owner@fitzone.com', 'password123');
     } elseif ($action === 'demo_admin') {
-        setCurrentUser([
-            'id' => '00000000-0000-0000-0000-000000000003',
-            'full_name' => 'Admin Priya Sharma',
-            'email' => 'admin@fitsync.ai',
-            'role' => 'admin',
-            'avatar_url' => asset('assets/logo.jpg')
-        ]);
-        setFlash('success', 'Logged in to Gym Administration Console.');
-        header('Location: ' . url('dashboard.php'));
+        $result = authenticateUser('admin@fitsync.com', 'password123');
+    } else {
+        $email    = trim($_POST['email'] ?? '');
+        $password = (string)($_POST['password'] ?? '');
+        $remember = !empty($_POST['remember']);
+
+        $result = authenticateUser($email, $password, $remember);
+    }
+
+    if ($result['success']) {
+        setFlash('success', 'Welcome back, ' . htmlspecialchars($result['user']['full_name']) . '!');
+        header('Location: ' . $result['redirect']);
         exit;
     } else {
-        // Standard Email / Password Login
-        $email = trim($_POST['email'] ?? '');
-        $password = trim($_POST['password'] ?? '');
-
-        if (empty($email) || empty($password)) {
-            $error = 'Please enter both your email address and password.';
-        } else {
-            setCurrentUser([
-                'id' => '00000000-0000-0000-0000-000000000001',
-                'full_name' => ucwords(str_replace(['.', '_'], ' ', explode('@', $email)[0])),
-                'email' => $email,
-                'role' => 'member'
-            ]);
-            setFlash('success', 'Welcome to FitSync!');
-            header('Location: ' . url('dashboard.php'));
-            exit;
-        }
+        $error = $result['message'];
     }
 }
 
-$pageTitle = 'Sign In';
+$pageTitle = 'Sign In — FitSync AI';
 include __DIR__ . '/includes/header.php';
 ?>
 
@@ -81,55 +57,92 @@ include __DIR__ . '/includes/header.php';
     <div class="col-md-6 col-lg-5">
       <div class="fitness-card p-4 p-md-5">
         <div class="text-center mb-4">
-          <img src="<?= asset('assets/logo.jpg') ?>" alt="Logo" width="56" height="56" class="rounded-circle border border-success mb-2">
+          <img src="<?= asset('assets/images/logo.jpg') ?>" alt="Logo" width="56" height="56" class="rounded-circle border border-success mb-2" onerror="this.src='<?= asset('assets/logo.jpg') ?>'">
           <h3 class="fw-bold text-white">Sign In to FitSync</h3>
           <p class="text-secondary small">Access your fitness metrics, routines, and telemetry</p>
         </div>
 
+        <?php if ($flash): ?>
+          <div class="alert alert-<?= e($flash['type']) ?> py-2 small border-0 mb-3"><?= e($flash['message']) ?></div>
+        <?php endif; ?>
+
         <?php if ($error): ?>
-          <div class="alert alert-danger py-2 small border-0"><?= htmlspecialchars($error) ?></div>
+          <div class="alert alert-danger py-2 small border-0 mb-3"><?= e($error) ?></div>
         <?php endif; ?>
 
         <!-- Standard Login Form -->
         <form method="POST" action="<?= url('login.php') ?>" class="mb-4">
+          <?= csrfInput() ?>
           <input type="hidden" name="action" value="login">
+
           <div class="mb-3">
             <label class="form-label text-light small fw-semibold">Email Address</label>
             <div class="input-group">
               <span class="input-group-text bg-dark border-secondary border-opacity-50 text-secondary"><i class="bi bi-envelope"></i></span>
-              <input type="email" name="email" class="form-control form-control-dark" placeholder="aarav@fitsync.ai" required>
+              <input type="email" name="email" class="form-control form-control-dark" placeholder="athlete@fitsync.health or coach@fitsync.health" value="<?= e($_POST['email'] ?? '') ?>" required autofocus>
             </div>
           </div>
 
-          <div class="mb-4">
-            <label class="form-label text-light small fw-semibold">Password</label>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label text-light small fw-semibold mb-0">Password</label>
+              <a href="<?= url('forgot_password.php') ?>" class="text-success small text-decoration-none">Forgot Password?</a>
+            </div>
             <div class="input-group">
               <span class="input-group-text bg-dark border-secondary border-opacity-50 text-secondary"><i class="bi bi-lock"></i></span>
               <input type="password" name="password" class="form-control form-control-dark" placeholder="••••••••" required>
             </div>
           </div>
 
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" name="remember" id="rememberMe" checked>
+            <label class="form-check-label text-secondary small" for="rememberMe">
+              Stay signed in
+            </label>
+          </div>
+
           <button type="submit" class="btn btn-fitness w-100 py-2 fw-semibold">
-            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to FitSync
           </button>
         </form>
 
-        <!-- Demo Fast Access Pill Group (Great for Viva & Project Presentation) -->
+        <!-- Demo Fast Access Pill Group (All Seeded Database Accounts) -->
         <div class="text-center border-top border-secondary border-opacity-25 pt-3">
-          <span class="text-secondary small d-block mb-2">⚡ Quick 1-Click Demo Logins</span>
+          <span class="text-secondary small d-block mb-2">⚡ Quick 1-Click Database Demo Logins</span>
           <div class="d-flex flex-column gap-2">
             <form method="POST" action="<?= url('login.php') ?>">
+              <?= csrfInput() ?>
               <input type="hidden" name="action" value="demo_member">
               <button type="submit" class="btn btn-dark border border-secondary w-100 btn-sm text-start d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-person-fill text-success me-2"></i> Member: Aarav Patel</span>
-                <span class="badge bg-success-subtle text-success">Demo</span>
+                <span class="badge bg-success-subtle text-success">Athlete</span>
               </button>
             </form>
+
             <form method="POST" action="<?= url('login.php') ?>">
+              <?= csrfInput() ?>
               <input type="hidden" name="action" value="demo_trainer">
               <button type="submit" class="btn btn-dark border border-secondary w-100 btn-sm text-start d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-person-badge text-warning me-2"></i> Trainer: Coach Raj</span>
-                <span class="badge bg-warning-subtle text-warning">Demo</span>
+                <span><i class="bi bi-award-fill text-warning me-2"></i> Trainer: Coach Raj Malhotra</span>
+                <span class="badge bg-warning-subtle text-warning">Coach</span>
+              </button>
+            </form>
+
+            <form method="POST" action="<?= url('login.php') ?>">
+              <?= csrfInput() ?>
+              <input type="hidden" name="action" value="demo_owner">
+              <button type="submit" class="btn btn-dark border border-secondary w-100 btn-sm text-start d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-buildings-fill text-info me-2"></i> Gym Owner: Priya Sharma</span>
+                <span class="badge bg-info-subtle text-info">Owner</span>
+              </button>
+            </form>
+
+            <form method="POST" action="<?= url('login.php') ?>">
+              <?= csrfInput() ?>
+              <input type="hidden" name="action" value="demo_admin">
+              <button type="submit" class="btn btn-dark border border-secondary w-100 btn-sm text-start d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-shield-lock-fill text-danger me-2"></i> Admin: System Administrator</span>
+                <span class="badge bg-danger-subtle text-danger">Admin</span>
               </button>
             </form>
           </div>

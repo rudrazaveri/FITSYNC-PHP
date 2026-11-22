@@ -1,9 +1,13 @@
 <?php
 /**
  * FitSync AI — Logout Handler
+ *
+ * Securely terminates session, deletes database session record, and redirects.
  */
-require_once __DIR__ . '/config/config.php';
-require_once __DIR__ . '/config/session.php';
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/config/bootstrap.php';
 
 logoutUser();
 setFlash('info', 'You have been securely signed out.');

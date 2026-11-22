@@ -1480,6 +1480,17 @@ function initAuthSystem() {
   const authOverlay = document.getElementById('authDashboardOverlay');
   const appLayout = document.querySelector('.app-layout');
 
+  // Synchronize with server-side authenticated session if present
+  if (window.__AUTHENTICATED_USER__) {
+    store.state.isLoggedIn = true;
+    if (store.state.user) {
+      store.state.user.id = window.__AUTHENTICATED_USER__.id;
+      store.state.user.name = window.__AUTHENTICATED_USER__.full_name || window.__AUTHENTICATED_USER__.name;
+      store.state.user.email = window.__AUTHENTICATED_USER__.email;
+      store.state.user.role = window.__AUTHENTICATED_USER__.role;
+    }
+  }
+
   if (!authOverlay) return;
 
   if (store.state.isLoggedIn === false) {
@@ -1493,6 +1504,9 @@ function initAuthSystem() {
     authOverlay.style.display = 'none';
     if (appLayout) appLayout.style.display = 'flex';
     syncUserProfileUI();
+    if (window.__INITIAL_VIEW__ && typeof switchView === 'function') {
+      switchView(window.__INITIAL_VIEW__);
+    }
   }
 }
 
@@ -1648,32 +1662,101 @@ function quickFillAccount(type) {
   }
 }
 
-function handleSignInSubmit(e) {
+async function handleSignInSubmit(e) {
   if (e) e.preventDefault();
-  const email = document.getElementById('authEmailInput')?.value;
+  const alertEl = document.getElementById('authSignInAlert');
+  if (alertEl) { alertEl.style.display = 'none'; alertEl.innerText = ''; }
+
+  const email = document.getElementById('authEmailInput')?.value?.trim();
   const password = document.getElementById('authPasswordInput')?.value;
   const remember = document.getElementById('authStaySignedIn')?.checked;
 
-  if (!email) {
-    alert('Please enter your email address.');
+  if (!email || !password) {
+    if (alertEl) {
+      alertEl.style.display = 'block';
+      alertEl.innerText = 'Please enter both your email address and password.';
+    } else {
+      alert('Please enter both your email address and password.');
+    }
     return;
   }
 
-  window.fitSyncStore.login(email, password, remember);
-  initAuthSystem();
-  updateDashboardUI();
-  showNotification(`Welcome back to FitSync AI, ${window.fitSyncStore.state.user.name}!`);
+  // Attempt backend database authentication
+  try {
+    const res = await fetch('api/auth/login.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ email, password, remember })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (data && data.success) {
+      // Role-based routing: if trainer, gym_owner, or admin, navigate to their dedicated portal
+      if (data.user && data.user.role && data.user.role !== 'user') {
+        if (data.redirect) {
+          window.location.href = data.redirect;
+          return;
+        }
+      }
+
+      // Member / User role: update client store and enter application
+      if (window.fitSyncStore) {
+        window.fitSyncStore.login(email, password, remember);
+        if (data.user && window.fitSyncStore.state && window.fitSyncStore.state.user) {
+          window.fitSyncStore.state.user.id = data.user.id;
+          window.fitSyncStore.state.user.name = data.user.full_name || data.user.name;
+          window.fitSyncStore.state.user.email = data.user.email;
+          window.fitSyncStore.state.user.role = data.user.role;
+          if (typeof window.fitSyncStore.save === 'function') window.fitSyncStore.save();
+        }
+      }
+
+      initAuthSystem();
+      if (typeof updateDashboardUI === 'function') updateDashboardUI();
+      if (typeof showNotification === 'function') {
+        showNotification(`Welcome back to FitSync, ${data.user.full_name || data.user.name}!`);
+      }
+      return;
+    } else if (data && !data.success) {
+      if (alertEl) {
+        alertEl.style.display = 'block';
+        alertEl.innerText = data.message || 'Invalid email or password.';
+      } else {
+        alert(data.message || 'Invalid email or password.');
+      }
+      return;
+    }
+  } catch (err) {
+    console.warn('[FitSync Auth] API unreachable, falling back to local client store:', err);
+  }
+
+  // Graceful fallback for local offline / static server demo
+  if (window.fitSyncStore) {
+    window.fitSyncStore.login(email, password, remember);
+    initAuthSystem();
+    if (typeof updateDashboardUI === 'function') updateDashboardUI();
+    if (typeof showNotification === 'function') {
+      showNotification(`Welcome back to FitSync AI, ${window.fitSyncStore.state.user.name}!`);
+    }
+  }
 }
 
-function handleRegisterSubmit(e) {
+async function handleRegisterSubmit(e) {
   if (e) e.preventDefault();
-  const fullName = document.getElementById('regFullName')?.value;
-  const email = document.getElementById('regEmail')?.value;
-  const phone = document.getElementById('regPhone')?.value;
+  const alertEl = document.getElementById('authRegisterAlert');
+  if (alertEl) { alertEl.style.display = 'none'; alertEl.innerText = ''; }
+
+  const fullName = document.getElementById('regFullName')?.value?.trim();
+  const email = document.getElementById('regEmail')?.value?.trim();
+  const phone = document.getElementById('regPhone')?.value?.trim();
   const avatarUrl = document.getElementById('regAvatarUrl')?.value;
   const password = document.getElementById('regPassword')?.value;
   const confirmPassword = document.getElementById('regConfirmPassword')?.value;
-  const role = document.getElementById('regRoleInput')?.value;
+  const role = document.getElementById('regRoleInput')?.value || 'member';
   const gender = document.getElementById('regGender')?.value;
   const age = document.getElementById('regAge')?.value;
   const height = document.getElementById('regHeight')?.value;
@@ -1684,48 +1767,171 @@ function handleRegisterSubmit(e) {
   const gymLocation = document.getElementById('regGymLocationInput')?.value;
 
   if (password !== confirmPassword) {
-    alert('Passwords do not match. Please verify your password.');
+    if (alertEl) {
+      alertEl.style.display = 'block';
+      alertEl.innerText = 'Passwords do not match. Please verify your password.';
+    } else {
+      alert('Passwords do not match. Please verify your password.');
+    }
     return;
   }
 
-  window.fitSyncStore.register({
-    fullName,
-    email,
-    phone,
-    avatarUrl,
-    role,
-    gender,
-    age,
-    height,
-    weight,
-    goal,
-    activityLevel,
-    gymBranch,
-    gymLocation
-  });
-
-  initAuthSystem();
-  updateDashboardUI();
-  showNotification(`Profile created! Welcome to FitSync AI, ${fullName}.`);
-}
-
-function loginDemoAccount(key) {
-  if (key === 'ritika') {
-    window.fitSyncStore.login('ritika@fitsync.health', 'password123');
-  } else if (key === 'coach') {
-    window.fitSyncStore.login('coach@fitsync.health', 'password123');
-  } else if (key === 'aarav') {
-    window.fitSyncStore.login('aarav@fitsync.health', 'password123');
-  } else {
-    window.fitSyncStore.login('isha.kulkarni@fitsync.com', 'password123');
+  if (password.length < 6) {
+    if (alertEl) {
+      alertEl.style.display = 'block';
+      alertEl.innerText = 'Password must be at least 6 characters.';
+    } else {
+      alert('Password must be at least 6 characters.');
+    }
+    return;
   }
-  initAuthSystem();
-  updateDashboardUI();
-  showNotification(`Signed in as ${window.fitSyncStore.state.user.name}!`);
+
+  // Attempt backend database registration
+  try {
+    const res = await fetch('api/auth/register.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        full_name: fullName,
+        email: email,
+        phone: phone,
+        password: password,
+        gender: gender,
+        height: height,
+        weight: weight,
+        activityLevel: activityLevel,
+        gymBranch: gymBranch,
+        gymLocation: gymLocation
+      })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (data && data.success) {
+      if (window.fitSyncStore) {
+        window.fitSyncStore.register({
+          fullName, email, phone, avatarUrl, role: 'member',
+          gender, age, height, weight, goal, activityLevel,
+          gymBranch, gymLocation
+        });
+        if (data.user && window.fitSyncStore.state && window.fitSyncStore.state.user) {
+          window.fitSyncStore.state.user.id = data.user.id;
+          window.fitSyncStore.state.user.name = data.user.full_name || fullName;
+          window.fitSyncStore.state.user.email = data.user.email;
+          if (typeof window.fitSyncStore.save === 'function') window.fitSyncStore.save();
+        }
+      }
+
+      initAuthSystem();
+      if (typeof updateDashboardUI === 'function') updateDashboardUI();
+      if (typeof showNotification === 'function') {
+        showNotification(`Profile created! Welcome to FitSync, ${fullName}.`);
+      }
+      return;
+    } else if (data && !data.success) {
+      if (alertEl) {
+        alertEl.style.display = 'block';
+        alertEl.innerText = data.message || 'Registration failed.';
+      } else {
+        alert(data.message || 'Registration failed.');
+      }
+      return;
+    }
+  } catch (err) {
+    console.warn('[FitSync Auth] API unreachable, attempting local client registration fallback:', err);
+  }
+
+  // Fallback for static offline demo
+  if (window.fitSyncStore) {
+    window.fitSyncStore.register({
+      fullName, email, phone, avatarUrl, role,
+      gender, age, height, weight, goal, activityLevel,
+      gymBranch, gymLocation
+    });
+    initAuthSystem();
+    if (typeof updateDashboardUI === 'function') updateDashboardUI();
+    if (typeof showNotification === 'function') {
+      showNotification(`Profile created! Welcome to FitSync AI, ${fullName}.`);
+    }
+  }
 }
 
-function logoutUser() {
+async function loginDemoAccount(key) {
+  let email = 'ritika@fitsync.health';
+
+  if (key === 'ritika') {
+    email = 'ritika@fitsync.health';
+  } else if (key === 'coach') {
+    email = 'coach@fitsync.health';
+  } else if (key === 'owner') {
+    email = 'owner@fitzone.com';
+  } else if (key === 'admin') {
+    email = 'admin@fitsync.com';
+  } else if (key === 'aarav') {
+    email = 'aarav.patel@fitsync.ai';
+  } else {
+    email = 'isha.kulkarni@fitsync.com';
+  }
+
+  // Try API login
+  try {
+    const res = await fetch('api/auth/login.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ email, password: 'password123', remember: true })
+    });
+    const data = await res.json().catch(() => null);
+
+    if (data && data.success) {
+      if (data.user && data.user.role && data.user.role !== 'user') {
+        if (data.redirect) {
+          window.location.href = data.redirect;
+          return;
+        }
+      }
+      if (window.fitSyncStore) {
+        window.fitSyncStore.login(email, 'password123');
+        if (data.user && window.fitSyncStore.state && window.fitSyncStore.state.user) {
+          window.fitSyncStore.state.user.id = data.user.id;
+          window.fitSyncStore.state.user.name = data.user.full_name || data.user.name;
+          window.fitSyncStore.state.user.email = data.user.email;
+          window.fitSyncStore.state.user.role = data.user.role;
+          if (typeof window.fitSyncStore.save === 'function') window.fitSyncStore.save();
+        }
+      }
+      initAuthSystem();
+      if (typeof updateDashboardUI === 'function') updateDashboardUI();
+      if (typeof showNotification === 'function') {
+        showNotification(`Signed in as ${data.user.full_name || data.user.name}!`);
+      }
+      return;
+    }
+  } catch (err) {
+    console.warn('[FitSync Auth] Demo API login failed, using local demo store:', err);
+  }
+
+  // Fallback
+  if (window.fitSyncStore) {
+    window.fitSyncStore.login(email, 'password123');
+    initAuthSystem();
+    if (typeof updateDashboardUI === 'function') updateDashboardUI();
+    if (typeof showNotification === 'function') {
+      showNotification(`Signed in as ${window.fitSyncStore.state.user.name}!`);
+    }
+  }
+}
+
+async function logoutUser() {
   console.log('Logging out user from FitSync...');
+  try {
+    await fetch('api/auth/logout.php', { method: 'POST' }).catch(() => {});
+  } catch (e) {
+    console.warn('Backend logout call error:', e);
+  }
+
   try {
     if (window.fitSyncStore) {
       if (typeof window.fitSyncStore.logout === 'function') {
@@ -1738,7 +1944,7 @@ function logoutUser() {
       }
     }
   } catch(e) {
-    console.warn('Error during logout:', e);
+    console.warn('Error during store logout:', e);
   }
 
   initAuthSystem();
@@ -1766,7 +1972,7 @@ function dismissCleanBanner() {
 }
 
 function handleForgotPassword() {
-  alert('Demo Password Reset: All accounts use "password123", or you can 1-Click Demo Sign In anytime!');
+  window.location.href = 'forgot_password.php';
 }
 
 function openDataStorageModal() {

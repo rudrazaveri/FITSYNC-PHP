@@ -1,0 +1,282 @@
+/**
+ * FitSync AI — Dedicated Trainer Portal Stylesheet
+ * 
+ * Strictly adheres to the unified FitSync visual identity:
+ * - Inherits all CSS variables from css/style.css (:root)
+ * - Light-theme palette: --bg-page (#F5F7FF), --card-bg (#FFFFFF), --primary-blue (#155DFC)
+ * - Identical typography (Inter), border-radius, shadows, buttons, and tables
+ */
+
+/* Sub-navigation Tabs (used in Member Details & Schedules) */
+.fs-tabs-nav {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 22px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.fs-tabs-nav::-webkit-scrollbar {
+  display: none;
+}
+.fs-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.fs-tab-btn:hover {
+  color: var(--text-main);
+  background-color: #F8FAFC;
+}
+.fs-tab-btn.active {
+  color: var(--primary-blue);
+  border-bottom-color: var(--primary-blue);
+  font-weight: 600;
+  background-color: var(--light-blue-soft);
+}
+
+/* Tab Panels */
+.fs-tab-pane {
+  display: none;
+}
+.fs-tab-pane.active {
+  display: block;
+}
+
+/* Badge and Status Pills */
+.fs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+.fs-badge-green {
+  background-color: var(--light-green);
+  color: var(--success-green);
+}
+.fs-badge-blue {
+  background-color: var(--light-blue-bg);
+  color: var(--primary-blue);
+}
+.fs-badge-orange {
+  background-color: var(--light-orange);
+  color: var(--orange);
+}
+.fs-badge-pink {
+  background-color: var(--light-pink);
+  color: var(--pink);
+}
+.fs-badge-purple {
+  background-color: var(--light-purple);
+  color: var(--purple);
+}
+.fs-badge-gray {
+  background-color: #F1F5F9;
+  color: #475569;
+}
+
+/* Member Grid Cards */
+.member-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 18px;
+}
+.member-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.member-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+.member-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.member-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--light-blue-bg);
+  color: var(--primary-blue);
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+.member-meta h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+.member-meta p {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.member-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px;
+  background-color: #F8FAFC;
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  text-align: center;
+}
+.member-stat-col span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.member-stat-col strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* Schedule & Agenda Items */
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.schedule-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background-color: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+.schedule-item:hover {
+  background-color: #FFFFFF;
+  border-color: var(--primary-blue);
+  box-shadow: var(--shadow-sm);
+}
+.schedule-time-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  padding: 6px 8px;
+  background-color: var(--light-blue-bg);
+  border: 1px solid var(--light-blue);
+  border-radius: var(--radius-sm);
+  color: var(--primary-blue);
+  text-align: center;
+  flex-shrink: 0;
+}
+.schedule-time-box strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+.schedule-time-box span {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--primary-blue);
+}
+
+/* Coach Notes Feed */
+.notes-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+.note-item {
+  padding: 14px 16px;
+  background-color: #F8FAFC;
+  border-left: 3px solid var(--primary-blue);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.note-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.note-body {
+  font-size: 13px;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+/* Action Buttons inside cards */
+.fs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+.fs-btn-primary {
+  background-color: var(--primary-blue);
+  color: #FFFFFF;
+  border-color: var(--primary-blue);
+}
+.fs-btn-primary:hover {
+  background-color: var(--primary-blue-hover);
+  border-color: var(--primary-blue-hover);
+}
+.fs-btn-secondary {
+  background-color: var(--light-blue-bg);
+  color: var(--primary-blue);
+  border-color: var(--light-blue);
+}
+.fs-btn-secondary:hover {
+  background-color: #DBEAFE;
+}
+.fs-btn-outline {
+  background-color: #FFFFFF;
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+.fs-btn-outline:hover {
+  background-color: #F8FAFC;
+  border-color: #CBD5E1;
+}
+
+/* Responsive tweaks */
+@media (max-width: 992px) {
+  .member-grid {
+    grid-template-columns: 1fr;
+  }
+}

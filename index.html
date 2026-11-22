@@ -85,6 +85,7 @@
              PANE 1: SIGN IN FORM
              ------------------------------------------------------------- -->
         <div id="authSignInPane">
+          <div id="authSignInAlert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem;"></div>
           <form id="authSignInForm" onsubmit="handleSignInSubmit(event)">
             
             <div class="auth-form-group">
@@ -141,6 +142,7 @@
              PANE 2: REGISTER (NEW) FORM
              ------------------------------------------------------------- -->
         <div id="authRegisterPane" style="display: none;">
+          <div id="authRegisterAlert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem;"></div>
           <form id="authRegisterForm" onsubmit="handleRegisterSubmit(event)">
             
             <!-- SELECT FITSYNC ROLE -->
