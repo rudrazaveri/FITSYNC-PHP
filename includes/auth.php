@@ -79,14 +79,14 @@ function getRedirectUrlForRole(?string $role = null): string {
 
     switch ($role) {
         case 'trainer':
-            return url('trainer/');
+            return url('trainer/index.html');
         case 'gym_owner':
-            return url('gym_owner/');
+            return url('gym_owner/index.html');
         case 'admin':
-            return url('admin/');
+            return url('gym_owner/index.html');
         case 'user':
         default:
-            return url('user/');
+            return url('index.html');
     }
 }
 
@@ -119,7 +119,7 @@ function requireLogin($allowedRoles = null): void {
             ], 401);
         } else {
             setFlash('warning', 'Please sign in to access that portal.');
-            header('Location: ' . url('login.php'));
+            header('Location: ' . url('index.html'));
             exit;
         }
     }

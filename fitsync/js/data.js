@@ -1,136 +1,49 @@
 /**
  * FitSync — Master Data Store & LocalStorage Persistence
- * Manages state for Isha Kulkarni (Member · Premium) across all 16 platform modules
+ * Manages state across all 16 platform modules
  */
 
 const DEFAULT_FITSYNC_DATA = {
-  isLoggedIn: true,
-  registeredUsers: [
-    {
-      name: "Ritika Sharma",
-      email: "ritika@fitsync.health",
-      role: "Gym Member",
-      tag: "Athlete",
-      avatar: "assets/images/isha_avatar.jpg",
-      phone: "+91 98765 43210",
-      gym: "FitZone Fitness",
-      branchLocation: "Alkapuri, Vadodara • 1.2 km",
-      goal: "Build Muscle (Hypertrophy Surplus)",
-      activityLevel: "Moderately Active (1.55x BMR)",
-      gender: "Female",
-      age: 24,
-      height: 168,
-      weight: 58.5
-    },
-    {
-      name: "Isha Kulkarni",
-      email: "isha.kulkarni@fitsync.com",
-      role: "Gym Member",
-      tag: "Athlete",
-      avatar: "assets/images/isha_avatar.jpg",
-      phone: "+91 98765 43210",
-      gym: "FitZone Gym",
-      branchLocation: "Kothrud, Pune",
-      goal: "Build Muscle",
-      activityLevel: "Moderately Active (1.55x BMR)",
-      gender: "Female",
-      age: 24,
-      height: 168,
-      weight: 62.5
-    },
-    {
-      name: "Coach Raj Malhotra",
-      email: "coach@fitsync.health",
-      role: "Gym Trainer",
-      tag: "Coach",
-      avatar: "assets/images/raj.jpg",
-      phone: "+91 98111 22334",
-      gym: "FitZone Fitness",
-      branchLocation: "Alkapuri, Vadodara",
-      goal: "Athletic Strength & Conditioning",
-      activityLevel: "Very Active (1.725x BMR)",
-      gender: "Male",
-      age: 32,
-      height: 182,
-      weight: 84.0
-    },
-    {
-      name: "Aarav Patel",
-      email: "aarav@fitsync.health",
-      role: "Gym Member",
-      tag: "Athlete",
-      avatar: "assets/images/aarav.jpg",
-      phone: "+91 98234 56789",
-      gym: "PowerHouse Gym",
-      branchLocation: "SG Highway, Ahmedabad • 84 km",
-      goal: "Fat Loss & Lean Definition",
-      activityLevel: "Moderately Active (1.55x BMR)",
-      gender: "Male",
-      age: 26,
-      height: 178,
-      weight: 74.0
-    }
-  ],
-  user: {
-    name: "Isha Kulkarni",
-    initials: "IK",
-    role: "Member · Premium",
-    avatar: "assets/images/aarav.jpg",
-    email: "isha.kulkarni@fitsync.com",
-    phone: "+91 98765 43210",
-    dob: "2002-04-15",
-    gender: "Female",
-    age: 24,
-    height: "168 cm",
-    weight: "62.5 kg",
-    emergencyContact: "Anand Kulkarni (+91 98220 12345)",
-    fitnessGoal: "Build Muscle",
-    experienceLevel: "Intermediate (2+ years)",
-    gymBranch: "FitZone Gym, Kothrud, Pune",
-    notifications: {
-      workoutReminders: true,
-      waterReminders: true,
-      attendanceAlerts: true,
-      coachFeedback: true
-    }
-  },
+  isLoggedIn: false,
+  registeredUsers: [],
+  user: null,
   stats: {
     weight: {
-      current: 62.5,
+      current: null,
       unit: "kg",
-      changeText: "↓ 1.5 kg vs last month",
+      changeText: "No measurement yet",
       isPositive: true
     },
     bmi: {
-      value: 21.6,
-      status: "Healthy range"
+      value: "--",
+      status: "No data yet"
     },
     calories: {
-      current: 1820,
-      target: 2200,
+      current: 0,
+      target: 2000,
       unit: "kcal"
     },
     water: {
-      current: 2.1,
+      current: 0.0,
       target: 3.0,
       unit: "L"
     }
   },
   goal: {
-    title: "Build Muscle",
-    targetWeight: "68 kg",
-    targetDate: "28 Feb 2027",
-    progressPercent: 75,
-    startingWeight: "65.0 kg"
+    title: "General Fitness",
+    targetWeight: "--",
+    targetDate: "--",
+    progressPercent: 0,
+    startingWeight: "--"
   },
   membership: {
-    gymName: "FitZone Gym",
-    location: "Kothrud, Pune",
-    plan: "Premium All-Access Plan",
-    validTill: "15 Mar 2027",
-    status: "Active",
-    startDate: "16 Mar 2026",
-    turnstileCode: "FS-PUN-9821"
+    gymName: "No Gym Selected",
+    location: "--",
+    plan: "Free Athlete Tier",
+    validTill: "--",
+    status: "Inactive",
+    startDate: "--",
+    turnstileCode: "--"
   },
   gyms: [
     {
@@ -182,54 +95,13 @@ const DEFAULT_FITSYNC_DATA = {
       phone: "+91 20 4122 7700"
     }
   ],
-  trainers: [
-    {
-      id: "tr-1",
-      name: "Coach Raj Malhotra",
-      isAssigned: true,
-      title: "Head Strength & Conditioning Coach",
-      rating: 4.9,
-      experience: "8+ Years",
-      specialties: ["Hypertrophy", "Powerlifting", "Biomechanical Alignment"],
-      avatar: "assets/images/trainer_raj.jpg",
-      gym: "FitZone Gym, Kothrud"
-    },
-    {
-      id: "tr-2",
-      name: "Simran Kaur",
-      isAssigned: false,
-      title: "Senior Functional Fitness Coach",
-      rating: 4.9,
-      experience: "6 Years",
-      specialties: ["Mobility & Kinematics", "Fat Loss", "Athletic Conditioning"],
-      avatar: "assets/images/trainer_raj.jpg",
-      gym: "PowerHouse Arena, Baner"
-    },
-    {
-      id: "tr-3",
-      name: "Vikram Shinde",
-      isAssigned: false,
-      title: "Olympic Weightlifting Specialist",
-      rating: 4.8,
-      experience: "7 Years",
-      specialties: ["Clean & Jerk", "Snatch Technique", "Explosive Power"],
-      avatar: "assets/images/trainer_raj.jpg",
-      gym: "Metro Crossfit Studio"
-    }
-  ],
+  trainers: [],
   todayWorkout: {
-    title: "Upper Body Strength",
-    duration: "45 min",
-    exercisesCount: 6,
-    difficulty: "Intermediate",
-    exercises: [
-      { id: "e1", name: "Incline Barbell Bench Press", sets: "4 Sets", reps: "8-10 Reps", weight: "65 kg", completed: true },
-      { id: "e2", name: "Dumbbell Overhead Shoulder Press", sets: "3 Sets", reps: "10-12 Reps", weight: "18 kg", completed: true },
-      { id: "e3", name: "Cable Chest Flyes", sets: "3 Sets", reps: "12-15 Reps", weight: "15 kg", completed: false },
-      { id: "e4", name: "Dumbbell Lateral Deltoid Raises", sets: "4 Sets", reps: "15 Reps", weight: "8 kg", completed: false },
-      { id: "e5", name: "Triceps Rope Pushdowns", sets: "3 Sets", reps: "12 Reps", weight: "25 kg", completed: false },
-      { id: "e6", name: "Parallel Bar Bodyweight Dips", sets: "3 Sets", reps: "To failure", weight: "Bodyweight", completed: false }
-    ]
+    title: "No Workout Scheduled",
+    duration: "0 min",
+    exercisesCount: 0,
+    difficulty: "Beginner",
+    exercises: []
   },
   workoutPlans: {
     mon: {
@@ -1196,50 +1068,39 @@ const DEFAULT_FITSYNC_DATA = {
     }
   ],
   assessment: {
-    age: 24,
-    gender: "female",
-    height: 168,
-    weight: 62.5,
-    waist: 74,
-    neck: 32,
-    hip: 94,
-    activity: 1.55,
-    goal: "muscle_gain",
-    bmi: 22.1,
-    bmiCategory: "Normal Weight",
-    bmr: 1410,
-    tdee: 2185,
-    targetCalories: 2350,
-    targetProtein: 125,
-    targetCarbs: 275,
-    targetFat: 65,
-    bodyFatPct: 22.4,
-    lastCalculated: "20 Nov 2026"
+    age: null,
+    gender: null,
+    height: null,
+    weight: null,
+    waist: null,
+    neck: null,
+    hip: null,
+    activity: 1.2,
+    goal: "general_fitness",
+    bmi: null,
+    bmiCategory: "No assessment yet",
+    bmr: null,
+    tdee: null,
+    targetCalories: 2000,
+    targetProtein: 0,
+    targetCarbs: 0,
+    targetFat: 0,
+    bodyFatPct: null,
+    lastCalculated: "No assessment recorded"
   },
-  measurementsHistory: [
-    { date: "20 Nov 2026", weight: 62.5, waist: 74.0, chest: 92.0, bicep: 29.5, thigh: 54.0 },
-    { date: "20 Oct 2026", weight: 63.0, waist: 74.5, chest: 91.5, bicep: 29.0, thigh: 54.5 },
-    { date: "20 Sep 2026", weight: 63.8, waist: 75.0, chest: 91.0, bicep: 28.5, thigh: 55.0 },
-    { date: "20 Aug 2026", weight: 64.2, waist: 76.0, chest: 91.0, bicep: 28.0, thigh: 55.5 },
-    { date: "20 Jul 2026", weight: 65.0, waist: 77.0, chest: 90.5, bicep: 28.0, thigh: 56.0 }
-  ],
+  measurementsHistory: [],
   nutrition: {
-    calories: 1820,
-    targetCalories: 2200,
+    calories: 0,
+    targetCalories: 2000,
     macros: {
-      protein: { current: 96, target: 110, unit: "g" },
-      carbs: { current: 212, target: 260, unit: "g" },
-      fat: { current: 58, target: 70, unit: "g" },
-      fiber: { current: 28, target: 35, unit: "g" }
+      protein: { current: 0, target: 120, unit: "g" },
+      carbs: { current: 0, target: 200, unit: "g" },
+      fat: { current: 0, target: 60, unit: "g" },
+      fiber: { current: 0, target: 30, unit: "g" }
     },
-        meals: [
-      { time: "08:15 AM", category: "Breakfast", name: "Rolled Oats & Whey Bowl with Chia Seeds", calories: 480, protein: 36, carbs: 62, fat: 9, image: "assets/images/recipe_oats.jpg" },
-      { time: "01:20 PM", category: "Lunch", name: "Grilled Paneer & Quinoa Power Bowl", calories: 640, protein: 38, carbs: 75, fat: 21, image: "assets/images/recipe_paneer.jpg" },
-      { time: "05:00 PM", category: "Post-Workout Snack", name: "Greek Yogurt with Banana & Honey", calories: 310, protein: 22, carbs: 48, fat: 4, image: "assets/images/recipe_yogurt_parfait.jpg" },
-      { time: "08:30 PM", category: "Dinner", name: "Moong Dal Khichdi & Steamed Veggies", calories: 390, protein: 18, carbs: 64, fat: 6, image: "assets/images/recipe_dal.jpg" }
-    ],
-    allergies: ["Peanuts (Strict Allergen Conflict)", "Soy (Mild Intolerance)"],
-    reactionNotes: "Mild bloating noted after consuming high-sodium meal on 12 Nov. Recovered with hydration."
+    meals: [],
+    allergies: [],
+    reactionNotes: "No adverse nutritional reactions logged."
   },
     recipes: [
     {
@@ -1374,100 +1235,45 @@ const DEFAULT_FITSYNC_DATA = {
     }
   ],
   waterStation: {
-    current: 2.1,
+    current: 0.0,
     target: 3.0,
-    logs: [
-      { time: "07:30 AM", amount: "500 ml", note: "Morning hydration" },
-      { time: "10:15 AM", amount: "350 ml", note: "Desk hydration" },
-      { time: "01:00 PM", amount: "500 ml", note: "Pre-lunch water" },
-      { time: "04:30 PM", amount: "400 ml", note: "Pre-workout hydration" },
-      { time: "06:45 PM", amount: "350 ml", note: "Post-workout hydration" }
-    ],
-    weeklyHistory: [2.8, 3.1, 2.9, 3.2, 2.7, 3.0, 2.1]
+    logs: [],
+    weeklyHistory: [0, 0, 0, 0, 0, 0, 0]
   },
-  appointments: [
-    {
-      id: "apt-1",
-      dayName: "Wed",
-      dayNum: "20",
-      time: "11:30 AM",
-      professional: "Dr. Meera Nair",
-      specialty: "General Physician",
-      type: "Online",
-      typeColor: "success",
-      topic: "Cardiovascular Telemetry & Blood Panel Review"
-    },
-    {
-      id: "apt-2",
-      dayName: "Sat",
-      dayNum: "23",
-      time: "02:00 PM",
-      professional: "Mr. Arjun Desai",
-      specialty: "Sports Physiotherapist",
-      type: "In-person",
-      typeColor: "blue",
-      topic: "Scapular Kinematics & Shoulder Mobility Screen"
-    }
-  ],
-  reports: [
-    {
-      id: "rep-1",
-      name: "Comprehensive Blood Biomarker Panel",
-      category: "Pathology Diagnostic",
-      date: "14 Nov 2026",
-      size: "2.4 MB",
-      status: "Verified",
-      doctor: "Dr. Meera Nair"
-    },
-    {
-      id: "rep-2",
-      name: "Dual-Energy X-Ray (DEXA) Body Scan",
-      category: "Body Composition",
-      date: "28 Oct 2026",
-      size: "1.8 MB",
-      status: "Verified",
-      doctor: "FitSync Biometrics Lab"
-    },
-    {
-      id: "rep-3",
-      name: "ECG & Resting Cardiovascular Rhythm",
-      category: "Cardiac Diagnostic",
-      date: "10 Oct 2026",
-      size: "1.1 MB",
-      status: "Normal",
-      doctor: "Dr. K. Iyer"
-    }
-  ],
+  appointments: [],
+  reports: [],
   attendance: {
-    monthlyVisits: 18,
-    targetVisits: 22,
-    consistencyPct: 91,
-    currentStreak: 5,
-    records: [
-      { date: "20 Nov 2026", time: "06:45 AM", gym: "FitZone Gym, Kothrud", method: "Turnstile QR", status: "Verified" },
-      { date: "19 Nov 2026", time: "07:10 AM", gym: "FitZone Gym, Kothrud", method: "Turnstile QR", status: "Verified" },
-      { date: "18 Nov 2026", time: "06:30 AM", gym: "FitZone Gym, Kothrud", method: "Turnstile QR", status: "Verified" },
-      { date: "17 Nov 2026", time: "07:00 AM", gym: "PowerHouse Arena, Baner", method: "Turnstile QR", status: "Verified" },
-      { date: "16 Nov 2026", time: "06:50 AM", gym: "FitZone Gym, Kothrud", method: "Turnstile QR", status: "Verified" },
-      { date: "14 Nov 2026", time: "06:40 AM", gym: "FitZone Gym, Kothrud", method: "Turnstile QR", status: "Verified" },
-      { date: "13 Nov 2026", time: "07:15 AM", gym: "Metro Crossfit Studio", method: "Turnstile QR", status: "Verified" }
-    ]
+    monthlyVisits: 0,
+    targetVisits: 20,
+    consistencyPct: 0,
+    currentStreak: 0,
+    records: []
   },
   weeklyActivity: {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    workouts: [45, 60, 50, 0, 55, 65, 40],
-    activityScore: [70, 88, 78, 35, 82, 94, 68]
+    workouts: [0, 0, 0, 0, 0, 0, 0],
+    activityScore: [0, 0, 0, 0, 0, 0, 0]
   },
   progressData: {
-    labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov'],
-    weights: [65.0, 64.2, 63.8, 63.0, 62.5]
+    labels: [],
+    weights: []
   }
 };
 
 class FitSyncStore {
   constructor() {
-    this.storageKey = 'fitsync_master_platform_v2';
+    this.storageKey = 'fitsync_master_platform_v4';
+    this.purgeLegacyKeys();
     this.state = this.load();
+  }
+
+  purgeLegacyKeys() {
+    try {
+      localStorage.removeItem('fitsync_master_platform_v1');
+      localStorage.removeItem('fitsync_master_platform_v2');
+      localStorage.removeItem('fitsync_master_platform_v3');
+      localStorage.removeItem('fitsync_authenticated_session');
+    } catch(e) {}
   }
 
   load() {
@@ -1476,12 +1282,25 @@ class FitSyncStore {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.isLoggedIn === undefined) {
-          parsed.isLoggedIn = true;
+          parsed.isLoggedIn = false;
         }
-        if (!parsed.registeredUsers || parsed.registeredUsers.length === 0) {
-          parsed.registeredUsers = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.registeredUsers));
+        if (!parsed.registeredUsers) {
+          parsed.registeredUsers = [];
+        } else {
+          // Filter out any legacy seed users
+          parsed.registeredUsers = parsed.registeredUsers.filter(u => 
+            !['ritika@fitsync.health', 'isha.kulkarni@fitsync.com', 'aarav@fitsync.health', 'coach@fitsync.health'].includes(u.email.toLowerCase())
+          );
         }
-                if (!parsed.workoutPlans || !parsed.workoutPlans.thu || !parsed.workoutPlans.thu.exercises || parsed.workoutPlans.thu.exercises[0].id !== "ex_greatest_stretch" || !parsed.workoutPlans.mon.exercises[0].image.includes('ex_incline_bench')) {
+        if (!parsed.trainers) {
+          parsed.trainers = [];
+        } else {
+          // Filter out any legacy seed trainers
+          parsed.trainers = parsed.trainers.filter(t => 
+            !['coach@fitsync.health', 'simran@fitsync.health', 'vikram.shinde@fitsync.health'].includes((t.email || '').toLowerCase())
+          );
+        }
+        if (!parsed.workoutPlans || !parsed.workoutPlans.thu || !parsed.workoutPlans.thu.exercises || parsed.workoutPlans.thu.exercises[0].id !== "ex_greatest_stretch" || !parsed.workoutPlans.mon.exercises[0].image.includes('ex_incline_bench')) {
           parsed.workoutPlans = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.workoutPlans));
         }
         if (!parsed.exerciseLibrary || parsed.exerciseLibrary.length < 30 || parsed.exerciseLibrary[0].image.includes('ex_bench.jpg')) {
@@ -1504,6 +1323,9 @@ class FitSyncStore {
   save() {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.state));
+      try {
+        window.dispatchEvent(new CustomEvent('fitsync_data_changed', { detail: this.state }));
+      } catch (evErr) {}
     } catch (e) {
       console.warn('Could not save to LocalStorage:', e);
     }
@@ -1742,6 +1564,152 @@ class FitSyncStore {
   logout() {
     this.state.isLoggedIn = false;
     this.save();
+  }
+
+  // --- Dynamic Gym Owner & Roster Management Methods ---
+  getTrainers() {
+    return this.state.trainers || [];
+  }
+
+  getTrainerById(id) {
+    if (!id) return null;
+    return (this.getTrainers() || []).find(t => t.id === id) || null;
+  }
+
+  getMemberByEmail(email) {
+    if (!email) return null;
+    const cleanEmail = email.trim().toLowerCase();
+    return (this.getMembers() || []).find(m => m.email.toLowerCase() === cleanEmail) || null;
+  }
+
+  addTrainer(coachData) {
+    if (!this.state.trainers) this.state.trainers = [];
+
+    const coachId = coachData.id || ('tr-' + (this.state.trainers.length + 1) + '-' + Math.floor(100 + Math.random() * 900));
+    const cleanEmail = (coachData.email || '').trim().toLowerCase();
+
+    const newCoach = {
+      id: coachId,
+      user_id: coachData.user_id || parseInt(coachId.replace('tr-', '')) || null,
+      name: coachData.name || 'New Coach',
+      email: cleanEmail,
+      phone: coachData.phone || '+91 98000 00000',
+      title: coachData.title || 'Certified Strength Coach',
+      rating: parseFloat(coachData.rating) || 5.0,
+      experience: coachData.experience || '3+ Years',
+      hourlyRate: coachData.hourlyRate || '₹1,500 / hr',
+      specialties: Array.isArray(coachData.specialties) ? coachData.specialties : (coachData.specialties ? coachData.specialties.split(',').map(s => s.trim()) : ['Hypertrophy', 'Strength']),
+      avatar: coachData.avatar || 'assets/images/trainer_raj.jpg',
+      gym: coachData.gym || 'FitZone Fitness',
+      isAssigned: false
+    };
+
+    // Update if already exists, else push
+    const existingIndex = this.state.trainers.findIndex(t => t.id === coachId || t.email.toLowerCase() === cleanEmail);
+    if (existingIndex >= 0) {
+      this.state.trainers[existingIndex] = newCoach;
+    } else {
+      this.state.trainers.push(newCoach);
+    }
+
+    this.save();
+    return newCoach;
+  }
+
+  deleteTrainer(coachId) {
+    if (!this.state.trainers) return false;
+    this.state.trainers = this.state.trainers.filter(t => t.id !== coachId && ('tr-' + t.user_id) !== coachId);
+
+    // Unassign this coach from any assigned members
+    if (this.state.registeredUsers) {
+      this.state.registeredUsers.forEach(u => {
+        if (u.assignedCoachId === coachId) {
+          u.assignedCoachId = null;
+          u.assignedCoachName = null;
+        }
+      });
+    }
+
+    this.save();
+    return true;
+  }
+
+  getMembers() {
+    return (this.state.registeredUsers || []).filter(u => u.role !== 'Gym Trainer');
+  }
+
+  addMember(memberData) {
+    if (!this.state.registeredUsers) this.state.registeredUsers = [];
+
+    const cleanEmail = (memberData.email || '').trim().toLowerCase();
+    const existingIndex = this.state.registeredUsers.findIndex(u => u.email.toLowerCase() === cleanEmail);
+
+    let assignedCoachName = memberData.assignedCoachName || null;
+    if (memberData.assignedCoachId && !assignedCoachName) {
+      const c = (this.state.trainers || []).find(t => t.id === memberData.assignedCoachId);
+      if (c) assignedCoachName = c.name;
+    }
+
+    const newMember = {
+      name: memberData.name || 'New Athlete',
+      email: cleanEmail,
+      role: 'Gym Member',
+      tag: 'Athlete',
+      avatar: memberData.avatar || (memberData.gender === 'Female' ? 'assets/images/isha_avatar.jpg' : 'assets/images/aarav.jpg'),
+      phone: memberData.phone || '+91 98765 00000',
+      gym: memberData.gym || 'FitZone Fitness',
+      branchLocation: memberData.branchLocation || 'FitZone Kothrud',
+      goal: memberData.goal || 'Build Muscle (Hypertrophy Surplus)',
+      membershipTier: memberData.membershipTier || 'Gold',
+      assignedCoachId: memberData.assignedCoachId || null,
+      assignedCoachName: assignedCoachName || 'Unassigned',
+      activityLevel: memberData.activityLevel || 'Moderately Active (1.55x BMR)',
+      gender: memberData.gender || 'Female',
+      age: parseInt(memberData.age, 10) || 24,
+      height: parseInt(memberData.height, 10) || 168,
+      weight: parseFloat(memberData.weight) || 60.0,
+      registeredAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    };
+
+    if (existingIndex >= 0) {
+      this.state.registeredUsers[existingIndex] = newMember;
+    } else {
+      this.state.registeredUsers.push(newMember);
+    }
+
+    this.save();
+    return newMember;
+  }
+
+  deleteMember(email) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    this.state.registeredUsers = (this.state.registeredUsers || []).filter(u => u.email.toLowerCase() !== cleanEmail);
+    this.save();
+    return true;
+  }
+
+  assignCoach(memberEmail, coachId) {
+    const cleanEmail = (memberEmail || '').trim().toLowerCase();
+    const member = (this.state.registeredUsers || []).find(u => u.email.toLowerCase() === cleanEmail);
+    const coach = (this.state.trainers || []).find(t => t.id === coachId);
+    if (member && coach) {
+      member.assignedCoachId = coach.id;
+      member.assignedCoachName = coach.name;
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  getGymStats() {
+    const coaches = this.getTrainers();
+    const members = this.getMembers();
+    return {
+      totalCoaches: coaches.length,
+      totalMembers: members.length,
+      capacityPct: Math.min(95, Math.max(30, Math.round((members.length / 50) * 100))),
+      activeSubscriptions: members.length
+    };
   }
 
   resetDatabase() {

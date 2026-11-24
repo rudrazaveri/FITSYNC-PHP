@@ -1,0 +1,177 @@
+import re
+
+with open('js/data.js', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+# 1. Update DEFAULT_FITSYNC_DATA.registeredUsers
+old_registered_users = """    {
+      name: "Ritika Sharma",
+      email: "ritika@fitsync.health",
+      role: "Gym Member",
+      tag: "Athlete",
+      avatar: "assets/images/isha_avatar.jpg",
+      phone: "+91 98765 43210",
+      gym: "FitZone Fitness",
+      branchLocation: "Alkapuri, Vadodara • 1.2 km",
+      goal: "Build Muscle (Hypertrophy Surplus)",
+      activityLevel: "Moderately Active (1.55x BMR)",
+      gender: "Female",
+      age: 24,
+      height: 168,
+      weight: 58.5
+    },
+    {
+      name: "Isha Kulkarni",
+      email: "isha.kulkarni@fitsync.com",
+      role: "Gym Member",
+      tag: "Athlete",
+      avatar: "assets/images/isha_avatar.jpg",
+      phone: "+91 98765 43210",
+      gym: "FitZone Gym",
+      branchLocation: "Kothrud, Pune",
+      goal: "Build Muscle",
+      activityLevel: "Moderately Active (1.55x BMR)",
+      gender: "Female",
+      age: 24,
+      height: 168,
+      weight: 62.5
+    },
+    {
+      name: "Coach Raj Malhotra",
+      email: "coach@fitsync.health",
+      role: "Gym Trainer",
+      tag: "Coach",
+      avatar: "assets/images/raj.jpg",
+      phone: "+91 98111 22334",
+      gym: "FitZone Fitness",
+      branchLocation: "Alkapuri, Vadodara",
+      goal: "Athletic Strength & Conditioning",
+      activityLevel: "Very Active (1.725x BMR)",
+      gender: "Male",
+      age: 32,
+      height: 182,
+      weight: 84.0
+    },
+    {
+      name: "Aarav Patel",
+      email: "aarav@fitsync.health",
+      role: "Gym Member",
+      tag: "Athlete",
+      avatar: "assets/images/aarav.jpg",
+      phone: "+91 98234 56789",
+      gym: "PowerHouse Gym",
+      branchLocation: "SG Highway, Ahmedabad • 84 km",
+      goal: "Fat Loss & Lean Definition",
+      activityLevel: "Moderately Active (1.55x BMR)",
+      gender: "Male",
+      age: 26,
+      height: 178,
+      weight: 74.0
+    }"""
+
+new_registered_users = """    {
+      name: "Ritika Sharma",
+      email: "ritika@fitsync.health",
+      role: "Gym Member",
+      tag: "Athlete",
+      avatar: "assets/images/isha_avatar.jpg",
+      phone: "+91 98765 43210",
+      gym: "FitZone Fitness",
+      branchLocation: "Alkapuri, Vadodara",
+      goal: "Build Muscle (Hypertrophy Surplus)",
+      membershipTier: "Elite",
+      assignedCoachId: "tr-1",
+      assignedCoachName: "Coach Raj Malhotra",
+      activityLevel: "Moderately Active (1.55x BMR)",
+      gender: "Female",
+      age: 24,
+      height: 168,
+      weight: 58.5,
+      bodyFat: "21.2%",
+      adherence: "94%",
+      notes: "Focusing on upper body push mechanics, shoulder stability, and clean hypertrophy surplus. Increased pull-up volume by 2 reps per set.",
+      recentLifts: { bench: "52.5 kg", squat: "75 kg", deadlift: "90 kg" },
+      caloricTarget: "2,350 kcal",
+      macroSplit: "140g P / 260g C / 55g F",
+      checkInTime: "Today, 07:15 AM",
+      sessionsCount: 38
+    },
+    {
+      name: "Isha Kulkarni",
+      email: "isha.kulkarni@fitsync.com",
+      role: "Gym Member",
+      tag: "Athlete",
+      avatar: "assets/images/isha_avatar.jpg",
+      phone: "+91 98765 43210",
+      gym: "FitZone Gym",
+      branchLocation: "Kothrud, Pune",
+      goal: "Clean Bulk & Strength",
+      membershipTier: "Gold",
+      assignedCoachId: "tr-1",
+      assignedCoachName: "Coach Raj Malhotra",
+      activityLevel: "Moderately Active (1.55x BMR)",
+      gender: "Female",
+      age: 24,
+      height: 168,
+      weight: 62.5,
+      bodyFat: "22.0%",
+      adherence: "89%",
+      notes: "Hit 62.5 kg bodyweight target with healthy body composition. Checked barbell squat depth and hip hinge mobility.",
+      recentLifts: { bench: "45 kg", squat: "80 kg", deadlift: "95 kg" },
+      caloricTarget: "2,150 kcal",
+      macroSplit: "130g P / 230g C / 50g F",
+      checkInTime: "Today, 08:30 AM",
+      sessionsCount: 29
+    },
+    {
+      name: "Coach Raj Malhotra",
+      email: "coach@fitsync.health",
+      role: "Gym Trainer",
+      tag: "Coach",
+      avatar: "assets/images/raj.jpg",
+      phone: "+91 98111 22334",
+      gym: "FitZone Fitness",
+      branchLocation: "Alkapuri, Vadodara",
+      goal: "Athletic Strength & Conditioning",
+      activityLevel: "Very Active (1.725x BMR)",
+      gender: "Male",
+      age: 32,
+      height: 182,
+      weight: 84.0
+    },
+    {
+      name: "Aarav Patel",
+      email: "aarav@fitsync.health",
+      role: "Gym Member",
+      tag: "Athlete",
+      avatar: "assets/images/aarav.jpg",
+      phone: "+91 98234 56789",
+      gym: "PowerHouse Gym",
+      branchLocation: "SG Highway, Ahmedabad",
+      goal: "Powerlifting & Deadlift Peak",
+      membershipTier: "Platinum",
+      assignedCoachId: "tr-1",
+      assignedCoachName: "Coach Raj Malhotra",
+      activityLevel: "Moderately Active (1.55x BMR)",
+      gender: "Male",
+      age: 26,
+      height: 178,
+      weight: 74.0,
+      bodyFat: "14.5%",
+      adherence: "96%",
+      notes: "Metabolic conditioning and 4-day strength split. Torso bracing strictly controlled. Hit 205 kg deadlift PR.",
+      recentLifts: { bench: "115 kg", squat: "155 kg", deadlift: "205 kg" },
+      caloricTarget: "2,850 kcal",
+      macroSplit: "185g P / 320g C / 65g F",
+      checkInTime: "Today, 06:30 AM",
+      sessionsCount: 44
+    }"""
+
+if old_registered_users in content:
+    content = content.replace(old_registered_users, new_registered_users)
+    print("Replaced registeredUsers successfully!")
+else:
+    print("WARNING: old_registered_users not found exactly!")
+
+with open('js/data.js', 'w', encoding='utf-8') as f:
+    f.write(content)

@@ -8,6 +8,9 @@
 
 declare(strict_types=1);
 
+// Establish Asia/Kolkata as authoritative application timezone
+date_default_timezone_set('Asia/Kolkata');
+
 // Load base configuration and environment variables
 require_once __DIR__ . '/config.php';
 

@@ -17,7 +17,7 @@ $initialView = $initialView ?? 'dashboard';
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <base href="<?= url('/') ?>/">
+  <base href="<?= rtrim(url('/'), '/') ?>/">
   <script>
     window.__AUTHENTICATED_USER__ = <?= json_encode($authUser, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
     window.__INITIAL_VIEW__ = <?= json_encode($initialView) ?>;
@@ -50,6 +50,33 @@ $initialView = $initialView ?? 'dashboard';
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+
+  <!-- Top Global Portal Switcher -->
+  <div class="portal-nav-bar">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <a href="<?= url('index.php') ?>" style="display:flex; align-items:center; gap:8px; text-decoration:none;">
+        <div style="width:28px; height:28px; border-radius:6px; background:#2563eb; display:flex; align-items:center; justify-content:center; color:#fff;">
+          <i data-lucide="activity" style="width:16px; height:16px;"></i>
+        </div>
+        <span style="font-weight:800; font-size:15px; color:#fff; letter-spacing:-0.3px;">FitSync AI</span>
+      </a>
+      <div class="portal-pills">
+        <a href="<?= url('switch_portal.php?to=gym_owner') ?>" class="portal-pill portal-pill-inactive">
+          <i data-lucide="building-2" style="width:14px; height:14px;"></i> Gym Owner Portal
+        </a>
+        <a href="<?= url('switch_portal.php?to=trainer') ?>" class="portal-pill portal-pill-inactive">
+          <i data-lucide="dumbbell" style="width:14px; height:14px;"></i> Trainer Portal
+        </a>
+        <a href="<?= url('switch_portal.php?to=member') ?>" class="portal-pill portal-pill-active">
+          <i data-lucide="user" style="width:14px; height:14px;"></i> Member Portal
+        </a>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#94a3b8;">
+      <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10B981;"></span>
+      <span>Member Console</span>
+    </div>
+  </div>
 
   <!-- Mobile Top Header (Visible on screens <768px) -->
   <header class="mobile-top-bar">
@@ -90,15 +117,12 @@ $initialView = $initialView ?? 'dashboard';
       <div class="auth-card">
         
         <!-- Segmented Tab Navigation -->
-        <div class="auth-tabs">
+        <div class="auth-tabs" style="grid-template-columns: 1fr 1fr;">
           <button type="button" class="auth-tab-btn active" id="authTabBtnSignIn" onclick="switchAuthTab('signin')">
             Sign In
           </button>
           <button type="button" class="auth-tab-btn" id="authTabBtnRegister" onclick="switchAuthTab('register')">
-            Register (New)
-          </button>
-          <button type="button" class="auth-tab-btn" id="authTabBtnDemo" onclick="switchAuthTab('demo')">
-            ⚡ 1-Click Demo
+            Create Account
           </button>
         </div>
 
@@ -113,7 +137,7 @@ $initialView = $initialView ?? 'dashboard';
               <label class="auth-label">
                 <i data-lucide="mail"></i> Email Address
               </label>
-              <input type="email" id="authEmailInput" class="auth-input" placeholder="e.g. athlete@fitsync.health or coach@fitsync.health" value="ritika@fitsync.health" required>
+              <input type="email" id="authEmailInput" class="auth-input" placeholder="name@example.com" required>
             </div>
 
             <div class="auth-form-group">
@@ -123,7 +147,7 @@ $initialView = $initialView ?? 'dashboard';
                 </label>
                 <a href="javascript:void(0)" onclick="handleForgotPassword()" class="auth-forgot-link">Forgot Password?</a>
               </div>
-              <input type="password" id="authPasswordInput" class="auth-input" placeholder="••••••••" value="password123" required>
+              <input type="password" id="authPasswordInput" class="auth-input" placeholder="Enter your password" required>
             </div>
 
             <!-- Registered Accounts on this Device -->
@@ -312,83 +336,7 @@ $initialView = $initialView ?? 'dashboard';
           </form>
         </div>
 
-        <!-- -------------------------------------------------------------
-             PANE 3: 1-CLICK DEMO ACCOUNTS
-             ------------------------------------------------------------- -->
-        <div id="authDemoPane" style="display: none;">
-          <div class="auth-step-title" style="margin-top: 0;">
-            <i data-lucide="zap"></i> INSTANT ACCESS PROFILES
-          </div>
-          <div class="auth-demo-grid">
-            <div class="auth-demo-card" onclick="loginDemoAccount('ritika')">
-              <div class="auth-demo-card-left">
-                <img src="assets/images/isha_avatar.jpg" class="auth-demo-avatar" alt="Ritika">
-                <div class="auth-demo-info">
-                  <strong>Ritika Sharma</strong>
-                  <span>Gym Member • 24y Female • 58.5 kg • FitZone</span>
-                </div>
-              </div>
-              <div class="auth-demo-arrow">Enter &rarr;</div>
-            </div>
-
-            <div class="auth-demo-card" onclick="loginDemoAccount('isha')">
-              <div class="auth-demo-card-left">
-                <img src="assets/images/aarav.jpg" class="auth-demo-avatar" alt="Isha">
-                <div class="auth-demo-info">
-                  <strong>Isha Kulkarni</strong>
-                  <span>Member · Premium • 24y Female • 62.5 kg</span>
-                </div>
-              </div>
-              <div class="auth-demo-arrow">Enter &rarr;</div>
-            </div>
-
-            <div class="auth-demo-card" onclick="loginDemoAccount('coach')">
-              <div class="auth-demo-card-left">
-                <img src="assets/images/raj.jpg" class="auth-demo-avatar" alt="Coach Raj">
-                <div class="auth-demo-info">
-                  <strong>Coach Raj Malhotra</strong>
-                  <span>Certified Strength Coach & Trainer</span>
-                </div>
-              </div>
-              <div class="auth-demo-arrow">Enter &rarr;</div>
-            </div>
-
-            <div class="auth-demo-card" onclick="loginDemoAccount('aarav')">
-              <div class="auth-demo-card-left">
-                <img src="assets/images/aarav.jpg" class="auth-demo-avatar" alt="Aarav">
-                <div class="auth-demo-info">
-                  <strong>Aarav Patel</strong>
-                  <span>Gym Member • 26y Male • 74.0 kg • PowerHouse</span>
-                </div>
-              </div>
-              <div class="auth-demo-arrow">Enter &rarr;</div>
-            </div>
-          </div>
         </div>
-
-        <!-- Shared Clean Database Mode Active Banner -->
-        <div class="auth-banner" id="cleanDbBanner">
-          <div class="auth-banner-left">
-            <i data-lucide="check-circle" class="auth-banner-icon"></i>
-            <div>
-              <strong>Clean Database Mode Active</strong>
-              <p>All pre-defined demo data has been wiped. Register a real Athlete or Coach below to start from scratch.</p>
-            </div>
-          </div>
-          <button type="button" class="auth-banner-close" onclick="dismissCleanBanner()" aria-label="Dismiss">&times;</button>
-        </div>
-
-        <!-- Shared Card Footer Actions -->
-        <div class="auth-card-footer">
-          <button type="button" class="btn-auth-reset-db" onclick="handleResetDatabase()">
-            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> 🧹 Reset Database (Start from Scratch)
-          </button>
-          <a href="javascript:void(0)" onclick="openDataStorageModal()" class="auth-data-storage-link">
-            <i data-lucide="database" style="width: 14px; height: 14px;"></i> Where & How is Data Stored?
-          </a>
-        </div>
-
-      </div>
     </div>
   </div>
 
@@ -414,8 +362,8 @@ $initialView = $initialView ?? 'dashboard';
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0; cursor:pointer;" onclick="switchView('settings')">
           <img src="assets/images/isha_avatar.jpg" id="sidebarAvatarImg" class="user-avatar-circle" alt="IK" onerror="this.outerHTML='<div class=\'user-avatar-circle\' id=\'sidebarAvatarFallback\'>IK</div>'">
           <div class="user-meta" style="min-width:0; overflow:hidden;">
-            <h4 id="sidebarUserName" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Isha Kulkarni</h4>
-            <span id="sidebarUserRole">Member · Premium</span>
+            <h4 id="sidebarUserName" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Athlete Profile</h4>
+            <span id="sidebarUserRole">Member</span>
           </div>
         </div>
         <button type="button" class="btn-sidebar-user-logout" id="sidebarUserLogoutBtn" onclick="logoutUser()" title="Log Out">
@@ -441,6 +389,13 @@ $initialView = $initialView ?? 'dashboard';
         <button class="sidebar-nav-item" data-nav="trainers">
           <i data-lucide="users"></i>
           <span class="nav-label">Trainers</span>
+        </button>
+
+        <!-- 3.1 Coach Chat -->
+        <button class="sidebar-nav-item" data-nav="coach_chat">
+          <i data-lucide="message-square"></i>
+          <span class="nav-label">Coach Chat</span>
+          <span class="nav-badge" style="background: #22C55E; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 999px; margin-left: auto;">Live</span>
         </button>
 
         <!-- 4. Workouts -->
@@ -485,19 +440,7 @@ $initialView = $initialView ?? 'dashboard';
           <span class="nav-label">Water Intake</span>
         </button>
 
-        <!-- 11. Appointments -->
-        <button class="sidebar-nav-item" data-nav="appointments">
-          <i data-lucide="calendar"></i>
-          <span class="nav-label">Appointments</span>
-        </button>
-
-        <!-- 12. Health Reports -->
-        <button class="sidebar-nav-item" data-nav="reports">
-          <i data-lucide="file-text"></i>
-          <span class="nav-label">Health Reports</span>
-        </button>
-
-        <!-- 13. Attendance -->
+        <!-- 11. Attendance -->
         <button class="sidebar-nav-item" data-nav="attendance">
           <i data-lucide="qr-code"></i>
           <span class="nav-label">Attendance</span>
@@ -581,7 +524,7 @@ $initialView = $initialView ?? 'dashboard';
             <div class="fs-card stat-card" onclick="switchView('assessment')" title="Click to re-calculate Biometrics">
               <div class="stat-card-top">
                 <div class="stat-icon-box stat-icon-pink">
-                  <i data-lucide="heart"></i>
+                  <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
                 </div>
                 <span class="stat-label">BMI</span>
               </div>
@@ -595,7 +538,7 @@ $initialView = $initialView ?? 'dashboard';
             <div class="fs-card stat-card" onclick="switchView('nutrition')" title="Click to open Nutrition Diary">
               <div class="stat-card-top">
                 <div class="stat-icon-box stat-icon-orange">
-                  <i data-lucide="flame"></i>
+                  <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
                 </div>
                 <span class="stat-label">Daily Calories</span>
               </div>
@@ -611,7 +554,7 @@ $initialView = $initialView ?? 'dashboard';
             <div class="fs-card stat-card" onclick="switchView('water')" title="Click to open Hydration Station">
               <div class="stat-card-top">
                 <div class="stat-icon-box stat-icon-blue">
-                  <i data-lucide="droplet"></i>
+                  <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
                 </div>
                 <span class="stat-label">Water Intake</span>
               </div>
@@ -881,14 +824,14 @@ $initialView = $initialView ?? 'dashboard';
             </button>
           </div>
 
-          <!-- Assigned Coach Spotlight Card -->
-          <div class="fs-card" style="margin-bottom: 20px;">
+          <!-- Assigned Coach Spotlight Card (Dynamically Rendered) -->
+          <div class="fs-card" id="assignedCoachSpotlightContainer" style="margin-bottom: 20px;">
             <div style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
-              <img src="assets/images/trainer_raj.jpg" class="trainer-avatar-img" style="margin: 0; width: 84px; height: 84px;" alt="Coach Raj">
+              <img src="assets/images/trainer_raj.jpg" class="trainer-avatar-img" style="margin: 0; width: 84px; height: 84px;" alt="Coach">
               <div style="flex: 1;">
                 <span class="badge-active" style="margin-bottom: 4px; display: inline-block;">YOUR ASSIGNED COACH</span>
-                <h3 style="font-size: 18px; font-weight: 800;">Coach Raj Malhotra</h3>
-                <p style="font-size: 13px; color: var(--text-secondary);">Head Strength & Conditioning Coach • FitZone Kothrud • 8+ Years Experience</p>
+                <h3 style="font-size: 18px; font-weight: 800;">Personal Coach</h3>
+                <p style="font-size: 13px; color: var(--text-secondary);">Strength & Conditioning Specialist • FitZone Gym</p>
                 <div style="display: flex; gap: 6px; margin-top: 6px;">
                   <span class="tag-badge">Hypertrophy</span>
                   <span class="tag-badge">Powerlifting</span>
@@ -896,6 +839,7 @@ $initialView = $initialView ?? 'dashboard';
                 </div>
               </div>
               <div style="display: flex; gap: 8px;">
+                <button class="btn-primary-block" style="width: auto; padding: 8px 16px; background: #2563EB;" onclick="switchView('coach_chat')"><i data-lucide="message-square" style="width: 14px; height: 14px; margin-right: 4px;"></i> Chat with Coach</button>
                 <button class="btn-primary-block" style="width: auto; padding: 8px 16px;" onclick="openModal('bookAppointmentModal')">Book PT Session</button>
                 <button class="btn-secondary" onclick="switchView('workouts')">View My Workout Plan</button>
               </div>
@@ -926,6 +870,87 @@ $initialView = $initialView ?? 'dashboard';
               </div>
               <button class="btn-secondary" style="width: 100%;" onclick="showToast('Consultation request sent to Vikram Shinde.', 'success')">Request Consult</button>
             </div>
+          </div>
+        </div>
+
+        <!-- ================================================================
+             MODULE 3.1: COACH CHAT & DIRECT MESSAGING
+             ================================================================ -->
+        <div class="view-container" id="view-coach_chat">
+          <div class="module-header-bar">
+            <div class="module-header-title">
+              <div>
+                <h2>Coach Chat & Direct Mentorship</h2>
+                <p>Direct communication channel with your assigned personal trainer for form checks, routine adjustments, and daily guidance</p>
+              </div>
+            </div>
+            <button class="btn-back-dashboard" data-switch-view="dashboard">
+              <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Dashboard
+            </button>
+          </div>
+
+          <div class="coach-chat-card fs-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column; height: 680px; max-height: calc(100vh - 190px); background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+            
+            <!-- Chat Header -->
+            <div id="coachChatHeader" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="position: relative;">
+                  <img id="coachChatAvatar" src="assets/images/trainer_raj.jpg" alt="Coach Avatar" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #2563EB;">
+                  <span style="position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background: #22C55E; border: 2px solid #fff; border-radius: 50%;"></span>
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <h3 id="coachChatName" style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Personal Coach</h3>
+                    <span class="fs-badge fs-badge-blue" style="font-size: 11px;">Assigned Coach</span>
+                  </div>
+                  <div style="font-size: 12px; color: #64748B; display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22C55E;"></span>
+                    <span id="coachChatStatus">Online Now • Direct Mentorship Desk</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn-outline-gym" style="padding: 6px 12px; font-size: 12px; margin-top: 0;" onclick="openModal('bookAppointmentModal')">
+                  <i data-lucide="calendar" style="width: 14px; height: 14px; margin-right: 4px;"></i> Book Session
+                </button>
+                <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="clearCoachChatHistory()">
+                  <i data-lucide="trash-2" style="width: 14px; height: 14px; margin-right: 4px;"></i> Clear
+                </button>
+              </div>
+            </div>
+
+            <!-- Chat Suggestions Bar -->
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #F1F5F9; border-bottom: 1px solid var(--border-color); overflow-x: auto;">
+              <span style="font-size: 11px; font-weight: 600; color: #64748B; white-space: nowrap;">Suggestions:</span>
+              <button class="chat-prompt-pill" onclick="sendQuickPrompt('Review my bench press form from today\'s workout')">🏋️ Review Bench Form</button>
+              <button class="chat-prompt-pill" onclick="sendQuickPrompt('Can you adjust my caloric deficit for this week?')">🥗 Adjust Calorie Deficit</button>
+              <button class="chat-prompt-pill" onclick="sendQuickPrompt('Can I swap barbell squats for leg press due to knee fatigue?')">🔄 Swap Squats</button>
+              <button class="chat-prompt-pill" onclick="sendQuickPrompt('Confirming our 1-on-1 session tomorrow at 7:00 AM')">⏰ Confirm 7 AM Slot</button>
+            </div>
+
+            <!-- Messages Stream -->
+            <div id="coachChatStream" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: #FFFFFF;">
+              <!-- Dynamically populated by JS -->
+            </div>
+
+            <!-- Typing Indicator (Hidden by default) -->
+            <div id="coachChatTyping" style="display: none; padding: 0 20px 10px 20px;">
+              <div style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #F1F5F9; border-radius: 16px; font-size: 12px; color: #64748B;">
+                <span>Coach is typing</span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+              </div>
+            </div>
+
+            <!-- Chat Input Bar -->
+            <form id="coachChatForm" onsubmit="handleSendCoachChat(event)" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border-color); background: #F8FAFC; margin-bottom: 0;">
+              <input type="text" id="coachChatInput" placeholder="Message your coach regarding workouts, recovery, or diet..." style="flex: 1; padding: 10px 16px; font-size: 13px; border: 1px solid #CBD5E1; border-radius: 24px; outline: none; background: #FFFFFF; font-family: inherit;">
+              <button type="submit" class="btn-primary-gym" style="padding: 10px 20px; border-radius: 24px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                <span>Send</span>
+                <i data-lucide="send" style="width: 14px; height: 14px;"></i>
+              </button>
+            </form>
           </div>
         </div>
 
@@ -1813,126 +1838,7 @@ $initialView = $initialView ?? 'dashboard';
           </div>
         </div>
 
-        <!-- ================================================================
-             MODULE 11: APPOINTMENTS & CONSULTATIONS
-             ================================================================ -->
-        <div class="view-container" id="view-appointments">
-          <div class="module-header-bar">
-            <div class="module-header-title">
-              <div>
-                <h2>Appointments & Consultations</h2>
-                <p>Schedule one-on-one sessions with medical doctors, physiotherapists, and personal trainers</p>
-              </div>
-            </div>
-            <button class="btn-back-dashboard" data-switch-view="dashboard">
-              <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Dashboard
-            </button>
-          </div>
 
-          <div class="fs-card" style="margin-bottom: 20px;">
-            <div class="card-header-row">
-              <h3 class="card-title">Upcoming Scheduled Consultations</h3>
-              <button class="btn-primary-block" style="width: auto; padding: 6px 14px;" onclick="openModal('bookAppointmentModal')">+ Book New Session</button>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-              <div class="appointment-row" style="padding: 16px;">
-                <img src="assets/images/doctor_meera.jpg" class="apt-avatar-img" alt="Dr. Meera">
-                <div class="apt-date-box" style="width: 60px; height: 60px;">
-                  <span class="apt-day-name" style="font-size: 11px;">Wed</span>
-                  <span class="apt-day-num" style="font-size: 18px;">20</span>
-                </div>
-                <div class="apt-details">
-                  <h4 class="apt-pro-name" style="font-size: 15px;">Dr. Meera Nair — General Physician</h4>
-                  <p class="apt-specialty">Cardiovascular Telemetry & Blood Panel Review</p>
-                  <span class="apt-time">Today • 11:30 AM</span>
-                </div>
-                <span class="badge-online">Online Video</span>
-              </div>
-
-              <div class="appointment-row" style="padding: 16px;">
-                <img src="assets/images/physio_arjun.jpg" class="apt-avatar-img" alt="Mr. Arjun">
-                <div class="apt-date-box" style="width: 60px; height: 60px;">
-                  <span class="apt-day-name" style="font-size: 11px;">Sat</span>
-                  <span class="apt-day-num" style="font-size: 18px;">23</span>
-                </div>
-                <div class="apt-details">
-                  <h4 class="apt-pro-name" style="font-size: 15px;">Mr. Arjun Desai — Sports Physiotherapist</h4>
-                  <p class="apt-specialty">Scapular Kinematics & Shoulder Mobility Screen</p>
-                  <span class="apt-time">Sat 23 Nov • 02:00 PM</span>
-                </div>
-                <span class="badge-inperson">FitZone Arena</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ================================================================
-             MODULE 12: HEALTH REPORTS VAULT
-             ================================================================ -->
-        <div class="view-container" id="view-reports">
-          <div class="module-header-bar">
-            <div class="module-header-title">
-              <div>
-                <h2>Health Reports & Medical Vault</h2>
-                <p>Private client vault for laboratory blood panels, DEXA body scans, and doctor reviews</p>
-              </div>
-            </div>
-            <button class="btn-back-dashboard" data-switch-view="dashboard">
-              <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Dashboard
-            </button>
-          </div>
-
-          <div class="fs-card">
-            <div class="card-header-row">
-              <h3 class="card-title">Encrypted Personal Vault</h3>
-              <button class="btn-primary-block" style="width: auto; padding: 6px 14px;" onclick="openModal('uploadReportModal')">
-                <i data-lucide="upload-cloud" style="width: 14px; height: 14px;"></i> Upload Document
-              </button>
-            </div>
-
-            <div class="documents-list">
-              <div class="document-item">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 38px; height: 38px; border-radius: var(--radius-sm); background: #EFF6FF; color: var(--primary-blue); display: flex; align-items: center; justify-content: center;">
-                    <i data-lucide="file-text"></i>
-                  </div>
-                  <div>
-                    <strong style="font-size: 14px;">Comprehensive Blood Biomarker Panel</strong>
-                    <div style="font-size: 11px; color: var(--text-secondary);">14 Nov 2026 • 2.4 MB • Verified by Dr. Meera Nair</div>
-                  </div>
-                </div>
-                <button class="btn-secondary" onclick="showToast('Document downloaded from encrypted vault.', 'success')">Download PDF</button>
-              </div>
-
-              <div class="document-item">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 38px; height: 38px; border-radius: var(--radius-sm); background: #EFF6FF; color: var(--primary-blue); display: flex; align-items: center; justify-content: center;">
-                    <i data-lucide="file-text"></i>
-                  </div>
-                  <div>
-                    <strong style="font-size: 14px;">DEXA Body Composition Scan</strong>
-                    <div style="font-size: 11px; color: var(--text-secondary);">28 Oct 2026 • 1.8 MB • FitSync Biometrics Lab</div>
-                  </div>
-                </div>
-                <button class="btn-secondary" onclick="showToast('DEXA Scan downloaded.', 'success')">Download PDF</button>
-              </div>
-
-              <div class="document-item">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 38px; height: 38px; border-radius: var(--radius-sm); background: #EFF6FF; color: var(--primary-blue); display: flex; align-items: center; justify-content: center;">
-                    <i data-lucide="file-text"></i>
-                  </div>
-                  <div>
-                    <strong style="font-size: 14px;">ECG & Resting Cardiovascular Rhythm</strong>
-                    <div style="font-size: 11px; color: var(--text-secondary);">10 Oct 2026 • 1.1 MB • Verified Normal</div>
-                  </div>
-                </div>
-                <button class="btn-secondary" onclick="showToast('ECG Report downloaded.', 'success')">Download PDF</button>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- ================================================================
              MODULE 13: GYM ATTENDANCE & QR PASS
@@ -1941,8 +1847,8 @@ $initialView = $initialView ?? 'dashboard';
           <div class="module-header-bar">
             <div class="module-header-title">
               <div>
-                <h2>Gym Attendance & Access Pass</h2>
-                <p>Digital QR Turnstile access pass, monthly check-in history, and attendance consistency</p>
+                <h2>Gym Attendance & Digital Turnstile Pass</h2>
+                <p>Live QR access keycard, interactive turnstile scanner, floor occupancy meter, and consistency streaks</p>
               </div>
             </div>
             <button class="btn-back-dashboard" data-switch-view="dashboard">
@@ -1950,78 +1856,222 @@ $initialView = $initialView ?? 'dashboard';
             </button>
           </div>
 
-          <div class="attendance-layout">
-            <!-- QR Access Card -->
-            <div class="qr-pass-box">
-              <span class="badge-active" style="margin-bottom: 8px; display: inline-block;">ACTIVE PASS</span>
-              <h3 style="font-size: 16px; font-weight: 800;">FitSync Turnstile Pass</h3>
-              <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">Valid across all 4 branches</p>
+          <!-- Top Attendance Telemetry -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px;">
+            <div class="fs-card" style="margin-bottom: 0; padding: 16px; border-left: 4px solid #2563EB;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Monthly Workouts</span>
+              <div style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 4px 0;" id="attMonthlyVisits">18 / 22 Days</div>
+              <div style="height: 6px; background: #E2E8F0; border-radius: 999px; overflow: hidden; margin-top: 6px;">
+                <div id="attProgressFill" style="width: 82%; height: 100%; background: #2563EB; border-radius: 999px;"></div>
+              </div>
+            </div>
+            <div class="fs-card" style="margin-bottom: 0; padding: 16px; border-left: 4px solid #EA580C;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Active Streak</span>
+              <div style="font-size: 22px; font-weight: 800; color: #EA580C; margin: 4px 0;" id="attStreak">5 Days 🔥</div>
+              <span style="font-size: 12px; color: #64748B;">Personal record: 12 days</span>
+            </div>
+            <div class="fs-card" style="margin-bottom: 0; padding: 16px; border-left: 4px solid #16A34A;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Live Floor Density</span>
+              <div style="font-size: 22px; font-weight: 800; color: #16A34A; margin: 4px 0;">34% (Quiet)</div>
+              <span style="font-size: 12px; color: #16A34A; display: flex; align-items: center; gap: 4px;">
+                <span style="width: 6px; height: 6px; border-radius: 50%; background: #16A34A;"></span> Optimal Lifting Window
+              </span>
+            </div>
+            <div class="fs-card" style="margin-bottom: 0; padding: 16px; border-left: 4px solid #7C3AED;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Access Keycard</span>
+              <div style="font-size: 20px; font-weight: 800; color: #7C3AED; margin: 4px 0;" id="attPassId">FS-PUN-9821</div>
+              <span style="font-size: 12px; color: #64748B;">VIP All-Access Active</span>
+            </div>
+          </div>
 
-              <!-- QR Code SVG -->
-              <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: inline-block; margin-bottom: 12px;">
-                <svg width="150" height="150" viewBox="0 0 100 100" fill="#0F172A">
-                  <rect x="0" y="0" width="30" height="30" rx="3" />
-                  <rect x="5" y="5" width="20" height="20" fill="#fff" rx="2" />
-                  <rect x="9" y="9" width="12" height="12" />
-                  <rect x="70" y="0" width="30" height="30" rx="3" />
-                  <rect x="75" y="5" width="20" height="20" fill="#fff" rx="2" />
-                  <rect x="79" y="9" width="12" height="12" />
-                  <rect x="0" y="70" width="30" height="30" rx="3" />
-                  <rect x="5" y="75" width="20" height="20" fill="#fff" rx="2" />
-                  <rect x="9" y="79" width="12" height="12" />
-                  <rect x="36" y="8" width="8" height="8" />
-                  <rect x="52" y="14" width="8" height="8" />
-                  <rect x="36" y="38" width="14" height="14" />
-                  <rect x="60" y="38" width="8" height="8" />
-                  <rect x="42" y="60" width="8" height="8" />
-                  <rect x="74" y="60" width="14" height="14" />
-                </svg>
+          <!-- Main Attendance Dual-Column Layout -->
+          <div style="display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start;">
+            
+            <!-- Left Column: Digital Pass + Floor Occupancy Radar -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              
+              <!-- Digital Keycard Card -->
+              <div class="turnstile-pass-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                  <div>
+                    <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #94A3B8; text-transform: uppercase;">FitSync Pass</div>
+                    <h3 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin: 2px 0;">All-Access Keycard</h3>
+                  </div>
+                  <span style="background: rgba(34, 197, 94, 0.2); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.4); padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;">ACTIVE</span>
+                </div>
+
+                <!-- Animated Laser Scanner Frame -->
+                <div style="text-align: center; margin: 10px 0 16px;">
+                  <div class="qr-scanner-frame">
+                    <div class="qr-scanner-line"></div>
+                    <svg width="140" height="140" viewBox="0 0 100 100" fill="#0F172A">
+                      <rect x="0" y="0" width="30" height="30" rx="3" />
+                      <rect x="5" y="5" width="20" height="20" fill="#fff" rx="2" />
+                      <rect x="9" y="9" width="12" height="12" />
+                      <rect x="70" y="0" width="30" height="30" rx="3" />
+                      <rect x="75" y="5" width="20" height="20" fill="#fff" rx="2" />
+                      <rect x="79" y="9" width="12" height="12" />
+                      <rect x="0" y="70" width="30" height="30" rx="3" />
+                      <rect x="5" y="75" width="20" height="20" fill="#fff" rx="2" />
+                      <rect x="9" y="79" width="12" height="12" />
+                      <rect x="36" y="8" width="8" height="8" />
+                      <rect x="52" y="14" width="8" height="8" />
+                      <rect x="36" y="38" width="14" height="14" />
+                      <rect x="60" y="38" width="8" height="8" />
+                      <rect x="42" y="60" width="8" height="8" />
+                      <rect x="74" y="60" width="14" height="14" />
+                    </svg>
+                  </div>
+                  <div style="margin-top: 10px; font-family: monospace; font-size: 13px; font-weight: 700; color: #38BDF8;">KEY: FS-PUN-9821</div>
+                  <div style="font-size: 11px; color: #94A3B8; margin-top: 2px;">Dynamic token refreshes every 60s</div>
+                </div>
+
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; font-size: 12px; color: #CBD5E1; display: flex; justify-content: space-between;">
+                  <span>Branch: FitZone Elite (All Branches)</span>
+                  <span>Turnstiles 1-4</span>
+                </div>
+
+                <button class="btn-primary-block" id="simulateCheckInBtn" onclick="simulateTurnstileCheckIn()" style="margin-top: 16px; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); border: none; font-weight: 700; padding: 12px; border-radius: 8px;">
+                  <i data-lucide="scan-line" style="width: 16px; height: 16px; margin-right: 6px;"></i> Tap Turnstile / Check-In Now
+                </button>
               </div>
 
-              <div style="font-family: monospace; font-size: 14px; font-weight: 700; color: var(--primary-blue);">FS-PUN-9821</div>
-              <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">Refreshes automatically every 60s</p>
+              <!-- Live Floor Occupancy & Hourly Peak Chart -->
+              <div class="fs-card" style="margin-bottom: 0;">
+                <h4 style="font-size: 14px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Live Gym Floor Occupancy</span>
+                  <span class="fs-badge fs-badge-green" style="font-size: 10px;">Live Sensor</span>
+                </h4>
+                <p style="font-size: 12px; color: #64748B; margin-bottom: 14px;">Average hourly crowd levels based on turnstile sensors.</p>
 
-              <button class="btn-primary-block" id="simulateCheckInBtn">
-                <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Simulate Scan Turnstile
-              </button>
+                <!-- Hourly Bars -->
+                <div style="display: flex; align-items: flex-end; gap: 6px; height: 90px; padding-bottom: 20px; border-bottom: 1px solid #E2E8F0; position: relative;">
+                  <div class="occupancy-hourly-bar">
+                    <div class="occupancy-bar-fill" style="height: 60px; background: #60A5FA;" title="06:00 AM - 65% Capacity"></div>
+                    <span style="font-size: 10px; color: #64748B;">6A</span>
+                  </div>
+                  <div class="occupancy-hourly-bar">
+                    <div class="occupancy-bar-fill" style="height: 75px; background: #3B82F6;" title="08:00 AM - 80% Capacity"></div>
+                    <span style="font-size: 10px; color: #64748B;">8A</span>
+                  </div>
+                  <div class="occupancy-hourly-bar">
+                    <div class="occupancy-bar-fill" style="height: 40px; background: #93C5FD;" title="10:00 AM - 45% Capacity"></div>
+                    <span style="font-size: 10px; color: #64748B;">10A</span>
+                  </div>
+                  <div class="occupancy-hourly-bar">
+                    <div class="occupancy-bar-fill" style="height: 25px; background: #22C55E;" title="12:00 PM - 25% Capacity"></div>
+                    <span style="font-size: 10px; color: #64748B;">12P</span>
+                  </div>
+                  <div class="occupancy-hourly-bar">
+                    <div class="occupancy-bar-fill" style="height: 28px; background: #22C55E;" title="02:00 PM - 30% Capacity"></div>
+                    <span style="font-size: 10px; color: #64748B;">2P</span>
+                  </div>
+                  <div class="occupancy-hourly-bar">
+                    <div class="occupancy-bar-fill" style="height: 55px; background: #60A5FA;" title="04:00 PM - 60% Capacity"></div>
+                    <span style="font-size: 10px; color: #64748B;">4P</span>
+                  </div>
+                  <div class="occupancy-hourly-bar">
+                    <div class="occupancy-bar-fill" style="height: 85px; background: #EF4444;" title="06:00 PM - 90% Peak Rush"></div>
+                    <span style="font-size: 10px; color: #64748B;">6P</span>
+                  </div>
+                  <div class="occupancy-hourly-bar">
+                    <div class="occupancy-bar-fill" style="height: 70px; background: #F97316;" title="08:00 PM - 75% Capacity"></div>
+                    <span style="font-size: 10px; color: #64748B;">8P</span>
+                  </div>
+                </div>
+
+                <div style="margin-top: 12px; padding: 10px 12px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 12px; color: #334155; display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="zap" style="width: 14px; height: 14px; color: #F59E0B; flex-shrink: 0;"></i>
+                  <span><strong>Best time today:</strong> 1:00 PM – 4:30 PM for zero equipment wait times.</span>
+                </div>
+              </div>
             </div>
 
-            <!-- Attendance Records & Stats -->
-            <div class="fs-card">
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px;">
-                <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
-                  <span style="font-size: 11px; color: var(--text-secondary);">MONTHLY VISITS</span>
-                  <div style="font-size: 20px; font-weight: 800; color: var(--primary-blue);" id="attMonthlyVisits">18 / 22 Days</div>
+            <!-- Right Column: Weekly Streak Grid + History Table -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              
+              <!-- Weekly Heatmap Card -->
+              <div class="fs-card" style="margin-bottom: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                  <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">This Week's Workout Cadence</h3>
+                    <p style="font-size: 12px; color: #64748B; margin-top: 2px;">Goal: 5 workouts / week • Target: Upper body hypertrophy & conditioning</p>
+                  </div>
+                  <span class="fs-badge fs-badge-blue">4 of 5 Done</span>
                 </div>
-                <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
-                  <span style="font-size: 11px; color: var(--text-secondary);">ACTIVE STREAK</span>
-                  <div style="font-size: 20px; font-weight: 800; color: var(--orange);" id="attStreak">5 Days 🔥</div>
-                </div>
-                <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; text-align: center;">
-                  <span style="font-size: 11px; color: var(--text-secondary);">CONSISTENCY</span>
-                  <div style="font-size: 20px; font-weight: 800; color: var(--success-green);" id="attConsistency">91%</div>
+
+                <!-- 7-Day Visual Row -->
+                <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px;">
+                  <div class="week-day-pill attended">
+                    <span style="font-size: 11px; font-weight: 600; color: #64748B;">MON</span>
+                    <div class="day-dot" style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div>
+                    <span style="font-size: 10px; font-weight: 700; color: #16A34A;">06:45A</span>
+                  </div>
+                  <div class="week-day-pill attended">
+                    <span style="font-size: 11px; font-weight: 600; color: #64748B;">TUE</span>
+                    <div class="day-dot" style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div>
+                    <span style="font-size: 10px; font-weight: 700; color: #16A34A;">07:10A</span>
+                  </div>
+                  <div class="week-day-pill attended">
+                    <span style="font-size: 11px; font-weight: 600; color: #64748B;">WED</span>
+                    <div class="day-dot" style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div>
+                    <span style="font-size: 10px; font-weight: 700; color: #16A34A;">06:30A</span>
+                  </div>
+                  <div class="week-day-pill attended">
+                    <span style="font-size: 11px; font-weight: 600; color: #64748B;">THU</span>
+                    <div class="day-dot" style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div>
+                    <span style="font-size: 10px; font-weight: 700; color: #16A34A;">07:00A</span>
+                  </div>
+                  <div class="week-day-pill today attended" id="pillTodayAttendance">
+                    <span style="font-size: 11px; font-weight: 700; color: #2563EB;">TODAY</span>
+                    <div class="day-dot" style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div>
+                    <span style="font-size: 10px; font-weight: 700; color: #16A34A;" id="pillTodayTime">06:50A</span>
+                  </div>
+                  <div class="week-day-pill">
+                    <span style="font-size: 11px; font-weight: 600; color: #64748B;">SAT</span>
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #64748B;">--</div>
+                    <span style="font-size: 10px; color: #94A3B8;">Leg Day</span>
+                  </div>
+                  <div class="week-day-pill">
+                    <span style="font-size: 11px; font-weight: 600; color: #64748B;">SUN</span>
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #64748B;">--</div>
+                    <span style="font-size: 10px; color: #94A3B8;">Rest</span>
+                  </div>
                 </div>
               </div>
 
-              <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">Recent Turnstile Check-Ins</h4>
-              <table class="fs-table">
-                <thead>
-                  <tr>
-                    <th>DATE</th>
-                    <th>TIME</th>
-                    <th>FACILITY BRANCH</th>
-                    <th>METHOD</th>
-                    <th>STATUS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td>Today</td><td>06:45 AM</td><td>FitZone Gym, Kothrud</td><td>Turnstile QR</td><td><span class="badge-active">Verified</span></td></tr>
-                  <tr><td>19 Nov 2026</td><td>07:10 AM</td><td>FitZone Gym, Kothrud</td><td>Turnstile QR</td><td><span class="badge-active">Verified</span></td></tr>
-                  <tr><td>18 Nov 2026</td><td>06:30 AM</td><td>FitZone Gym, Kothrud</td><td>Turnstile QR</td><td><span class="badge-active">Verified</span></td></tr>
-                  <tr><td>17 Nov 2026</td><td>07:00 AM</td><td>PowerHouse Arena, Baner</td><td>Turnstile QR</td><td><span class="badge-active">Verified</span></td></tr>
-                  <tr><td>16 Nov 2026</td><td>06:50 AM</td><td>FitZone Gym, Kothrud</td><td>Turnstile QR</td><td><span class="badge-active">Verified</span></td></tr>
-                </tbody>
-              </table>
+              <!-- History Logs Card -->
+              <div class="fs-card" style="margin-bottom: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                  <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Turnstile Check-In Timeline</h3>
+                    <p style="font-size: 12px; color: #64748B; margin-top: 2px;">Optical laser and biometric turnstile logs.</p>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="exportAttendanceCSV()">
+                      <i data-lucide="download" style="width: 14px; height: 14px; margin-right: 4px;"></i> Export CSV
+                    </button>
+                  </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                  <table class="fs-table" id="attendanceHistoryTable">
+                    <thead>
+                      <tr>
+                        <th>Date & Time</th>
+                        <th>Duration</th>
+                        <th>Branch & Zone</th>
+                        <th>Gate Method</th>
+                        <th>Verification Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="attendanceLogsTbody">
+                      <!-- Populated dynamically by JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -2106,19 +2156,19 @@ $initialView = $initialView ?? 'dashboard';
               <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
                 <img src="assets/images/isha_avatar.jpg" class="user-avatar-circle" style="width: 64px; height: 64px;" alt="Isha">
                 <div>
-                  <h4 style="font-size: 16px; font-weight: 700;">Isha Kulkarni</h4>
-                  <p style="font-size: 12px; color: var(--text-secondary);">Member ID: FS-MEM-2026-441 • Gold Tier Athlete</p>
+                  <h4 style="font-size: 16px; font-weight: 700;" id="settingsProfileHeading">Athlete Profile</h4>
+                  <p style="font-size: 12px; color: var(--text-secondary);">FitSync All-Access Member</p>
                 </div>
               </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                 <div class="form-group">
                   <label class="form-label">Full Name</label>
-                  <input type="text" id="setFullName" class="form-input" value="Isha Kulkarni" required>
+                  <input type="text" id="setFullName" class="form-input" placeholder="Your full name" required>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Email Address</label>
-                  <input type="email" class="form-input" value="isha.kulkarni@fitsync.com" disabled>
+                  <input type="email" id="setEmailAddress" class="form-input" placeholder="athlete@fitsync.health" disabled>
                 </div>
               </div>
 
@@ -2158,16 +2208,14 @@ $initialView = $initialView ?? 'dashboard';
                   <i data-lucide="shield-alert" style="width: 18px; height: 18px;"></i> Session & Account Security
                 </h3>
                 <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
-                  Currently active session: <strong id="settingsSessionUser" style="color: var(--text-main);">Isha Kulkarni</strong> (<span id="settingsSessionEmail">isha.kulkarni@fitsync.com</span>). Data is securely persisted in your local browser sandbox.
+                  Currently active session: <strong id="settingsSessionUser" style="color: var(--text-main);">Active Account</strong> (<span id="settingsSessionEmail">Logged In</span>). Data is securely persisted in your local browser sandbox.
                 </p>
               </div>
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button type="button" onclick="logoutUser()" class="btn-settings-logout" id="settingsLogoutBtn">
                   <i data-lucide="log-out" style="width: 15px; height: 15px;"></i> Log Out
                 </button>
-                <button type="button" onclick="handleResetDatabase()" class="btn-settings-reset">
-                  <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Reset Database
-                </button>
+                <button type="button" onclick="if(confirm('Sign out of this session?')) window.fitSyncStore.logout();" class="btn-settings-reset" style="border-color: #E2E8F0; color: #64748B;"><i data-lucide="log-out" style="width: 14px; height: 14px;"></i> Sign Out</button>
               </div>
             </div>
           </div>
@@ -2199,7 +2247,7 @@ $initialView = $initialView ?? 'dashboard';
                 </div>
                 <div style="padding: 12px; background: #F8FAFC; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
                   <strong style="color: var(--text-main);">How do I message my coach?</strong>
-                  <p style="color: var(--text-secondary); margin-top: 4px;">Navigate to the Trainers tab, locate Coach Raj Malhotra, and click "Send Query" or "Book PT Session".</p>
+                  <p style="color: var(--text-secondary); margin-top: 4px;">Navigate to the Coach Chat tab in the sidebar or click "Chat with Coach" in the Trainers directory to directly message your personal trainer.</p>
                 </div>
                 <div style="padding: 12px; background: #F8FAFC; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
                   <strong style="color: var(--text-main);">How are BMR and TDEE computed?</strong>
@@ -2331,43 +2379,7 @@ $initialView = $initialView ?? 'dashboard';
           </div>
         </div>
 
-        <!-- Upcoming Appointments Widget -->
-        <div class="fs-card">
-          <div class="card-header-row">
-            <h3 class="card-title">Upcoming Appointments</h3>
-            <a href="javascript:void(0)" class="card-link" onclick="switchView('appointments')">View All &rarr;</a>
-          </div>
 
-          <div class="appointment-list">
-            <div class="appointment-row" onclick="switchView('appointments')" style="cursor: pointer;">
-              <img src="assets/images/doctor_meera.jpg" class="apt-avatar-img" alt="Dr. Meera">
-              <div class="apt-date-box">
-                <span class="apt-day-name">Wed</span>
-                <span class="apt-day-num">20</span>
-              </div>
-              <div class="apt-details">
-                <h5 class="apt-pro-name">Dr. Meera Nair</h5>
-                <p class="apt-specialty">General Physician</p>
-                <span class="apt-time">11:30 AM</span>
-              </div>
-              <span class="badge-online">Online</span>
-            </div>
-
-            <div class="appointment-row" onclick="switchView('appointments')" style="cursor: pointer;">
-              <img src="assets/images/physio_arjun.jpg" class="apt-avatar-img" alt="Mr. Arjun">
-              <div class="apt-date-box">
-                <span class="apt-day-name">Sat</span>
-                <span class="apt-day-num">23</span>
-              </div>
-              <div class="apt-details">
-                <h5 class="apt-pro-name">Mr. Arjun Desai</h5>
-                <p class="apt-specialty">Physiotherapist</p>
-                <span class="apt-time">02:00 PM</span>
-              </div>
-              <span class="badge-inperson">In-person</span>
-            </div>
-          </div>
-        </div>
 
       </aside>
 
@@ -2575,84 +2587,7 @@ $initialView = $initialView ?? 'dashboard';
     </div>
   </div>
 
-  <!-- Modal 5: Book Appointment Modal -->
-  <div class="modal-overlay" id="bookAppointmentModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="calendar" style="color: var(--primary-blue);"></i>
-          <h4 class="modal-title">Book Health / Coach Consultation</h4>
-        </div>
-        <button class="modal-close-btn" data-close-modal>&times;</button>
-      </div>
-      <form id="appointmentForm">
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Select Professional</label>
-            <select class="form-select" id="appointmentDoctor">
-              <option value="Dr. Meera Nair (General Physician)">Dr. Meera Nair — General Physician</option>
-              <option value="Mr. Arjun Desai (Physiotherapist)">Mr. Arjun Desai — Sports Physiotherapist</option>
-              <option value="Coach Raj Malhotra (Strength Coach)">Coach Raj Malhotra — Strength & Conditioning Coach</option>
-            </select>
-          </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label class="form-label">Date</label>
-              <input type="date" id="appointmentDate" class="form-input" value="2026-11-25" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Time Slot</label>
-              <select class="form-select" id="appointmentTime">
-                <option value="10:00 AM">10:00 AM</option>
-                <option value="11:30 AM" selected>11:30 AM</option>
-                <option value="02:00 PM">02:00 PM</option>
-                <option value="04:30 PM">04:30 PM</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
-          <button type="submit" class="btn-primary-block" style="width: auto;">Confirm Booking</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal 6: Upload Report Modal -->
-  <div class="modal-overlay" id="uploadReportModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="upload-cloud" style="color: var(--primary-blue);"></i>
-          <h4 class="modal-title">Upload Health & Fitness Document</h4>
-        </div>
-        <button class="modal-close-btn" data-close-modal>&times;</button>
-      </div>
-      <form id="uploadReportForm">
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Document Category</label>
-            <select class="form-select" id="reportCategory">
-              <option value="Blood Biomarker Panel">Blood Biomarker Panel</option>
-              <option value="ECG & Cardiovascular Report">ECG & Cardiovascular Report</option>
-              <option value="DEXA Body Composition Scan">DEXA Body Composition Scan</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Select File (PDF, JPG, PNG)</label>
-            <input type="file" class="form-input" accept=".pdf,.png,.jpg,.jpeg" required>
-          </div>
-          <p style="font-size: 11px; color: var(--text-muted);"><i data-lucide="lock" style="width: 12px; height: 12px; display: inline;"></i> Encrypted and protected under FitSync Client Privacy Vault.</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
-          <button type="submit" class="btn-primary-block" style="width: auto;">Upload File</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- Modal 7: Gym Details Modal -->
   <div class="modal-overlay" id="gymDetailsModal">
@@ -2773,41 +2708,7 @@ $initialView = $initialView ?? 'dashboard';
 
 
   <!-- Modal: Where & How is Data Stored -->
-  <div class="modal-overlay" id="dataStorageModal">
-    <div class="modal-card" style="max-width: 520px; background: #FFFFFF; border: 1px solid var(--border-color, #E2E8F0); color: var(--text-main, #0F172A); box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);">
-      <div class="modal-header" style="border-bottom: 1px solid var(--border-color, #E2E8F0);">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="database" style="color: var(--primary-blue, #155DFC);"></i>
-          <h4 class="modal-title" style="color: var(--text-main, #0F172A);">Where & How is Data Stored?</h4>
-        </div>
-        <button class="modal-close-btn" data-close-modal style="color: var(--text-secondary, #64748B);">&times;</button>
-      </div>
-      <div class="modal-body" style="font-size: 13.5px; line-height: 1.6; color: var(--text-secondary, #475569);">
-        <div style="background: var(--light-blue-bg, #EFF6FF); border: 1px solid var(--light-blue, #DBEAFE); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-          <strong style="color: var(--primary-blue, #155DFC); display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i> 100% Private, On-Device Browser Storage
-          </strong>
-          <p style="margin: 6px 0 0; font-size: 12.5px; color: #1E40AF;">
-            FitSync stores all user profiles, custom workout logs, sets, hydration logs, and fitness assessments exclusively in your browser's private LocalStorage sandbox.
-          </p>
-        </div>
-
-        <ul style="padding-left: 20px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; color: #334155;">
-          <li><strong>Zero Cloud Tracking:</strong> No remote servers, No Supabase, No Firebase, and zero telemetry sent to third parties.</li>
-          <li><strong>Complete Offline Capability:</strong> The entire application operates completely offline without internet once loaded.</li>
-          <li><strong>Instant Zero-Latency:</strong> Logging reps, updating sets, or filling water renders in under 1 millisecond.</li>
-          <li><strong>Full User Control:</strong> You can wipe or reset the local database anytime by clicking "Reset Database (Start from Scratch)".</li>
-        </ul>
-
-        <div style="font-size: 12px; color: var(--text-muted, #94A3B8); border-top: 1px solid var(--border-color, #E2E8F0); padding-top: 12px;">
-          Storage Key: <code style="background: #F1F5F9; padding: 2px 6px; border-radius: 4px; color: var(--primary-blue, #155DFC);">fitsync_master_platform_v2</code>
-        </div>
-      </div>
-      <div class="modal-footer" style="border-top: 1px solid var(--border-color, #E2E8F0);">
-        <button class="btn-primary-block" data-close-modal style="width: auto; padding: 8px 18px;">Got it</button>
-      </div>
-    </div>
-  </div>
+  
 
 </body>
 </html>

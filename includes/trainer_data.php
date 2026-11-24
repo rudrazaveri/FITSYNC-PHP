@@ -47,27 +47,27 @@ function getTrainerProfile(int $trainerUserId, ?PDO $db = null): ?array {
         }
     }
 
-    // High-fidelity fallback based on seed data if database is currently offline
+    // Default fallback for freshly created platform
     return [
         'id'                      => $trainerUserId,
-        'full_name'               => 'Coach Raj Malhotra',
-        'email'                   => 'coach@fitsync.health',
+        'full_name'               => 'Staff Trainer',
+        'email'                   => 'trainer@fitsync.health',
         'mobile'                  => '+91 98220 12345',
         'profile_picture_id'      => null,
         'status'                  => 'active',
-        'created_at'              => '2023-01-15 00:00:00',
+        'created_at'              => date('Y-m-d H:i:s'),
         'certification_name'      => 'CSCS (Certified Strength & Conditioning Specialist)',
         'certifying_body'         => 'NSCA',
-        'certification_year'      => 2018,
-        'experience_years'        => 8,
-        'specializations_summary' => 'Hypertrophy, Powerlifting, Body Composition',
-        'bio'                     => '8+ years coaching national athletes and intermediate lifters toward peak physique and functional strength.',
+        'certification_year'      => 2024,
+        'experience_years'        => 5,
+        'specializations_summary' => 'Hypertrophy, Powerlifting, Biomechanical Alignment',
+        'bio'                     => 'Certified fitness specialist and personal trainer.',
         'hourly_rate'             => '1500.00',
-        'rating'                  => '4.95',
-        'reviews_count'           => 42,
+        'rating'                  => '5.0',
+        'reviews_count'           => 0,
         'verification_status'     => 'verified',
         'primary_gym_id'          => 1,
-        'primary_gym_name'        => 'FitZone Fitness (Kothrud, Pune)',
+        'primary_gym_name'        => 'FitZone Fitness Center',
         'gym_city'                => 'Pune'
     ];
 }
@@ -140,15 +140,15 @@ function getTrainerDashboardStats(int $trainerUserId, ?PDO $db = null): array {
         }
     }
 
-    // Default seeded stats for offline mode
+    // Default stats for clean empty system
     return [
-        'total_assigned'       => 3,
-        'active_members'       => 3,
+        'total_assigned'       => 0,
+        'active_members'       => 0,
         'inactive_members'     => 0,
-        'workouts_assigned'    => 2,
-        'completed_sessions'   => 14,
-        'total_volume_kg'      => 48250.00,
-        'today_sessions_count' => 1
+        'workouts_assigned'    => 0,
+        'completed_sessions'   => 0,
+        'total_volume_kg'      => 0.00,
+        'today_sessions_count' => 0
     ];
 }
 
@@ -218,88 +218,8 @@ function getTrainerAssignedMembers(int $trainerUserId, array $filters = [], ?PDO
         }
     }
 
-    // Seeded assigned members fallback (Coach Raj assigned to Isha, Ritika, Aarav)
-    $allSeed = [
-        [
-            'id'                  => 7,
-            'full_name'           => 'Ritika Sharma',
-            'email'               => 'ritika@fitsync.health',
-            'mobile'              => '+91 98765 43210',
-            'gender'              => 'female',
-            'height_cm'           => 168.00,
-            'weight_kg'           => 62.50,
-            'fitness_experience'  => 'intermediate',
-            'assignment_status'   => 'active',
-            'start_date'          => '2026-02-10',
-            'assignment_notes'    => 'Primary goal: Hypertrophy Surplus and posture alignment.',
-            'gym_id'              => 1,
-            'gym_name'            => 'FitZone Fitness (Pune)',
-            'membership_status'   => 'active',
-            'goal_title'          => 'Hypertrophy Surplus & Glute Strength',
-            'goal_type'           => 'hypertrophy',
-            'target_weight_kg'    => 64.00,
-            'progress_pct'        => 75,
-            'current_plan_name'   => 'Push / Pull / Legs Hypertrophy Split',
-            'attendance_30d'      => 18,
-            'last_check_in'       => date('Y-m-d H:i:s', strtotime('-1 day'))
-        ],
-        [
-            'id'                  => 6,
-            'full_name'           => 'Isha Kulkarni',
-            'email'               => 'isha.kulkarni@fitsync.com',
-            'mobile'              => '+91 98234 56789',
-            'gender'              => 'female',
-            'height_cm'           => 165.00,
-            'weight_kg'           => 58.00,
-            'fitness_experience'  => 'intermediate',
-            'assignment_status'   => 'active',
-            'start_date'          => '2026-01-05',
-            'assignment_notes'    => 'Focusing on upper body push mechanics and shoulder stability.',
-            'gym_id'              => 1,
-            'gym_name'            => 'FitZone Fitness (Pune)',
-            'membership_status'   => 'active',
-            'goal_title'          => 'Upper Body Strength & Mobility',
-            'goal_type'           => 'strength',
-            'target_weight_kg'    => 59.00,
-            'progress_pct'        => 60,
-            'current_plan_name'   => 'Push / Pull / Legs Hypertrophy Split',
-            'attendance_30d'      => 14,
-            'last_check_in'       => date('Y-m-d H:i:s', strtotime('-2 days'))
-        ],
-        [
-            'id'                  => 8,
-            'full_name'           => 'Aarav Patel',
-            'email'               => 'aarav.patel@fitsync.ai',
-            'mobile'              => '+91 99090 11223',
-            'gender'              => 'male',
-            'height_cm'           => 178.00,
-            'weight_kg'           => 74.00,
-            'fitness_experience'  => 'advanced',
-            'assignment_status'   => 'active',
-            'start_date'          => '2026-03-05',
-            'assignment_notes'    => 'Metabolic conditioning and 4-day strength split.',
-            'gym_id'              => 2,
-            'gym_name'            => 'PowerHouse Gym (Ahmedabad)',
-            'membership_status'   => 'active',
-            'goal_title'          => 'Body Recomposition & Compound Power',
-            'goal_type'           => 'strength',
-            'target_weight_kg'    => 76.00,
-            'progress_pct'        => 45,
-            'current_plan_name'   => 'Upper / Lower Power Split',
-            'attendance_30d'      => 12,
-            'last_check_in'       => date('Y-m-d H:i:s', strtotime('-3 days'))
-        ]
-    ];
-
-    // Filter seed data if search is applied
-    if (!empty($filters['search'])) {
-        $q = strtolower(trim($filters['search']));
-        return array_values(array_filter($allSeed, function($m) use ($q) {
-            return strpos(strtolower($m['full_name']), $q) !== false || strpos(strtolower($m['email']), $q) !== false;
-        }));
-    }
-
-    return $allSeed;
+    // Default empty when no records in database
+    return [];
 }
 
 /**
@@ -440,117 +360,10 @@ function getAssignedMemberDetails(int $trainerUserId, int $memberUserId, ?PDO $d
         }
     }
 
-    // Fallback seed member data for assigned members (Ritika Sharma ID 7, Isha Kulkarni ID 6, Aarav Patel ID 8)
-    if (!in_array($memberUserId, [6, 7, 8], true)) {
-        return null; // Reject unassigned members
-    }
-
-    $names = [
-        7 => ['name' => 'Ritika Sharma', 'email' => 'ritika@fitsync.health', 'phone' => '+91 98765 43210', 'gender' => 'female', 'weight' => 62.50, 'height' => 168.00, 'gym' => 'FitZone Fitness (Pune)'],
-        6 => ['name' => 'Isha Kulkarni', 'email' => 'isha.kulkarni@fitsync.com', 'phone' => '+91 98234 56789', 'gender' => 'female', 'weight' => 58.00, 'height' => 165.00, 'gym' => 'FitZone Fitness (Pune)'],
-        8 => ['name' => 'Aarav Patel', 'email' => 'aarav.patel@fitsync.ai', 'phone' => '+91 99090 11223', 'gender' => 'male', 'weight' => 74.00, 'height' => 178.00, 'gym' => 'PowerHouse Gym (Ahmedabad)']
-    ];
-
-    $info = $names[$memberUserId];
-
-    return [
-        'profile' => [
-            'id'                      => $memberUserId,
-            'full_name'               => $info['name'],
-            'email'                   => $info['email'],
-            'mobile'                  => $info['phone'],
-            'created_at'              => '2026-01-10',
-            'gender'                  => $info['gender'],
-            'date_of_birth'           => '1998-05-14',
-            'height_cm'               => $info['height'],
-            'weight_kg'               => $info['weight'],
-            'fitness_experience'      => 'intermediate',
-            'emergency_contact_name'  => 'Amit Sharma',
-            'emergency_contact_phone' => '+91 98111 22334',
-            'bio'                     => 'Dedicated athlete working on clean hypertrophy and mobility.',
-            'home_gym_name'           => $info['gym'],
-            'membership_status'       => 'active',
-            'membership_start'        => '2026-01-01',
-            'membership_end'          => '2026-12-31'
-        ],
-        'assignment' => [
-            'id'         => 1,
-            'status'     => 'active',
-            'start_date' => '2026-02-10',
-            'notes'      => 'Coach Raj assigned for personalized programming and weekly check-ins.'
-        ],
-        'goals' => [
-            [
-                'id'                 => 1,
-                'title'              => 'Hypertrophy Surplus & Glute Strength',
-                'goal_type'          => 'hypertrophy',
-                'target_weight_kg'   => 64.00,
-                'starting_weight_kg' => 60.50,
-                'target_date'        => '2026-06-30',
-                'status'             => 'active',
-                'progress_pct'       => 75,
-                'created_at'         => '2026-02-10'
-            ]
-        ],
-        'plans' => [
-            [
-                'assignment_id'     => 1,
-                'start_date'        => '2026-02-10',
-                'is_active'         => 1,
-                'assignment_status' => 'active',
-                'plan_name'         => 'Push / Pull / Legs Hypertrophy Split',
-                'description'       => '3-Day specialized hypertrophy split focusing on heavy compound movements.',
-                'difficulty'        => 'intermediate',
-                'days_per_week'     => 4
-            ]
-        ],
-        'sessions' => [
-            [
-                'id'                   => 1,
-                'session_date'         => date('Y-m-d', strtotime('-1 day')),
-                'duration_minutes'     => 52,
-                'total_volume_kg'      => 3420.00,
-                'total_sets_completed' => 16,
-                'perceived_rpe'        => 8,
-                'notes'                => 'Solid back & biceps day. Strong form on lat pulldowns.'
-            ],
-            [
-                'id'                   => 2,
-                'session_date'         => date('Y-m-d', strtotime('-3 days')),
-                'duration_minutes'     => 48,
-                'total_volume_kg'      => 3100.00,
-                'total_sets_completed' => 14,
-                'perceived_rpe'        => 7,
-                'notes'                => 'Chest and triceps compound overload.'
-            ]
-        ],
-        'attendance' => [
-            ['id' => 1, 'check_in_time' => date('Y-m-d 07:15:00', strtotime('-1 day')), 'check_in_method' => 'turnstile', 'status' => 'verified'],
-            ['id' => 2, 'check_in_time' => date('Y-m-d 07:22:00', strtotime('-2 days')), 'check_in_method' => 'turnstile', 'status' => 'verified'],
-            ['id' => 3, 'check_in_time' => date('Y-m-d 08:05:00', strtotime('-4 days')), 'check_in_method' => 'turnstile', 'status' => 'verified']
-        ],
-        'measurements' => [
-            ['id' => 1, 'recorded_at' => '2026-02-15', 'weight_kg' => 62.50, 'body_fat_pct' => 21.5, 'chest_cm' => 88.0, 'waist_cm' => 68.0, 'hips_cm' => 96.0, 'arms_cm' => 28.5, 'notes' => 'Post-workout measurement'],
-            ['id' => 2, 'recorded_at' => '2026-01-15', 'weight_kg' => 61.20, 'body_fat_pct' => 22.1, 'chest_cm' => 87.5, 'waist_cm' => 69.0, 'hips_cm' => 95.0, 'arms_cm' => 28.0, 'notes' => 'Baseline measurement']
-        ],
-        'notes' => [
-            [
-                'id'                 => 1,
-                'note_type'          => 'workout_feedback',
-                'note_text'          => 'Increased pull-up volume by 2 reps per set. Form remains strictly controlled without hip swing.',
-                'is_visible_to_user' => 1,
-                'created_at'         => date('Y-m-d 10:30:00', strtotime('-2 days'))
-            ],
-            [
-                'id'                 => 2,
-                'note_type'          => 'private_coach',
-                'note_text'          => 'Member exhibits slight left scapular winging during heavy shoulder presses. Prescribe prone Y-raises and band pull-aparts.',
-                'is_visible_to_user' => 0,
-                'created_at'         => date('Y-m-d 11:00:00', strtotime('-5 days'))
-            ]
-        ]
-    ];
+    // Member not found in database or database offline
+    return null;
 }
+
 
 /**
  * Save a trainer note for an assigned member.
@@ -650,45 +463,9 @@ function getTrainerSchedule(int $trainerUserId, ?PDO $db = null): array {
         }
     }
 
-    // Default seed schedule
+    // Default empty when no sessions in database
     return [
-        'rules' => [
-            ['day_of_week' => 1, 'start_time' => '06:00:00', 'end_time' => '12:00:00', 'slot_duration_minutes' => 60, 'is_active' => 1],
-            ['day_of_week' => 1, 'start_time' => '16:00:00', 'end_time' => '20:00:00', 'slot_duration_minutes' => 60, 'is_active' => 1],
-            ['day_of_week' => 2, 'start_time' => '06:00:00', 'end_time' => '12:00:00', 'slot_duration_minutes' => 60, 'is_active' => 1],
-            ['day_of_week' => 2, 'start_time' => '16:00:00', 'end_time' => '20:00:00', 'slot_duration_minutes' => 60, 'is_active' => 1],
-            ['day_of_week' => 3, 'start_time' => '06:00:00', 'end_time' => '12:00:00', 'slot_duration_minutes' => 60, 'is_active' => 1],
-            ['day_of_week' => 4, 'start_time' => '06:00:00', 'end_time' => '12:00:00', 'slot_duration_minutes' => 60, 'is_active' => 1],
-            ['day_of_week' => 5, 'start_time' => '06:00:00', 'end_time' => '12:00:00', 'slot_duration_minutes' => 60, 'is_active' => 1],
-            ['day_of_week' => 6, 'start_time' => '07:00:00', 'end_time' => '13:00:00', 'slot_duration_minutes' => 60, 'is_active' => 1]
-        ],
-        'sessions' => [
-            [
-                'id'            => 1,
-                'session_date'  => date('Y-m-d'),
-                'start_time'    => '07:00:00',
-                'end_time'      => '08:00:00',
-                'session_type'  => 'personal_training',
-                'status'        => 'scheduled',
-                'session_notes' => 'Upper body push & pull mechanics review.',
-                'member_id'     => 7,
-                'member_name'   => 'Ritika Sharma',
-                'member_email'  => 'ritika@fitsync.health',
-                'gym_name'      => 'FitZone Fitness (Pune)'
-            ],
-            [
-                'id'            => 2,
-                'session_date'  => date('Y-m-d', strtotime('-1 day')),
-                'start_time'    => '08:00:00',
-                'end_time'      => '09:00:00',
-                'session_type'  => 'form_check',
-                'status'        => 'completed',
-                'session_notes' => 'Checked barbell squat depth, hip hinge, and torso bracing.',
-                'member_id'     => 6,
-                'member_name'   => 'Isha Kulkarni',
-                'member_email'  => 'isha.kulkarni@fitsync.com',
-                'gym_name'      => 'FitZone Fitness (Pune)'
-            ]
-        ]
+        'rules'    => [],
+        'sessions' => []
     ];
 }

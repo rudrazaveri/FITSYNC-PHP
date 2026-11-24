@@ -55,7 +55,7 @@ function initSecureSession(): void {
  * @return void
  */
 function regenerateSessionId(): void {
-    if (session_status() === PHP_SESSION_ACTIVE) {
+    if (session_status() === PHP_SESSION_ACTIVE && !headers_sent()) {
         session_regenerate_id(true);
     }
 }
