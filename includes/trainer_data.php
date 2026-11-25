@@ -47,29 +47,7 @@ function getTrainerProfile(int $trainerUserId, ?PDO $db = null): ?array {
         }
     }
 
-    // Default fallback for freshly created platform
-    return [
-        'id'                      => $trainerUserId,
-        'full_name'               => 'Staff Trainer',
-        'email'                   => 'trainer@fitsync.health',
-        'mobile'                  => '+91 98220 12345',
-        'profile_picture_id'      => null,
-        'status'                  => 'active',
-        'created_at'              => date('Y-m-d H:i:s'),
-        'certification_name'      => 'CSCS (Certified Strength & Conditioning Specialist)',
-        'certifying_body'         => 'NSCA',
-        'certification_year'      => 2024,
-        'experience_years'        => 5,
-        'specializations_summary' => 'Hypertrophy, Powerlifting, Biomechanical Alignment',
-        'bio'                     => 'Certified fitness specialist and personal trainer.',
-        'hourly_rate'             => '1500.00',
-        'rating'                  => '5.0',
-        'reviews_count'           => 0,
-        'verification_status'     => 'verified',
-        'primary_gym_id'          => 1,
-        'primary_gym_name'        => 'FitZone Fitness Center',
-        'gym_city'                => 'Pune'
-    ];
+    return null;
 }
 
 /**
@@ -185,7 +163,7 @@ function getTrainerAssignedMembers(int $trainerUserId, array $filters = [], ?PDO
                 LEFT JOIN fitness_goals fg ON u.id = fg.user_id AND fg.status = 'active'
                 LEFT JOIN plan_assignments pa ON u.id = pa.user_id AND pa.is_active = 1
                 LEFT JOIN workout_plans wp ON pa.plan_id = wp.id
-                WHERE ta.trainer_user_id = :tid
+                WHERE ta.trainer_user_id = :tid AND ta.status = 'active' AND u.status = 'active' AND u.role = 'user'
             ";
 
             $params = [':tid' => $trainerUserId];
@@ -234,134 +212,19 @@ function getTrainerAssignedMembers(int $trainerUserId, array $filters = [], ?PDO
  */
 function getAssignedMemberDetails(int $trainerUserId, int $memberUserId, ?PDO $db = null): ?array {
     $db = $db ?? getDbConnection();
-
-    if ($db !== null) {
-        try {
-            // STEP 1: STRICT ASSIGNMENT VERIFICATION
-            $checkStmt = $db->prepare("
-                SELECT id, status, start_date, notes
-                FROM trainer_assignments
-                WHERE trainer_user_id = :tid AND user_id = :uid
-                LIMIT 1
-            ");
-            $checkStmt->execute([
-                ':tid' => $trainerUserId,
-                ':uid' => $memberUserId
-            ]);
-            $assignment = $checkStmt->fetch();
-
-            if (!$assignment) {
-                // ACCESS DENIED: This member is NOT assigned to this trainer
-                return null;
-            }
-
-            // STEP 2: MEMBER PROFILE
-            $userStmt = $db->prepare("
-                SELECT 
-                    u.id, u.full_name, u.email, u.mobile, u.created_at,
-                    up.gender, up.date_of_birth, up.height_cm, up.weight_kg, up.fitness_experience,
-                    up.emergency_contact_name, up.emergency_contact_phone, up.bio,
-                    g.name AS home_gym_name,
-                    m.status AS membership_status, m.start_date AS membership_start, m.end_date AS membership_end
-                FROM users u
-                LEFT JOIN user_profiles up ON u.id = up.user_id
-                LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'active'
-                LEFT JOIN gyms g ON m.gym_id = g.id
-                WHERE u.id = :uid
-                LIMIT 1
-            ");
-            $userStmt->execute([':uid' => $memberUserId]);
-            $member = $userStmt->fetch();
-
-            if (!$member) {
-                return null;
-            }
-
-            // STEP 3: FITNESS GOALS
-            $goalsStmt = $db->prepare("
-                SELECT id, title, goal_type, target_weight_kg, starting_weight_kg, target_date, status, progress_pct, created_at
-                FROM fitness_goals
-                WHERE user_id = :uid
-                ORDER BY created_at DESC
-            ");
-            $goalsStmt->execute([':uid' => $memberUserId]);
-            $goals = $goalsStmt->fetchAll();
-
-            // STEP 4: ASSIGNED WORKOUT PLANS & SESSIONS
-            $workoutStmt = $db->prepare("
-                SELECT 
-                    pa.id AS assignment_id, pa.start_date, pa.is_active, pa.status AS assignment_status,
-                    wp.name AS plan_name, wp.description, wp.difficulty, wp.days_per_week
-                FROM plan_assignments pa
-                JOIN workout_plans wp ON pa.plan_id = wp.id
-                WHERE pa.user_id = :uid
-                ORDER BY pa.is_active DESC, pa.start_date DESC
-            ");
-            $workoutStmt->execute([':uid' => $memberUserId]);
-            $plans = $workoutStmt->fetchAll();
-
-            $sessionsStmt = $db->prepare("
-                SELECT id, session_date, duration_minutes, total_volume_kg, total_sets_completed, perceived_rpe, notes
-                FROM workout_sessions
-                WHERE user_id = :uid
-                ORDER BY session_date DESC
-                LIMIT 10
-            ");
-            $sessionsStmt->execute([':uid' => $memberUserId]);
-            $sessions = $sessionsStmt->fetchAll();
-
-            // STEP 5: ATTENDANCE HISTORY
-            $attStmt = $db->prepare("
-                SELECT id, check_in_time, check_in_method, status
-                FROM attendance
-                WHERE user_id = :uid
-                ORDER BY check_in_time DESC
-                LIMIT 15
-            ");
-            $attStmt->execute([':uid' => $memberUserId]);
-            $attendance = $attStmt->fetchAll();
-
-            // STEP 6: BODY MEASUREMENTS
-            $bmStmt = $db->prepare("
-                SELECT id, recorded_at, weight_kg, body_fat_pct, chest_cm, waist_cm, hips_cm, arms_cm, notes
-                FROM body_measurements
-                WHERE user_id = :uid
-                ORDER BY recorded_at DESC
-                LIMIT 10
-            ");
-            $bmStmt->execute([':uid' => $memberUserId]);
-            $measurements = $bmStmt->fetchAll();
-
-            // STEP 7: TRAINER NOTES FOR THIS MEMBER
-            $notesStmt = $db->prepare("
-                SELECT id, note_type, note_text, is_visible_to_user, created_at
-                FROM trainer_notes
-                WHERE user_id = :uid AND trainer_user_id = :tid
-                ORDER BY created_at DESC
-            ");
-            $notesStmt->execute([
-                ':uid' => $memberUserId,
-                ':tid' => $trainerUserId
-            ]);
-            $notes = $notesStmt->fetchAll();
-
-            return [
-                'profile'      => $member,
-                'assignment'   => $assignment,
-                'goals'        => $goals,
-                'plans'        => $plans,
-                'sessions'     => $sessions,
-                'attendance'   => $attendance,
-                'measurements' => $measurements,
-                'notes'        => $notes
-            ];
-        } catch (Throwable $e) {
-            error_log("[FitSync TrainerData] Error fetching member details: " . $e->getMessage());
-        }
+    if ($db === null) {
+        return null;
     }
-
-    // Member not found in database or database offline
-    return null;
+    require_once __DIR__ . '/FitSyncDataService.php';
+    try {
+        $service = FitSyncDataService::getInstance($db);
+        return $service->getAthleteDossier($trainerUserId, $memberUserId, 'trainer');
+    } catch (RuntimeException $e) {
+        return null;
+    } catch (Throwable $e) {
+        error_log("[FitSync TrainerData] Error fetching member details: " . $e->getMessage());
+        return null;
+    }
 }
 
 

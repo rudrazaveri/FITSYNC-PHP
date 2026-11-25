@@ -3,9 +3,13 @@
  * Drives 16 Integrated Modules, Modals, LocalStorage State, and UI Events
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  // 1. Check Authentication & Session State
-  initAuthSystem();
+document.addEventListener('DOMContentLoaded', async () => {
+  // 1. Check Server Authentication & Session State
+  if (typeof window.fitSyncRefreshSession === 'function') {
+    await window.fitSyncRefreshSession();
+  }
+  const authAllowed = initAuthSystem();
+  if (authAllowed === false) return;
 
   // 1a. Instant Welcome Greeting & Date calculation
   updateWelcomeGreeting(window.fitSyncStore?.state?.user?.name);
@@ -13,8 +17,21 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1b. Initial State Render
   updateDashboardUI();
 
-  // 1c. Sync Real Database Telemetry (Zero fabricated metrics)
-  syncUserDashboardFromDb();
+  // 1c. Sync Real Database Telemetry when authenticated with Member access
+  const hasMemberAccess = window.__AUTHENTICATED_USER__ && (
+    typeof window.fitSyncHasPortalAccess === 'function'
+      ? window.fitSyncHasPortalAccess(window.__AUTHENTICATED_USER__, 'user')
+      : window.__AUTHENTICATED_USER__.role === 'user'
+  );
+  if (hasMemberAccess) {
+    await syncUserDashboardFromDb();
+    loadUserProfileData();
+    loadMembershipPortalData();
+    loadWorkoutPlanFromDb();
+    loadAttendanceCalendar();
+    renderMealsTimeline();
+    renderWaterLogs();
+  }
 
   // 2. Setup Routing & Cross-page navigation
   setupNavigation();
@@ -35,10 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupHeaderRestTimer();
   initExerciseLibraryModule();
   setupMacroAutoCalculation();
-  loadUserProfileData();
-  loadAttendanceCalendar();
-  renderMealsTimeline();
-  renderWaterLogs();
 
   // Initial routing from URL hash if provided
   const initialHash = window.location.hash.replace(/^#/, '');
@@ -46,8 +59,23 @@ document.addEventListener('DOMContentLoaded', () => {
     switchView(initialHash, false);
   }
 
-  // Periodic real-time background synchronization
-  setInterval(syncUserDashboardFromDb, 10000);
+  // Periodic real-time background synchronization (every 5 seconds + on tab focus/visibility)
+  const runLiveMemberSync = () => {
+    const canMemberSync = window.__AUTHENTICATED_USER__ && (
+      typeof window.fitSyncHasPortalAccess === 'function'
+        ? window.fitSyncHasPortalAccess(window.__AUTHENTICATED_USER__, 'user')
+        : window.__AUTHENTICATED_USER__.role === 'user'
+    );
+    if (canMemberSync) {
+      syncUserDashboardFromDb();
+      loadMembershipPortalData();
+    }
+  };
+  setInterval(runLiveMemberSync, 5000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') runLiveMemberSync();
+  });
+  window.addEventListener('focus', runLiveMemberSync);
   setInterval(() => updateWelcomeGreeting(window.fitSyncStore?.state?.user?.name), 30000);
 });
 
@@ -94,7 +122,7 @@ function updateWelcomeGreeting(userName) {
     if (raw && typeof raw === 'string' && raw.trim() && raw.trim() !== 'Athlete' && raw.trim() !== 'Athlete Profile') {
       firstName = raw.trim().split(' ')[0];
     } else {
-      firstName = 'Sneha';
+      firstName = 'Member';
     }
     nameEl.textContent = firstName;
   }
@@ -116,18 +144,27 @@ function updateWelcomeGreeting(userName) {
 async function syncUserDashboardFromDb() {
   try {
     const res = await fetch('api/user/dashboard.php');
+    if (res.status === 401) {
+      window.__AUTHENTICATED_USER__ = null;
+      return;
+    }
     if (res.ok) {
       const json = await res.json();
       if (json.success && json.data) {
         const d = json.data;
         const state = window.fitSyncStore.state;
-        
+        window._latestDashboardData = d;
+
         // 1. User & Identity
         if (d.user) {
           if (!state.user) state.user = {};
           if (d.user.id) state.user.id = d.user.id;
-          if (d.user.full_name) state.user.name = d.user.full_name;
+          if (d.user.full_name) {
+            state.user.name = d.user.full_name;
+            state.user.full_name = d.user.full_name;
+          }
           if (d.user.email) state.user.email = d.user.email;
+          if (d.user.mobile !== undefined) state.user.phone = d.user.mobile;
         }
 
         // 2. Weight & BMI
@@ -147,6 +184,101 @@ async function syncUserDashboardFromDb() {
           state.stats.bmi.status = 'No data yet';
         }
 
+        // 2b. Assessment Targets & Goal
+        if (d.assessment) {
+          state.stats.calories.target = d.assessment.target_calories_kcal || 2000;
+          state.nutrition.targetCalories = d.assessment.target_calories_kcal || 2000;
+          state.nutrition.macros.protein.target = d.assessment.target_protein_g || 120;
+          state.nutrition.macros.carbs.target = d.assessment.target_carbs_g || 200;
+          state.nutrition.macros.fat.target = d.assessment.target_fat_g || 60;
+        }
+        if (d.goal) {
+          state.goal.title = d.goal.title || 'General Fitness';
+          state.goal.targetWeight = d.goal.target_weight_kg ? `${d.goal.target_weight_kg} kg` : '--';
+          state.goal.progressPercent = d.goal.progress_pct || 0;
+        }
+
+        // 2c. Membership Summary
+        if (d.membership) {
+          state.membership.gymName = d.membership.gym_name || 'No Gym Connected';
+          state.membership.location = d.membership.gym_city || '--';
+          state.membership.plan = d.membership.plan_name || 'Standard';
+          state.membership.status = d.membership.status || 'inactive';
+          state.membership.validTill = d.membership.end_date || '--';
+          state.membership.turnstileCode = d.membership.qr_code_token || '--';
+        } else {
+          state.membership.gymName = 'No Gym Connected';
+          state.membership.location = 'Select a gym branch';
+          state.membership.plan = 'None';
+          state.membership.status = 'None';
+          state.membership.validTill = '--';
+        }
+
+        // 2d. Assigned Trainer + Platform Trainer Directory sync
+        const dirTrainers = Array.isArray(d.eligible_trainers) ? d.eligible_trainers : [];
+        state.eligibleTrainers = dirTrainers;
+
+        if (d.trainer) {
+          const tObj = {
+            id: 'tr-' + d.trainer.coach_id,
+            user_id: d.trainer.coach_id,
+            name: d.trainer.coach_name,
+            email: d.trainer.coach_email,
+            phone: d.trainer.coach_phone || '',
+            title: d.trainer.coach_title || 'Certified Strength Coach',
+            experience: (d.trainer.experience_years || 0) + ' Years',
+            gym: d.trainer.gym_name || 'FitSync Partner Gym',
+            specialties: d.trainer.specializations_summary ? d.trainer.specializations_summary.split(',').map(s => s.trim()) : ['Strength & Conditioning'],
+            avatar: 'assets/images/trainer_raj.jpg',
+            isAssigned: true
+          };
+          state.user.assignedCoachId = tObj.id;
+          state.assignedTrainerObj = tObj;
+          state.trainers = dirTrainers.length ? dirTrainers : [tObj];
+        } else {
+          state.user.assignedCoachId = null;
+          state.assignedTrainerObj = null;
+          state.trainers = dirTrainers;
+        }
+
+        // 2f. Real-time Notifications Dropdown Sync
+        renderMemberNotifications(Array.isArray(d.notifications) ? d.notifications : [], parseInt(d.unread_notifications || 0, 10));
+
+        // 2e. Data permissions sync
+        if (d.data_permissions) {
+          const pm = document.getElementById('permViewMeasurements');
+          const pn = document.getElementById('permViewNutrition');
+          const pa = document.getElementById('permViewAssessments');
+          const pp = document.getElementById('permViewPhotos');
+          const pw = document.getElementById('permViewWorkouts');
+          if (pm) pm.checked = !!d.data_permissions.can_view_measurements;
+          if (pn) pn.checked = !!d.data_permissions.can_view_nutrition;
+          if (pa) pa.checked = !!d.data_permissions.can_view_assessments;
+          if (pp) pp.checked = !!d.data_permissions.can_view_progress_photos;
+          if (pw) pw.checked = d.data_permissions.can_view_workouts !== false;
+        }
+
+        // 2g. Shared Coach Feedback sync
+        const fbCard = document.getElementById('memberSharedFeedbackCard');
+        const fbList = document.getElementById('memberSharedFeedbackList');
+        const fbItems = Array.isArray(d.feedback) ? d.feedback : [];
+        if (fbCard && fbList) {
+          if (fbItems.length === 0) {
+            fbCard.style.display = 'none';
+          } else {
+            fbCard.style.display = 'block';
+            fbList.innerHTML = fbItems.map(n => `
+              <div style="padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;background:#F8FAFC;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                  <strong style="font-size:12px;color:#0F172A;">${escapeHtml(n.coach_name || 'Your Coach')} • ${escapeHtml(String(n.note_type || 'feedback').replace('_', ' '))}</strong>
+                  <span style="font-size:11px;color:#64748B;">${escapeHtml((n.created_at || '').slice(0, 16))}</span>
+                </div>
+                <div style="font-size:13px;color:#334155;">${escapeHtml(n.note_text)}</div>
+              </div>
+            `).join('');
+          }
+        }
+
         // 3. Nutrition (100% Database-Driven)
         if (d.nutrition) {
           state.stats.calories.current = d.nutrition.calories || 0;
@@ -155,27 +287,41 @@ async function syncUserDashboardFromDb() {
           state.nutrition.macros.carbs.current = d.nutrition.carbs !== undefined ? Math.round(d.nutrition.carbs) : 0;
           state.nutrition.macros.fat.current = d.nutrition.fat !== undefined ? Math.round(d.nutrition.fat) : 0;
           state.nutrition.meals = Array.isArray(d.nutrition.meals) ? d.nutrition.meals : [];
-        } else {
-          state.stats.calories.current = 0;
-          state.nutrition.calories = 0;
-          state.nutrition.macros.protein.current = 0;
-          state.nutrition.macros.carbs.current = 0;
-          state.nutrition.macros.fat.current = 0;
-          state.nutrition.meals = [];
         }
 
         // 4. Water (100% Database-Driven)
         if (d.water) {
           state.stats.water.current = d.water.liters !== undefined ? d.water.liters : 0.0;
           if (state.waterStation) state.waterStation.current = state.stats.water.current;
-        } else {
-          state.stats.water.current = 0.0;
-          if (state.waterStation) state.waterStation.current = 0.0;
         }
 
-        // 5. Update UI
+        // 5. Unread Chat Messages Badge
+        const chatBadge = document.getElementById('sidebarChatUnreadBadge');
+        if (chatBadge) {
+          const unread = parseInt(d.unread_messages || 0, 10);
+          if (unread > 0) {
+            chatBadge.textContent = `${unread} New`;
+            chatBadge.style.background = '#EF4444';
+          } else {
+            chatBadge.textContent = 'Live';
+            chatBadge.style.background = '#22C55E';
+          }
+        }
+
+        // 6. Workout & Attendance updates
+        if (d.workout) {
+          applyServerWorkoutData(d.workout);
+        }
+        if (d.attendance) {
+          state.attendance.monthlyVisits = d.attendance.length;
+        }
+
+        // 7. Update UI
         updateDashboardUI();
         updateWelcomeGreeting(state.user?.name);
+        if (document.getElementById('view-trainers')?.classList.contains('active')) {
+          renderTrainersUI();
+        }
       }
     }
   } catch (err) {
@@ -275,13 +421,30 @@ function switchView(viewName, pushHistory = true) {
 
   try {
     if (viewName === 'coach_chat') {
-      if (typeof renderCoachChatUI === 'function') renderCoachChatUI();
+      window._lastChatMsgId = 0;
+      if (typeof renderCoachChatUI === 'function') renderCoachChatUI(true);
       coachChatPollInterval = setInterval(() => {
-        if (typeof renderCoachChatUI === 'function') renderCoachChatUI();
-      }, 4000);
+        if (typeof pollCoachChatMessages === 'function') pollCoachChatMessages();
+      }, 2000);
     }
   } catch (e) {
     console.warn('Error rendering coach chat view:', e);
+  }
+
+  try {
+    if (viewName === 'gyms' && typeof loadMembershipPortalData === 'function') {
+      loadMembershipPortalData();
+    }
+  } catch (e) {
+    console.warn('Error loading gyms membership view:', e);
+  }
+
+  try {
+    if (viewName === 'workouts' && typeof loadWorkoutPlanFromDb === 'function') {
+      loadWorkoutPlanFromDb();
+    }
+  } catch (e) {
+    console.warn('Error loading workouts view:', e);
   }
 
   try {
@@ -475,16 +638,48 @@ function updateDashboardUI() {
     stationWaterRem.textContent = `${rem} L`;
   }
 
-  // 4. Goal Ring
+  // 4. Goal Ring & Goal Details
   const goalCircle = document.getElementById('goalProgressCircle');
   const goalPctText = document.getElementById('goalProgressText');
+  const dashGoalTitle = document.getElementById('dashGoalTitle');
+  const dashGoalTarget = document.getElementById('dashGoalTarget');
   if (goalCircle) {
     const circumference = 264;
-    const offset = circumference - (circumference * state.goal.progressPercent) / 100;
+    const offset = circumference - (circumference * (state.goal.progressPercent || 0)) / 100;
     goalCircle.style.strokeDashoffset = offset;
   }
   if (goalPctText) {
-    goalPctText.textContent = `${state.goal.progressPercent}%`;
+    goalPctText.textContent = `${state.goal.progressPercent || 0}%`;
+  }
+  if (dashGoalTitle) {
+    dashGoalTitle.textContent = state.goal.title || 'General Fitness';
+  }
+  if (dashGoalTarget) {
+    dashGoalTarget.innerHTML = state.goal.targetWeight && state.goal.targetWeight !== '--'
+      ? `Target: <strong>${escapeHtml(state.goal.targetWeight)}</strong>`
+      : 'Set your target in Profile & Biometrics';
+  }
+
+  // 4b. Dashboard Gym & Membership Card + Recent Progress Weight
+  const dGymName = document.getElementById('dashGymName');
+  const dGymStatus = document.getElementById('dashGymStatus');
+  const dGymLoc = document.getElementById('dashGymLocation');
+  const dGymPlan = document.getElementById('dashGymPlan');
+  const dGymValid = document.getElementById('dashGymValidTill');
+  const dRecentWt = document.getElementById('dashRecentProgressWeight');
+
+  if (dGymName) dGymName.textContent = state.membership.gymName || 'No Gym Connected';
+  if (dGymStatus) {
+    const st = String(state.membership.status || 'None').toLowerCase();
+    dGymStatus.textContent = st.charAt(0).toUpperCase() + st.slice(1);
+    dGymStatus.style.background = st === 'active' ? 'rgba(16,185,129,0.12)' : (st === 'pending' ? 'rgba(245,158,11,0.15)' : '#F1F5F9');
+    dGymStatus.style.color = st === 'active' ? '#059669' : (st === 'pending' ? '#D97706' : '#64748B');
+  }
+  if (dGymLoc) dGymLoc.textContent = state.membership.location || 'Select a gym branch';
+  if (dGymPlan) dGymPlan.textContent = state.membership.plan || 'None';
+  if (dGymValid) dGymValid.textContent = state.membership.validTill && state.membership.validTill !== '--' ? `Valid till: ${state.membership.validTill}` : 'No active pass';
+  if (dRecentWt) {
+    dRecentWt.textContent = state.stats.weight.current ? `${state.stats.weight.current} kg` : '-- kg';
   }
 
   // 5. Attendance Module Stats
@@ -529,11 +724,10 @@ function setupEventListeners() {
   // View Details Links
   document.getElementById('rightAddWaterLink')?.addEventListener('click', () => openModal('addWaterModal'));
 
-  // Attendance Check-in Simulation
-  document.getElementById('simulateCheckInBtn')?.addEventListener('click', () => {
-    window.fitSyncStore.recordAttendance();
-    updateDashboardUI();
-    showToast('✅ Turnstile Unlocked! Attendance registered at FitZone Gym.', 'success');
+  // Attendance Check-in Button (Direct Database Verification)
+  document.getElementById('simulateCheckInBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    simulateTurnstileCheckIn();
   });
 
   // Modal Close buttons
@@ -584,6 +778,7 @@ function setupFormHandlers() {
   document.querySelectorAll('.water-preset-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const amount = parseFloat(btn.getAttribute('data-amount'));
+      if (!amount || isNaN(amount)) return;
       const amountMl = Math.round(amount * 1000);
 
       try {
@@ -603,19 +798,13 @@ function setupFormHandlers() {
           if (typeof renderWaterLogs === 'function') renderWaterLogs(json.data.logs);
           if (window.renderAllCharts) window.renderAllCharts();
           showToast(`Recorded +${amountMl} ml (${json.data.liters} L total today)!`, 'success');
-          return;
+        } else {
+          showToast(json.message || json.error || 'Failed to record water intake.', 'danger');
         }
       } catch (err) {
-        console.warn('Water API log warning:', err);
+        console.warn('Water API log error:', err);
+        showToast('Server error recording water intake.', 'danger');
       }
-
-      window.fitSyncStore.addWater(amount);
-      triggerWaterFillAnimation();
-      closeModal('addWaterModal');
-      await syncUserDashboardFromDb();
-      if (typeof renderWaterLogs === 'function') renderWaterLogs();
-      if (window.renderAllCharts) window.renderAllCharts();
-      showToast(`Added ${amountMl} ml of water!`, 'success');
     });
   });
 
@@ -624,8 +813,6 @@ function setupFormHandlers() {
       e.preventDefault();
       const customMl = parseFloat(document.getElementById('customWaterInput').value);
       if (customMl > 0) {
-        const liters = customMl / 1000;
-
         try {
           const res = await fetch('api/water.php', {
             method: 'POST',
@@ -644,20 +831,13 @@ function setupFormHandlers() {
             if (typeof renderWaterLogs === 'function') renderWaterLogs(json.data.logs);
             if (window.renderAllCharts) window.renderAllCharts();
             showToast(`Added ${customMl} ml (${json.data.liters} L total today)!`, 'success');
-            return;
+          } else {
+            showToast(json.message || json.error || 'Failed to record water intake.', 'danger');
           }
         } catch (err) {
-          console.warn('Water API log warning:', err);
+          console.warn('Water API log error:', err);
+          showToast('Server error recording water intake.', 'danger');
         }
-
-        window.fitSyncStore.addWater(liters);
-        triggerWaterFillAnimation();
-        closeModal('addWaterModal');
-        waterForm.reset();
-        await syncUserDashboardFromDb();
-        if (typeof renderWaterLogs === 'function') renderWaterLogs();
-        if (window.renderAllCharts) window.renderAllCharts();
-        showToast(`Added ${customMl} ml water recorded!`, 'success');
       }
     });
   }
@@ -723,11 +903,16 @@ function setupFormHandlers() {
         const json = await res.json();
         if (json.success) {
           showToast(editId ? `Updated "${foodName}" (${cal} kcal)!` : `Logged "${foodName}" (+${cal} kcal)!`, 'success');
+          closeModal('addMealModal');
+          resetMealForm();
+          await syncUserDashboardFromDb();
+          if (typeof renderMealsTimeline === 'function') renderMealsTimeline();
         } else {
-          showToast(json.error || 'Failed to record meal.', 'warning');
+          showToast(json.message || json.error || 'Failed to record meal.', 'danger');
         }
       } catch (err) {
-        console.warn('Meal API log warning:', err);
+        console.warn('Meal API log error:', err);
+        showToast('Server error recording meal.', 'danger');
       } finally {
         isSubmittingMeal = false;
         if (submitBtn) {
@@ -735,56 +920,66 @@ function setupFormHandlers() {
           submitBtn.textContent = originalBtnText;
         }
       }
-
-      window.fitSyncStore.addMeal(foodName, timing, cal, protein, carbs, fat);
-      closeModal('addMealModal');
-      resetMealForm();
-      await syncUserDashboardFromDb();
-      if (typeof renderMealsTimeline === 'function') renderMealsTimeline();
     });
   }
 
   // 3. Update Progress Form (Workflow A: Real database weight recording)
   const progressForm = document.getElementById('progressForm');
   if (progressForm) {
-    progressForm.addEventListener('submit', (e) => {
+    progressForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const newWeight = parseFloat(document.getElementById('newWeightInput').value);
       if (newWeight && newWeight > 20 && newWeight < 350) {
-        // Save to central database
-        fetch('api/user/measurements.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ weight_kg: newWeight })
-        }).then(r => r.json()).then(res => {
+        try {
+          const r = await fetch('api/user/measurements.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ weight_kg: newWeight })
+          });
+          const res = await r.json();
           if (res.success) {
-            syncUserDashboardFromDb();
+            await syncUserDashboardFromDb();
+            if (typeof loadUserProfileData === 'function') loadUserProfileData();
+            if (window.renderAllCharts) window.renderAllCharts();
+            showToast(`Weight recorded in database: ${newWeight} kg!`, 'success');
+            closeModal('updateProgressModal');
+          } else {
+            showToast(res.message || res.error || 'Failed to record weight.', 'danger');
           }
-        }).catch(err => console.warn('Weight sync err:', err));
-
-        window.fitSyncStore.updateWeight(newWeight);
-        updateDashboardUI();
-        if (window.renderAllCharts) window.renderAllCharts();
-        showToast(`Weight recorded in database: ${newWeight} kg!`, 'success');
-        closeModal('updateProgressModal');
+        } catch (err) {
+          console.warn('Weight sync err:', err);
+          showToast('Server error saving weight.', 'danger');
+        }
+      } else {
+        showToast('Please enter a valid weight between 20 and 350 kg.', 'warning');
       }
     });
   }
 
-  // 6. User Settings Profile Form
+  // 6. User Settings Profile Form (Authoritative Database Persistence)
   const settingsForm = document.getElementById('settingsProfileForm');
   if (settingsForm) {
-    settingsForm.addEventListener('submit', (e) => {
+    settingsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const fullName = document.getElementById('setFullName').value;
-      const phone = document.getElementById('setPhone').value;
-      const emergency = document.getElementById('setEmergency').value;
-      window.fitSyncStore.updateUserProfile({
-        name: fullName,
-        phone: phone,
-        emergencyContact: emergency
-      });
-      showToast('Profile settings saved successfully!', 'success');
+      const fullName = document.getElementById('setFullName')?.value?.trim();
+      const phone = document.getElementById('setPhone')?.value?.trim();
+      if (!fullName) return;
+      try {
+        const res = await fetch('api/user/profile.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'save_profile_details', full_name: fullName, mobile: phone })
+        });
+        const json = await res.json();
+        if (json.success) {
+          await syncUserDashboardFromDb();
+          showToast('Profile settings saved to database!', 'success');
+        } else {
+          showToast(json.message || 'Failed to save profile settings.', 'danger');
+        }
+      } catch (err) {
+        showToast('Server error saving profile.', 'danger');
+      }
     });
   }
 }
@@ -865,12 +1060,37 @@ function setupAssessmentLiveCalculator() {
     if (el) el.addEventListener('input', recompute);
   });
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const computed = recompute();
-    window.fitSyncStore.saveAssessment(computed);
-    updateDashboardUI();
-    showToast('Biometric assessment saved to your FitSync health profile!', 'success');
+    const age = parseFloat(ageInput?.value) || 24;
+    const gender = genderInput?.value || 'male';
+    const height = parseFloat(heightInput?.value) || 175;
+    const weight = parseFloat(weightInput?.value) || 72;
+    const waist = parseFloat(waistInput?.value) || 0;
+    const neck = parseFloat(neckInput?.value) || 0;
+    const hip = parseFloat(hipInput?.value) || 0;
+    const activity = parseFloat(actInput?.value) || 1.55;
+    const goal = goalInput?.value || 'muscle_gain';
+
+    try {
+      const res = await fetch('api/assessment.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ age, gender, height, weight, waist, neck, hip, activity, goal })
+      });
+      const json = await res.json();
+      if (json.success) {
+        const computed = recompute();
+        window.fitSyncStore.saveAssessment(computed);
+        await syncUserDashboardFromDb();
+        if (typeof loadUserProfileData === 'function') loadUserProfileData();
+        showToast('Biometric assessment saved to MySQL!', 'success');
+      } else {
+        showToast(json.message || 'Failed to save biometric assessment.', 'danger');
+      }
+    } catch (err) {
+      showToast('Server error saving assessment.', 'danger');
+    }
   });
 
   recompute();
@@ -1231,9 +1451,28 @@ function toggleSetDone(btn, dayKey, exIdx, setIdx) {
       doneBtn.classList.add('completed');
       doneBtn.innerHTML = '<i data-lucide="check-circle" style="width: 13px; height: 13px;"></i> <span>Completed ✓</span>';
     }
-    // Automatically launch rest timer countdown!
+    // Automatically launch rest timer countdown & persist set to MySQL
     startHeaderRestTimer(90);
-    showToast(`🎉 Set ${setObj.set} marked complete! Rest timer countdown (90s) started.`, 'success');
+    const exObj = plan.exercises[exIdx];
+    const weightVal = (setObj.weight === 'Bodyweight' || !setObj.weight) ? 0 : parseFloat(setObj.weight) || 0;
+    fetch('api/workouts.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'log_set',
+        plan_day_id: plan.plan_day_id || null,
+        exercise_id: exObj.exercise_id || 0,
+        exercise: exObj.name,
+        set_number: setObj.set || (setIdx + 1),
+        weight_kg: weightVal,
+        reps: parseInt(setObj.reps || 10, 10)
+      })
+    }).then(r => r.json()).then(json => {
+      if (json.success) {
+        showToast(`🎉 Set ${setObj.set} saved to MySQL! Rest timer (90s) started.`, 'success');
+        loadWorkoutPlanFromDb();
+      }
+    }).catch(() => {});
   } else {
     if (row) row.classList.remove('set-completed');
     if (doneBtn) {
@@ -1862,50 +2101,38 @@ function initAuthSystem() {
   const authOverlay = document.getElementById('authDashboardOverlay');
   const appLayout = document.querySelector('.app-layout');
 
-  // Synchronize with server-side authenticated session if present
+  // Synchronize strictly with server-side authenticated PHP session
   if (window.__AUTHENTICATED_USER__) {
     store.state.isLoggedIn = true;
-    if (store.state.user) {
-      store.state.user.id = window.__AUTHENTICATED_USER__.id;
-      store.state.user.name = window.__AUTHENTICATED_USER__.full_name || window.__AUTHENTICATED_USER__.name;
-      store.state.user.email = window.__AUTHENTICATED_USER__.email;
-      store.state.user.role = window.__AUTHENTICATED_USER__.role;
+    if (!store.state.user) store.state.user = {};
+    store.state.user.id = window.__AUTHENTICATED_USER__.id;
+    store.state.user.name = window.__AUTHENTICATED_USER__.full_name || window.__AUTHENTICATED_USER__.name;
+    store.state.user.full_name = window.__AUTHENTICATED_USER__.full_name || window.__AUTHENTICATED_USER__.name;
+    store.state.user.email = window.__AUTHENTICATED_USER__.email;
+    store.state.user.role = window.__AUTHENTICATED_USER__.role;
+
+    // Strictly enforce RBAC for the Member Portal without bouncing to login/registration
+    const hasMemberAccess = typeof window.fitSyncHasPortalAccess === 'function'
+      ? window.fitSyncHasPortalAccess(window.__AUTHENTICATED_USER__, 'user')
+      : (window.__AUTHENTICATED_USER__.role === 'user' || window.__AUTHENTICATED_USER__.role === 'admin');
+    if (!hasMemberAccess) {
+      if (typeof window.renderFitSyncAccessDenied === 'function') {
+        window.renderFitSyncAccessDenied('user', window.__AUTHENTICATED_USER__);
+      }
+      return false;
     }
-    // Strictly isolate non-user roles from entering the user portal layout
-    if (window.__AUTHENTICATED_USER__.role === 'trainer') {
-      window.location.href = 'trainer/';
-      return;
-    } else if (window.__AUTHENTICATED_USER__.role === 'gym_owner') {
-      window.location.href = 'gym_owner/';
-      return;
-    } else if (window.__AUTHENTICATED_USER__.role === 'admin') {
-      window.location.href = 'admin/';
-      return;
-    }
+  } else {
+    store.state.isLoggedIn = false;
   }
 
   if (!authOverlay) return;
 
-  if (window.location.search.includes('guest') || window.location.search.includes('explore')) {
-    enterGuestPortal();
-    return;
-  }
-
-  // Ensure member portal is always interactive and accessible by default
-  const explicitlyLoggedOut = sessionStorage.getItem('fitsync_logged_out') === 'true';
-  if (store.state.isLoggedIn === false && !explicitlyLoggedOut) {
-    enterGuestPortal();
-    return;
-  }
-
-  if (store.state.isLoggedIn === false && explicitlyLoggedOut) {
-    // Show Auth Dashboard, hide app layout
+  if (!window.__AUTHENTICATED_USER__) {
     authOverlay.style.display = 'flex';
     if (appLayout) appLayout.style.display = 'none';
     renderRegisteredAccountsChips();
     initIcons();
   } else {
-    // Show App Layout, hide auth dashboard
     authOverlay.style.display = 'none';
     if (appLayout) appLayout.style.display = 'flex';
     syncUserProfileUI();
@@ -1916,27 +2143,9 @@ function initAuthSystem() {
 }
 
 function enterGuestPortal() {
-  sessionStorage.removeItem('fitsync_logged_out');
-  if (window.fitSyncStore) {
-    window.fitSyncStore.state.isLoggedIn = true;
-    if (!window.fitSyncStore.state.user || !window.fitSyncStore.state.user.name) {
-      window.fitSyncStore.state.user = {
-        id: 999,
-        name: 'Guest Athlete',
-        email: 'guest@fitsync.health',
-        role: 'Gym Member',
-        membershipTier: 'Gold'
-      };
-    }
-    if (typeof window.fitSyncStore.save === 'function') window.fitSyncStore.save();
-  }
-  const authOverlay = document.getElementById('authDashboardOverlay');
-  const appLayout = document.querySelector('.app-layout');
-  if (authOverlay) authOverlay.style.display = 'none';
-  if (appLayout) appLayout.style.display = 'flex';
-  syncUserProfileUI();
-  switchView('dashboard');
-  if (typeof initIcons === 'function') initIcons();
+  // Redirect to real login page/overlay instead of fake unauthenticated guest bypass
+  switchAuthTab('signin');
+  showToast('Please sign in with your FitSync account to continue.', 'info');
 }
 
 function syncUserProfileUI() {
@@ -1981,31 +2190,27 @@ function syncUserProfileUI() {
 
 function renderTrainersUI() {
   const store = window.fitSyncStore;
-  if (!store || typeof store.getTrainers !== 'function') return;
-  const trainers = store.getTrainers();
+  if (!store) return;
+  const trainers = Array.isArray(store.state.eligibleTrainers) && store.state.eligibleTrainers.length
+    ? store.state.eligibleTrainers
+    : (typeof store.getTrainers === 'function' ? store.getTrainers() : []);
   const currentUser = store.state.user || {};
 
-  // Find assigned coach for current user or default to first
-  let assigned = null;
-  if (currentUser.assignedCoachId) {
-    assigned = trainers.find(t => t.id === currentUser.assignedCoachId);
-  }
-  if (!assigned) {
-    assigned = trainers.find(t => t.isAssigned) || trainers[0];
-  }
+  // Assigned trainer comes strictly from DB assignment (never fall back to trainers[0]!)
+  const assigned = store.state.assignedTrainerObj || trainers.find(t => t.isAssigned) || null;
 
   const spotlightEl = document.getElementById('assignedCoachSpotlightContainer');
   if (spotlightEl) {
     if (assigned) {
       spotlightEl.innerHTML = `
         <div style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
-          <img src="${assigned.avatar || 'assets/images/trainer_raj.jpg'}" class="trainer-avatar-img" style="margin: 0; width: 84px; height: 84px; border-radius: 50%; object-fit: cover;" alt="${assigned.name}">
+          <img src="${assigned.avatar || 'assets/images/trainer_raj.jpg'}" class="trainer-avatar-img" style="margin: 0; width: 84px; height: 84px; border-radius: 50%; object-fit: cover;" alt="${escapeHtml(assigned.name)}">
           <div style="flex: 1;">
             <span class="badge-active" style="margin-bottom: 4px; display: inline-block;">YOUR ASSIGNED COACH</span>
-            <h3 style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">${assigned.name}</h3>
-            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 6px;">${assigned.title} • ${assigned.gym || 'FitZone Fitness'} • ${assigned.experience || 'Certified'}</p>
+            <h3 style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">${escapeHtml(assigned.name)}</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 6px;">${escapeHtml(assigned.title)} • ${escapeHtml(assigned.gym || 'FitSync Partner Gym')} • ${escapeHtml(assigned.experience || 'Certified')}</p>
             <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
-              ${(assigned.specialties || []).map(s => `<span class="tag-badge">${s}</span>`).join('')}
+              ${(assigned.specialties || []).map(s => `<span class="tag-badge">${escapeHtml(s)}</span>`).join('')}
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -2025,35 +2230,65 @@ function renderTrainersUI() {
           </div>
           <div style="flex: 1;">
             <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">No Personal Coach Assigned Yet</h3>
-            <p style="font-size: 13px; color: var(--text-secondary);">Your gym manager will assign a dedicated strength coach to your profile, or browse available coaches below.</p>
+            <p style="font-size: 13px; color: var(--text-secondary);">Browse FitSync registered trainers below and submit a trainer request for your Gym Owner to approve.</p>
           </div>
         </div>
       `;
     }
   }
 
+  // Populate Specialization Filter dynamically
+  const specFilterEl = document.getElementById('memberTrainerSpecFilter');
+  if (specFilterEl) {
+    const curSpec = specFilterEl.value || 'all';
+    const specs = Array.from(new Set(trainers.flatMap(t => Array.isArray(t.specialties) ? t.specialties : []).filter(Boolean))).sort();
+    specFilterEl.innerHTML = '<option value="all">All Specializations</option>' +
+      specs.map(s => `<option value="${escapeHtml(s)}" ${curSpec === s ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('');
+  }
+
+  const q = (document.getElementById('memberTrainerSearch')?.value || '').trim().toLowerCase();
+  const sf = document.getElementById('memberTrainerSpecFilter')?.value || 'all';
+  const filtered = trainers.filter(t => {
+    if (q && !(t.name || '').toLowerCase().includes(q) && !(t.gym || '').toLowerCase().includes(q) && !(t.specialties || []).join(' ').toLowerCase().includes(q)) return false;
+    if (sf !== 'all' && !(t.specialties || []).includes(sf)) return false;
+    return true;
+  });
+
   const gridEl = document.getElementById('availableTrainersGrid');
   if (gridEl) {
-    if (trainers.length === 0) {
+    if (filtered.length === 0) {
       gridEl.innerHTML = `
         <div style="grid-column: 1 / -1; padding: 36px 20px; text-align: center; background: #F8FAFC; border: 1px dashed var(--border-color); border-radius: var(--radius-md);">
           <i data-lucide="users" style="width: 32px; height: 32px; color: #94A3B8; margin-bottom: 8px;"></i>
-          <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">No Trainers Listed Yet</h4>
-          <p style="font-size: 13px; color: var(--text-secondary); max-width: 400px; margin: 0 auto;">Certified personal coaches added by the Gym Owner will appear here for 1-on-1 consultations and PT bookings.</p>
+          <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">No Registered Trainers Found</h4>
+          <p style="font-size: 13px; color: var(--text-secondary); max-width: 420px; margin: 0 auto;">Registered FitSync personal trainers appear here automatically as they join the platform.</p>
         </div>
       `;
     } else {
-      gridEl.innerHTML = trainers.map(t => `
+      gridEl.innerHTML = filtered.map(t => {
+        const certColor = t.is_certified ? 'background:#DCFCE7;color:#166534;' : 'background:#FEF3C7;color:#92400E;';
+        const reqBtn = t.isAssigned
+          ? `<button class="btn-primary-block" style="width:100%;background:#10B981;border:none;" disabled>Assigned Trainer</button>`
+          : (t.request_status === 'pending'
+            ? `<button class="btn-secondary" style="width:100%;" disabled>Request Pending Approval</button>`
+            : `<button class="btn-primary-block" style="width:100%;" onclick="requestTrainerFromPortal(${t.user_id || 0})">Request Trainer</button>`);
+        return `
         <div class="trainer-card">
-          <img src="${t.avatar || 'assets/images/trainer_raj.jpg'}" class="trainer-avatar-img" alt="${t.name}" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
-          <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">${t.name}</h4>
-          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">${t.title} • ${t.experience} Exp</p>
-          <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 12px; flex-wrap: wrap;">
-            ${(t.specialties || []).slice(0, 2).map(s => `<span class="tag-badge">${s}</span>`).join('')}
+          <img src="${t.avatar || 'assets/images/trainer_raj.jpg'}" class="trainer-avatar-img" alt="${escapeHtml(t.name)}" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
+          <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">${escapeHtml(t.name)}</h4>
+          <span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;margin-bottom:6px;${certColor}">${escapeHtml(t.certification_badge || (t.is_certified ? 'Verified Certified' : 'Verification Pending'))}</span>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${escapeHtml(t.experience || '0 Years')} Exp • ${escapeHtml(t.qualifications || 'Trainer')}</p>
+          <p style="font-size: 11px; color: #64748B; margin-bottom: 6px;">Gym: ${escapeHtml(t.gym || 'Independent')}</p>
+          <p style="font-size: 11px; color: #64748B; margin-bottom: 8px;">Availability: ${escapeHtml(t.availability || 'Scheduled Slots')}</p>
+          <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 10px; flex-wrap: wrap;">
+            ${(t.specialties || []).slice(0, 3).map(s => `<span class="tag-badge">${escapeHtml(s)}</span>`).join('')}
           </div>
-          <button class="btn-secondary" style="width: 100%;" onclick="showNotification('Consultation request sent to ${t.name}.')">Request Consult</button>
-        </div>
-      `).join('');
+          <div style="display: flex; gap: 6px; flex-direction: column;">
+            <button class="btn-secondary" style="width: 100%; font-size: 12px;" onclick="previewTrainerProfile(${t.user_id || 0})">View Profile</button>
+            ${reqBtn}
+          </div>
+        </div>`;
+      }).join('');
     }
   }
 
@@ -2061,11 +2296,119 @@ function renderTrainersUI() {
   const consultSelect = document.querySelector('#appointmentForm select');
   if (consultSelect && trainers.length > 0) {
     consultSelect.innerHTML = trainers.map(t => `
-      <option value="${t.name} (${t.title})">${t.name} — ${t.title}</option>
+      <option value="${escapeHtml(t.name)} (${escapeHtml(t.title || '')})">${escapeHtml(t.name)} — ${escapeHtml(t.title || 'Coach')}</option>
     `).join('');
   }
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function previewTrainerProfile(trainerUserId) {
+  const trainers = window.fitSyncStore?.state?.eligibleTrainers || [];
+  const t = trainers.find(x => parseInt(x.user_id, 10) === parseInt(trainerUserId, 10));
+  if (!t) return;
+  alert(
+    `Trainer Profile: ${t.name}\n` +
+    `Certification Status: ${t.certification_badge || (t.is_certified ? 'Verified Certified' : 'Verification Pending')}\n` +
+    `Specialties: ${(t.specialties || []).join(', ')}\n` +
+    `Experience: ${t.experience}\n` +
+    `Qualifications: ${t.qualifications}\n` +
+    `Associated Gym: ${t.gym}\n` +
+    `Availability: ${t.availability}\n` +
+    `Bio: ${t.bio || 'No biography added yet.'}`
+  );
+}
+
+async function requestTrainerFromPortal(trainerUserId) {
+  if (!trainerUserId) return;
+  try {
+    const res = await fetch('api/user/trainers.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'request_trainer', trainer_user_id: trainerUserId })
+    });
+    const json = await res.json();
+    if (json.success) {
+      if (typeof showToast === 'function') showToast(json.message || 'Trainer request submitted.', 'success');
+      else alert(json.message || 'Trainer request submitted.');
+      await syncUserDashboardFromDb();
+      renderTrainersUI();
+    } else {
+      alert(json.message || 'Unable to request trainer.');
+    }
+  } catch (err) {
+    console.error('Request trainer err:', err);
+  }
+}
+
+function renderMemberNotifications(notifs, unreadCount) {
+  const badge = document.getElementById('memberNotifUnreadBadge');
+  if (badge) {
+    badge.textContent = String(unreadCount || 0);
+    badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+  }
+  const listEl = document.getElementById('memberNotifList');
+  if (!listEl) return;
+  if (!notifs || notifs.length === 0) {
+    listEl.innerHTML = '<div style="padding:12px;text-align:center;color:#64748B;">No notifications yet.</div>';
+    return;
+  }
+  listEl.innerHTML = notifs.map(n => `
+    <div onclick="handleMemberNotificationClick(${Number(n.id || 0)}, '${escapeHtml(n.entity_type || '')}')" style="padding:8px;border-bottom:1px solid #F1F5F9;background:${n.is_read ? '#fff' : '#EFF6FF'};border-radius:6px;margin-bottom:4px;cursor:pointer;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+        <div style="font-weight:700;color:#0F172A;">${escapeHtml(n.title)}</div>
+        ${!n.is_read ? '<span style="width:7px;height:7px;border-radius:50%;background:#2563EB;display:inline-block;flex-shrink:0;"></span>' : ''}
+      </div>
+      <div style="font-size:11px;color:#475569;margin-top:2px;">${escapeHtml(n.body)}</div>
+      <div style="font-size:10px;color:#94A3B8;margin-top:2px;">${escapeHtml(n.created_at || '')}</div>
+    </div>
+  `).join('');
+}
+
+async function handleMemberNotificationClick(notifId, entityType) {
+  const dd = document.getElementById('memberNotifDropdown');
+  if (dd) dd.style.display = 'none';
+  try {
+    if (notifId > 0) {
+      await fetch('api/notifications.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: notifId })
+      });
+    }
+  } catch (err) {
+    console.warn('Mark notification click read err:', err);
+  }
+  const routeMap = {
+    message: 'coach_chat',
+    membership: 'gyms',
+    trainer_assignment: 'trainers',
+    member_trainer_request: 'trainers',
+    workout_plan: 'workouts',
+    workout_reminder: 'workouts',
+    trainer_note: 'trainers'
+  };
+  const targetView = routeMap[entityType] || 'dashboard';
+  if (typeof switchView === 'function') switchView(targetView);
+  syncUserDashboardFromDb();
+}
+
+function toggleMemberNotifications() {
+  const dd = document.getElementById('memberNotifDropdown');
+  if (dd) dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+}
+
+async function markAllMemberNotifsRead() {
+  try {
+    await fetch('api/notifications.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    await syncUserDashboardFromDb();
+  } catch (err) {
+    console.warn('Mark notifications read err:', err);
+  }
 }
 
 function switchAuthTab(tab) {
@@ -2088,30 +2431,66 @@ function switchAuthTab(tab) {
     registerBtn?.classList.add('active');
     if (registerPane) registerPane.style.display = 'block';
     container?.classList.add('auth-container-wide');
+    loadModalRegisterGyms();
   }
   initIcons();
 }
 
+async function loadModalRegisterGyms() {
+  try {
+    const res = await fetch('api/auth/register_options.php');
+    const json = await res.json();
+    if (!json.success || !json.data) return;
+    const gyms = Array.isArray(json.data.gyms) ? json.data.gyms : [];
+    const memSel = document.getElementById('modalMemberGymSelect');
+    const trSel = document.getElementById('modalTrGymSelect');
+    if (memSel) {
+      memSel.innerHTML = '<option value="">No gym yet (Browse after sign in)</option>' +
+        gyms.map(g => `<option value="${g.id}">${escapeHtml(g.name)} (${escapeHtml(g.city)})</option>`).join('');
+    }
+    if (trSel) {
+      trSel.innerHTML = '<option value="none">Not associated with a gym</option>' +
+        gyms.map(g => `<option value="${g.id}">${escapeHtml(g.name)} (${escapeHtml(g.city)})</option>`).join('');
+    }
+  } catch (err) {
+    console.warn('Could not load modal gyms:', err);
+  }
+}
+
 function selectRegisterRole(role) {
+  const normalized = (role === 'member' || role === 'user' || !role) ? 'user' : role;
   const roleInput = document.getElementById('regRoleInput');
   const memberCard = document.getElementById('roleCardMember');
   const trainerCard = document.getElementById('roleCardTrainer');
+  const ownerCard = document.getElementById('roleCardOwner');
   const submitBtn = document.getElementById('regSubmitBtn');
 
-  if (roleInput) roleInput.value = role;
+  const memFields = document.getElementById('modalRoleMemberFields');
+  const trFields = document.getElementById('modalRoleTrainerFields');
+  const goFields = document.getElementById('modalRoleOwnerFields');
+  const dobBox = document.getElementById('modalRegDobBox');
 
-  if (role === 'trainer') {
+  if (roleInput) roleInput.value = normalized;
+  [memberCard, trainerCard, ownerCard].forEach(c => c?.classList.remove('active'));
+  if (memFields) memFields.style.display = normalized === 'user' ? 'block' : 'none';
+  if (trFields) trFields.style.display = normalized === 'trainer' ? 'block' : 'none';
+  if (goFields) goFields.style.display = normalized === 'gym_owner' ? 'block' : 'none';
+  if (dobBox) dobBox.style.display = normalized === 'gym_owner' ? 'none' : 'block';
+
+  const mobileLabel = document.getElementById('modalRegMobileLabel');
+  if (mobileLabel) {
+    mobileLabel.textContent = normalized === 'user' ? 'Mobile Number (Optional)' : 'Mobile Number *';
+  }
+
+  if (normalized === 'trainer') {
     trainerCard?.classList.add('active');
-    memberCard?.classList.remove('active');
-    if (submitBtn) {
-      submitBtn.innerHTML = 'Create Trainer Profile & Enter FitSync <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>';
-    }
+    if (submitBtn) submitBtn.innerHTML = 'Create Trainer Account &amp; Enter FitSync <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>';
+  } else if (normalized === 'gym_owner') {
+    ownerCard?.classList.add('active');
+    if (submitBtn) submitBtn.innerHTML = 'Register Gym &amp; Owner Account <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>';
   } else {
     memberCard?.classList.add('active');
-    trainerCard?.classList.remove('active');
-    if (submitBtn) {
-      submitBtn.innerHTML = 'Create Athlete Profile & Enter FitSync <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>';
-    }
+    if (submitBtn) submitBtn.innerHTML = 'Create Member Account &amp; Enter FitSync <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>';
   }
   initIcons();
 }
@@ -2211,95 +2590,69 @@ async function handleSignInSubmit(e) {
     if (data && data.success) {
       // Role-based routing: if trainer, gym_owner, or admin, navigate to their dedicated portal
       if (data.user && data.user.role && data.user.role !== 'user') {
-        const dest = data.redirect || (data.user.role === 'trainer' ? 'trainer/' : (data.user.role === 'gym_owner' ? 'gym_owner/' : 'admin/'));
+        const dest = data.redirect || (data.user.role === 'trainer' ? 'trainer/index.html' : (data.user.role === 'gym_owner' ? 'gym_owner/index.html' : 'admin/index.html'));
         window.location.href = dest;
         return;
       }
 
-      // Member / User role: update client store and enter application
-      if (window.fitSyncStore) {
-        window.fitSyncStore.login(email, password, remember);
-        if (data.user && window.fitSyncStore.state && window.fitSyncStore.state.user) {
-          window.fitSyncStore.state.user.id = data.user.id;
-          window.fitSyncStore.state.user.name = data.user.full_name || data.user.name;
-          window.fitSyncStore.state.user.email = data.user.email;
-          window.fitSyncStore.state.user.role = data.user.role;
-          if (typeof window.fitSyncStore.save === 'function') window.fitSyncStore.save();
-        }
+      if (typeof window.fitSyncRefreshSession === 'function') {
+        await window.fitSyncRefreshSession();
+      } else {
+        window.__AUTHENTICATED_USER__ = data.user;
       }
 
       initAuthSystem();
-      if (typeof updateDashboardUI === 'function') updateDashboardUI();
+      await syncUserDashboardFromDb();
+      loadUserProfileData();
+      loadMembershipPortalData();
+      loadWorkoutPlanFromDb();
+      loadAttendanceCalendar();
+      renderMealsTimeline();
+      renderWaterLogs();
       if (typeof showNotification === 'function') {
         showNotification(`Welcome back to FitSync, ${data.user.full_name || data.user.name}!`);
       }
       return;
-    } else if (data && !data.success) {
+    } else {
+      const msg = (data && data.message) ? data.message : 'Invalid email or password.';
       if (alertEl) {
         alertEl.style.display = 'block';
-        alertEl.innerText = data.message || 'Invalid email or password.';
+        alertEl.innerText = msg;
       } else {
-        alert(data.message || 'Invalid email or password.');
+        alert(msg);
       }
       return;
     }
   } catch (err) {
-    console.warn('[FitSync Auth] API unreachable, falling back to local client store:', err);
-  }
-
-  // Graceful fallback: route role accounts to dedicated portals
-  const lowerEmail = (email || '').toLowerCase();
-  if (lowerEmail === 'coach@fitsync.health' || lowerEmail.includes('coach')) {
-    window.location.href = 'trainer/';
-    return;
-  }
-  if (lowerEmail === 'owner@fitzone.com' || lowerEmail.includes('owner')) {
-    window.location.href = 'gym_owner/';
-    return;
-  }
-  if (lowerEmail === 'admin@fitsync.com' || lowerEmail.includes('admin')) {
-    window.location.href = 'admin/';
-    return;
-  }
-
-  // Graceful fallback for local offline / static server demo (Member / Athlete)
-  if (window.fitSyncStore) {
-    window.fitSyncStore.login(email, password, remember);
-    initAuthSystem();
-    if (typeof updateDashboardUI === 'function') updateDashboardUI();
-    if (typeof showNotification === 'function') {
-      showNotification(`Welcome back to FitSync AI, ${window.fitSyncStore.state.user.name}!`);
+    console.warn('[FitSync Auth] API error:', err);
+    if (alertEl) {
+      alertEl.style.display = 'block';
+      alertEl.innerText = 'Authentication server unreachable. Please ensure PHP & MySQL are running.';
     }
   }
 }
 
+let modalRegSubmitting = false;
+
 async function handleRegisterSubmit(e) {
   if (e) e.preventDefault();
+  if (modalRegSubmitting) return;
   const alertEl = document.getElementById('authRegisterAlert');
   if (alertEl) { alertEl.style.display = 'none'; alertEl.innerText = ''; }
 
-  const fullName = document.getElementById('regFullName')?.value?.trim();
-  const email = document.getElementById('regEmail')?.value?.trim();
-  const phone = document.getElementById('regPhone')?.value?.trim();
-  const avatarUrl = document.getElementById('regAvatarUrl')?.value;
-  const password = document.getElementById('regPassword')?.value;
-  const confirmPassword = document.getElementById('regConfirmPassword')?.value;
-  const role = document.getElementById('regRoleInput')?.value || 'member';
-  const gender = document.getElementById('regGender')?.value;
-  const age = document.getElementById('regAge')?.value;
-  const height = document.getElementById('regHeight')?.value;
-  const weight = document.getElementById('regWeight')?.value;
-  const goal = document.getElementById('regGoal')?.value;
-  const activityLevel = document.getElementById('regActivity')?.value;
-  const gymBranch = document.getElementById('regGymBranchInput')?.value;
-  const gymLocation = document.getElementById('regGymLocationInput')?.value;
+  const fullName = document.getElementById('regFullName')?.value?.trim() || '';
+  const email = document.getElementById('regEmail')?.value?.trim() || '';
+  const mobile = document.getElementById('regPhone')?.value?.trim() || '';
+  const dob = document.getElementById('regDobInput')?.value || '';
+  const password = document.getElementById('regPassword')?.value || '';
+  const confirmPassword = document.getElementById('regConfirmPassword')?.value || '';
+  const rawRole = document.getElementById('regRoleInput')?.value || 'user';
+  const role = rawRole === 'member' ? 'user' : rawRole;
 
   if (password !== confirmPassword) {
     if (alertEl) {
       alertEl.style.display = 'block';
       alertEl.innerText = 'Passwords do not match. Please verify your password.';
-    } else {
-      alert('Passwords do not match. Please verify your password.');
     }
     return;
   }
@@ -2308,13 +2661,59 @@ async function handleRegisterSubmit(e) {
     if (alertEl) {
       alertEl.style.display = 'block';
       alertEl.innerText = 'Password must be at least 6 characters.';
-    } else {
-      alert('Password must be at least 6 characters.');
     }
     return;
   }
 
-  // Attempt backend database registration
+  const payload = {
+    role: role,
+    full_name: fullName,
+    email: email,
+    mobile: mobile,
+    date_of_birth: dob,
+    password: password,
+    confirm_password: confirmPassword
+  };
+
+  if (role === 'user') {
+    payload.gender = document.getElementById('regGender')?.value || 'male';
+    payload.height_cm = document.getElementById('regHeight')?.value || '';
+    payload.weight_kg = document.getElementById('regWeight')?.value || '';
+    payload.fitness_experience = document.getElementById('regExperienceLevel')?.value || 'intermediate';
+    payload.primary_goal = document.getElementById('regGoal')?.value || 'Muscle Gain';
+    payload.activity_level = document.getElementById('regActivity')?.value || '1.55';
+    const memGym = document.getElementById('modalMemberGymSelect')?.value || '';
+    if (memGym) {
+      payload.gym_id = parseInt(memGym, 10);
+      payload.request_membership = 1;
+    }
+  } else if (role === 'trainer') {
+    payload.trainer_specialization = document.getElementById('modalTrSpec')?.value || 'Strength Training';
+    payload.experience_years = parseInt(document.getElementById('modalTrExp')?.value || '2', 10);
+    payload.certification_name = document.getElementById('modalTrCert')?.value?.trim() || '';
+    payload.certifying_body = document.getElementById('modalTrIssuer')?.value?.trim() || '';
+    payload.qualifications = document.getElementById('modalTrQual')?.value?.trim() || '';
+    payload.bio = document.getElementById('modalTrBio')?.value?.trim() || '';
+    const trGym = document.getElementById('modalTrGymSelect')?.value || 'none';
+    if (trGym && trGym !== 'none') payload.gym_id = parseInt(trGym, 10);
+  } else if (role === 'gym_owner') {
+    payload.gym_name = document.getElementById('modalGoName')?.value?.trim() || '';
+    payload.gym_email = document.getElementById('modalGoEmail')?.value?.trim() || '';
+    payload.gym_phone = document.getElementById('modalGoPhone')?.value?.trim() || '';
+    payload.address_line1 = document.getElementById('modalGoAddr')?.value?.trim() || '';
+    payload.city = document.getElementById('modalGoCity')?.value?.trim() || '';
+    payload.state = document.getElementById('modalGoState')?.value?.trim() || '';
+    payload.postal_code = document.getElementById('modalGoPin')?.value?.trim() || '';
+  }
+
+  const submitBtn = document.getElementById('regSubmitBtn');
+  const origHtml = submitBtn ? submitBtn.innerHTML : '';
+  modalRegSubmitting = true;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating Account...';
+  }
+
   try {
     const res = await fetch('api/auth/register.php', {
       method: 'POST',
@@ -2322,67 +2721,54 @@ async function handleRegisterSubmit(e) {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({
-        full_name: fullName,
-        email: email,
-        phone: phone,
-        password: password,
-        gender: gender,
-        height: height,
-        weight: weight,
-        activityLevel: activityLevel,
-        gymBranch: gymBranch,
-        gymLocation: gymLocation
-      })
+      body: JSON.stringify(payload)
     });
 
     const data = await res.json().catch(() => null);
 
     if (data && data.success) {
-      if (window.fitSyncStore) {
-        window.fitSyncStore.register({
-          fullName, email, phone, avatarUrl, role: 'member',
-          gender, age, height, weight, goal, activityLevel,
-          gymBranch, gymLocation
-        });
-        if (data.user && window.fitSyncStore.state && window.fitSyncStore.state.user) {
-          window.fitSyncStore.state.user.id = data.user.id;
-          window.fitSyncStore.state.user.name = data.user.full_name || fullName;
-          window.fitSyncStore.state.user.email = data.user.email;
-          if (typeof window.fitSyncStore.save === 'function') window.fitSyncStore.save();
-        }
+      if (role === 'trainer' || role === 'gym_owner') {
+        window.location.href = data.redirect || (role === 'trainer' ? 'trainer/index.html' : 'gym_owner/index.html');
+        return;
+      }
+
+      if (typeof window.fitSyncRefreshSession === 'function') {
+        await window.fitSyncRefreshSession();
+      } else {
+        window.__AUTHENTICATED_USER__ = data.user;
       }
 
       initAuthSystem();
-      if (typeof updateDashboardUI === 'function') updateDashboardUI();
+      await syncUserDashboardFromDb();
+      loadUserProfileData();
+      loadMembershipPortalData();
+      loadWorkoutPlanFromDb();
+      loadAttendanceCalendar();
       if (typeof showNotification === 'function') {
         showNotification(`Profile created! Welcome to FitSync, ${fullName}.`);
       }
       return;
-    } else if (data && !data.success) {
+    } else {
+      const msg = (data && data.message) ? data.message : 'Registration failed.';
       if (alertEl) {
         alertEl.style.display = 'block';
-        alertEl.innerText = data.message || 'Registration failed.';
+        alertEl.innerText = msg;
       } else {
-        alert(data.message || 'Registration failed.');
+        alert(msg);
       }
       return;
     }
   } catch (err) {
-    console.warn('[FitSync Auth] API unreachable, attempting local client registration fallback:', err);
-  }
-
-  // Fallback for static offline demo
-  if (window.fitSyncStore) {
-    window.fitSyncStore.register({
-      fullName, email, phone, avatarUrl, role,
-      gender, age, height, weight, goal, activityLevel,
-      gymBranch, gymLocation
-    });
-    initAuthSystem();
-    if (typeof updateDashboardUI === 'function') updateDashboardUI();
-    if (typeof showNotification === 'function') {
-      showNotification(`Profile created! Welcome to FitSync AI, ${fullName}.`);
+    console.warn('[FitSync Auth] Registration API error:', err);
+    if (alertEl) {
+      alertEl.style.display = 'block';
+      alertEl.innerText = 'Unable to connect to registration server.';
+    }
+  } finally {
+    modalRegSubmitting = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origHtml;
     }
   }
 }
@@ -2481,6 +2867,7 @@ async function logoutUser() {
     console.warn('Error during store logout:', e);
   }
 
+  window.__AUTHENTICATED_USER__ = null;
   initAuthSystem();
   switchAuthTab('signin');
 
@@ -2491,6 +2878,7 @@ async function logoutUser() {
 
 function handleResetDatabase() {
   window.fitSyncStore.resetDatabase();
+  window.__AUTHENTICATED_USER__ = null;
   initAuthSystem();
   switchAuthTab('signin');
 }
@@ -2504,9 +2892,10 @@ function openDataStorageModal() {
 }
 
 // ==========================================================================
-// COACH CHAT & DIRECT MESSAGING LOGIC (Database-Backed Real-Time Chat)
+// COACH CHAT & DIRECT MESSAGING LOGIC (Database-Backed 2s Polling Chat)
 // ==========================================================================
 let coachChatPollInterval = null;
+let lastCoachChatSignature = '';
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -2518,79 +2907,188 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-async function renderCoachChatUI() {
-  const store = window.fitSyncStore;
-  const trainers = store ? store.getTrainers() : [];
-  const currentUser = store && store.state ? store.state.user : {};
-  let coach = null;
-  if (currentUser && currentUser.assignedCoachId) {
-    coach = trainers.find(t => t.id === currentUser.assignedCoachId);
-  }
-  if (!coach) {
-    coach = trainers.find(t => t.isAssigned) || trainers[0] || {
-      name: 'Personal Coach',
-      title: 'Certified Strength Coach',
-      avatar: 'assets/images/trainer_raj.jpg'
+function formatChatTime(sentAt) {
+  if (!sentAt) return 'Just now';
+  const normalized = String(sentAt).replace(' ', 'T');
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return String(sentAt);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function getAssignedCoachContext() {
+  const dash = window._latestDashboardData || window.__CURRENT_DASHBOARD__ || {};
+  const assignedTrainer = dash.trainer || dash.assigned_trainer || null;
+  if (assignedTrainer && (assignedTrainer.coach_id || assignedTrainer.id)) {
+    return {
+      id: parseInt(assignedTrainer.coach_id || assignedTrainer.id, 10),
+      name: assignedTrainer.coach_name || assignedTrainer.full_name || assignedTrainer.name || 'Assigned Coach',
+      title: assignedTrainer.coach_title || assignedTrainer.specialization || 'Personal Coach',
+      avatar: assignedTrainer.avatar_url || assignedTrainer.avatar || 'assets/images/trainer_raj.jpg'
     };
   }
+  const store = window.fitSyncStore;
+  const trainers = store ? store.getTrainers() : [];
+  const currentUser = window.__AUTHENTICATED_USER__ || (store && store.state ? store.state.user : {});
+  let coach = null;
+  if (currentUser && currentUser.assignedCoachId) {
+    coach = trainers.find(t => parseInt(t.user_id || t.id, 10) === parseInt(currentUser.assignedCoachId, 10));
+  }
+  if (!coach) coach = trainers.find(t => t.isAssigned) || trainers[0] || null;
+  if (!coach) return null;
+  return {
+    id: parseInt(coach.user_id || coach.id, 10),
+    name: coach.name || coach.full_name || 'Assigned Coach',
+    title: coach.title || coach.specialization || 'Certified Coach',
+    avatar: coach.avatar || coach.avatar_url || 'assets/images/trainer_raj.jpg'
+  };
+}
 
-  // Update header elements
+function buildCoachMessageHtml(msg, currentUserId, coach) {
+  const isUser = parseInt(msg.sender_id, 10) === parseInt(currentUserId, 10);
+  const timeStr = formatChatTime(msg.sent_at);
+  if (isUser) {
+    const isRead = parseInt(msg.is_read || 0, 10) === 1;
+    const statusText = isRead ? 'Read' : 'Delivered';
+    const checkColor = isRead ? '#2563EB' : '#94A3B8';
+    return `
+      <div class="chat-bubble-outgoing" data-msg-id="${msg.id}">
+        <div class="bubble-content">${escapeHtml(msg.message_text)}</div>
+        <div class="chat-bubble-meta" style="color: #64748B;">
+          ${timeStr} • ${statusText} <i data-lucide="check-check" style="width: 13px; height: 13px; color: ${checkColor}; display: inline-block;"></i>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="chat-bubble-incoming" data-msg-id="${msg.id}">
+      <img src="${escapeHtml(coach.avatar || 'assets/images/trainer_raj.jpg')}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-top: 2px;" alt="${escapeHtml(coach.name)}">
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 3px;">${escapeHtml(coach.name)}</div>
+        <div class="bubble-content">${escapeHtml(msg.message_text)}</div>
+        <div class="chat-bubble-meta">${timeStr} • Received</div>
+      </div>
+    </div>`;
+}
+
+async function renderCoachChatUI(forceRedraw = false) {
+  const stream = document.getElementById('coachChatStream');
   const avatarEl = document.getElementById('coachChatAvatar');
   const nameEl = document.getElementById('coachChatName');
   const statusEl = document.getElementById('coachChatStatus');
+
+  const coach = getAssignedCoachContext();
+  const currentUser = window.__AUTHENTICATED_USER__ || (window.fitSyncStore?.state?.user) || {};
+  const currentUserId = parseInt(currentUser.id || 0, 10);
+
+  if (!coach || !coach.id || !currentUserId) {
+    if (nameEl) nameEl.innerText = 'No Assigned Coach';
+    if (statusEl) statusEl.innerText = 'Ask your gym owner to assign a coach to unlock live coaching chat.';
+    if (stream) {
+      stream.innerHTML = `
+        <div style="text-align: center; padding: 40px 16px; color: #64748B;">
+          <i data-lucide="user-x" style="width: 28px; height: 28px; margin: 0 auto 8px; opacity: 0.4; display: block;"></i>
+          <div style="font-weight: 700; color: #0F172A; margin-bottom: 4px;">No Coach Assigned Yet</div>
+          <div style="font-size: 12px;">Once your Gym Owner assigns a trainer to you, two-way real-time coaching chat will appear here.</div>
+        </div>`;
+      if (typeof initIcons === 'function') initIcons();
+    }
+    return;
+  }
+
   if (avatarEl) avatarEl.src = coach.avatar || 'assets/images/trainer_raj.jpg';
   if (nameEl) nameEl.innerText = coach.name;
   if (statusEl) statusEl.innerText = `Active Coach Desk • ${coach.title || 'Certified Coach'}`;
 
-  const stream = document.getElementById('coachChatStream');
   if (!stream) return;
 
-  const currentUserId = (currentUser && currentUser.id) ? parseInt(currentUser.id) : 2;
-  const coachUserId = (coach && coach.user_id) ? parseInt(coach.user_id) : ((coach && coach.id && !isNaN(coach.id)) ? parseInt(coach.id) : 1);
-
   try {
-    const res = await fetch(`api/messages.php?viewer_id=${currentUserId}&with_user=${coachUserId}`);
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && Array.isArray(json.messages)) {
-        if (json.messages.length === 0) {
-          stream.innerHTML = `
-            <div style="text-align: center; padding: 40px 16px; color: #64748B;">
-              <i data-lucide="message-square" style="width: 28px; height: 28px; margin: 0 auto 8px; opacity: 0.4; display: block;"></i>
-              <div style="font-weight: 700; color: #0F172A; margin-bottom: 4px;">Direct Desk with ${escapeHtml(coach.name)}</div>
-              <div style="font-size: 12px;">No messages recorded yet. Type below to consult on workout form, swap exercises, or adjust macros.</div>
-            </div>`;
-        } else {
-          stream.innerHTML = json.messages.map(msg => {
-            const isUser = (parseInt(msg.sender_id) === parseInt(currentUserId));
-            const timeStr = msg.sent_at ? new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today';
-            if (isUser) {
-              return `
-                <div class="chat-bubble-outgoing">
-                  <div class="bubble-content">${escapeHtml(msg.message_text)}</div>
-                  <div class="chat-bubble-meta" style="color: #64748B;">
-                    ${timeStr} • Delivered <i data-lucide="check-check" style="width: 13px; height: 13px; color: #2563EB; display: inline-block;"></i>
-                  </div>
-                </div>`;
-            } else {
-              return `
-                <div class="chat-bubble-incoming">
-                  <img src="${coach.avatar || 'assets/images/trainer_raj.jpg'}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-top: 2px;" alt="${coach.name}">
-                  <div>
-                    <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 3px;">${escapeHtml(coach.name)}</div>
-                    <div class="bubble-content">${escapeHtml(msg.message_text)}</div>
-                    <div class="chat-bubble-meta">${timeStr} • Read</div>
-                  </div>
-                </div>`;
-            }
-          }).join('');
-        }
-        stream.scrollTop = stream.scrollHeight;
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+    const res = await fetch(`api/messages.php?with_user=${encodeURIComponent(coach.id)}`);
+    if (!res.ok) return;
+    const json = await res.json();
+    const msgs = json.messages || (json.data && json.data.messages) || [];
+    window.__ACTIVE_CONVERSATION_ID__ = json.conversation_id || (json.data && json.data.conversation_id) || null;
+
+    if (json.success && Array.isArray(msgs)) {
+      const sig = `${coach.id}:${msgs.map(m => `${m.id}_${m.is_read ? 1 : 0}`).join(',')}`;
+      if (!forceRedraw && sig === lastCoachChatSignature) {
+        return;
       }
+      const wasAtBottom = (stream.scrollHeight - stream.scrollTop - stream.clientHeight) < 80;
+      lastCoachChatSignature = sig;
+
+      // Preserve any unsent pending/failed temporary nodes while replacing confirmed stream
+      const pendingNodes = Array.from(stream.querySelectorAll('[data-temp-msg="1"]'));
+
+      if (msgs.length === 0 && pendingNodes.length === 0) {
+        stream.innerHTML = `
+          <div style="text-align: center; padding: 40px 16px; color: #64748B;">
+            <i data-lucide="message-square" style="width: 28px; height: 28px; margin: 0 auto 8px; opacity: 0.4; display: block;"></i>
+            <div style="font-weight: 700; color: #0F172A; margin-bottom: 4px;">Direct Desk with ${escapeHtml(coach.name)}</div>
+            <div style="font-size: 12px;">No messages recorded yet. Type below to consult on workout form, swap exercises, or adjust macros.</div>
+          </div>`;
+      } else {
+        stream.innerHTML = msgs.map(msg => buildCoachMessageHtml(msg, currentUserId, coach)).join('');
+        pendingNodes.forEach(node => stream.appendChild(node));
+      }
+
+      if (forceRedraw || wasAtBottom || msgs.length <= 5) {
+        stream.scrollTop = stream.scrollHeight;
+      }
+      if (typeof initIcons === 'function') initIcons();
+
+      const chatBadge = document.getElementById('sidebarChatUnreadBadge');
+      if (chatBadge) chatBadge.style.display = 'none';
     }
   } catch (err) {
     console.warn('Coach chat stream load err:', err);
+  }
+}
+
+async function pollCoachChatMessages() {
+  const viewEl = document.getElementById('view-coach_chat');
+  if (!viewEl || !viewEl.classList.contains('active')) return;
+  await renderCoachChatUI(false);
+}
+
+async function dispatchCoachMessageText(text, tempNode) {
+  const coach = getAssignedCoachContext();
+  if (!coach || !coach.id) {
+    if (tempNode) tempNode.remove();
+    if (typeof showToast === 'function') showToast('No assigned coach available for chat.', 'warning');
+    return;
+  }
+
+  try {
+    const res = await fetch('api/messages.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversation_id: window.__ACTIVE_CONVERSATION_ID__ || null,
+        with_user: coach.id,
+        message_text: text
+      })
+    });
+    const json = await res.json();
+    if (json.success) {
+      if (tempNode && tempNode.parentNode) tempNode.remove();
+      lastCoachChatSignature = '';
+      await renderCoachChatUI(true);
+    } else {
+      if (tempNode) {
+        const metaEl = tempNode.querySelector('.chat-bubble-meta');
+        if (metaEl) {
+          metaEl.innerHTML = `<span style="color:#DC2626;">Failed: ${escapeHtml(json.error || json.message || 'Error')}</span> <button type="button" onclick="retryCoachMessage(this)" data-retry-text="${escapeHtml(text)}" style="background:none;border:none;color:#2563EB;font-weight:700;cursor:pointer;text-decoration:underline;font-size:11px;">Retry</button>`;
+        }
+      }
+      if (typeof showToast === 'function') showToast(json.error || json.message || 'Failed to send message', 'danger');
+    }
+  } catch (err) {
+    console.warn('Message send err:', err);
+    if (tempNode) {
+      const metaEl = tempNode.querySelector('.chat-bubble-meta');
+      if (metaEl) {
+        metaEl.innerHTML = `<span style="color:#DC2626;">Network error</span> <button type="button" onclick="retryCoachMessage(this)" data-retry-text="${escapeHtml(text)}" style="background:none;border:none;color:#2563EB;font-weight:700;cursor:pointer;text-decoration:underline;font-size:11px;">Retry</button>`;
+      }
+    }
   }
 }
 
@@ -2602,39 +3100,32 @@ async function handleSendCoachChat(e) {
   if (!text) return;
   input.value = '';
 
-  const store = window.fitSyncStore;
-  const trainers = store ? store.getTrainers() : [];
-  const currentUser = store && store.state ? store.state.user : {};
-  let coach = null;
-  if (currentUser && currentUser.assignedCoachId) {
-    coach = trainers.find(t => t.id === currentUser.assignedCoachId);
-  }
-  if (!coach) {
-    coach = trainers.find(t => t.isAssigned) || trainers[0];
+  const stream = document.getElementById('coachChatStream');
+  let tempNode = null;
+  if (stream) {
+    const emptyState = stream.querySelector('[data-lucide="message-square"]')?.closest('div');
+    if (emptyState && stream.children.length === 1) stream.innerHTML = '';
+    tempNode = document.createElement('div');
+    tempNode.className = 'chat-bubble-outgoing';
+    tempNode.setAttribute('data-temp-msg', '1');
+    tempNode.innerHTML = `
+      <div class="bubble-content">${escapeHtml(text)}</div>
+      <div class="chat-bubble-meta" style="color: #64748B;">Sending...</div>
+    `;
+    stream.appendChild(tempNode);
+    stream.scrollTop = stream.scrollHeight;
   }
 
-  const currentUserId = (currentUser && currentUser.id) ? parseInt(currentUser.id) : 2;
-  const coachUserId = (coach && coach.user_id) ? parseInt(coach.user_id) : ((coach && coach.id && !isNaN(coach.id)) ? parseInt(coach.id) : 1);
+  await dispatchCoachMessageText(text, tempNode);
+}
 
-  try {
-    const res = await fetch('api/messages.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sender_id: currentUserId,
-        recipient_id: coachUserId,
-        message_text: text
-      })
-    });
-    const json = await res.json();
-    if (json.success) {
-      renderCoachChatUI();
-    } else {
-      showToast(json.error || 'Failed to send message', 'error');
-    }
-  } catch (err) {
-    console.warn('Message send err:', err);
-  }
+async function retryCoachMessage(btnEl) {
+  const text = btnEl?.getAttribute('data-retry-text');
+  const tempNode = btnEl?.closest('[data-temp-msg="1"]');
+  if (!text) return;
+  const metaEl = tempNode?.querySelector('.chat-bubble-meta');
+  if (metaEl) metaEl.innerHTML = 'Sending...';
+  await dispatchCoachMessageText(text, tempNode);
 }
 
 function sendQuickPrompt(promptText) {
@@ -2642,6 +3133,12 @@ function sendQuickPrompt(promptText) {
   if (input) {
     input.value = promptText;
     handleSendCoachChat();
+  }
+}
+
+function clearCoachChatHistory() {
+  if (typeof showToast === 'function') {
+    showToast('Conversation messages are stored permanently in MySQL for coach continuity.', 'info');
   }
 }
 
@@ -2919,14 +3416,17 @@ async function renderAttendanceView() {
   const tbody = document.getElementById('attendanceLogsTbody');
   if (!tbody) return;
 
-  const user = window.fitSyncStore?.state?.user;
-  const userId = user?.id || '';
-
   try {
-    const res = await fetch(`api/attendance.php?user_id=${userId}`);
+    const res = await fetch('api/attendance.php');
     if (res.ok) {
       const json = await res.json();
-      const records = Array.isArray(json.data) ? json.data : (Array.isArray(json.history) ? json.history : []);
+      const payload = (json.data && typeof json.data === 'object' && !Array.isArray(json.data)) ? json.data : {};
+      const records = Array.isArray(payload.logs) ? payload.logs : (Array.isArray(json.data) ? json.data : (Array.isArray(json.history) ? json.history : []));
+
+      const user = window.__AUTHENTICATED_USER__ || window.fitSyncStore?.state?.user || {};
+      const passIdEl = document.getElementById('attPassId');
+      if (passIdEl && user.id) passIdEl.textContent = `FS-PASS-${String(user.id).padStart(4, '0')}`;
+
       if (records.length === 0) {
         tbody.innerHTML = `
           <tr>
@@ -2936,12 +3436,12 @@ async function renderAttendanceView() {
               <span style="font-size: 12px; color: var(--text-muted);">Scan your QR pass or click "Simulate Check-In" to record turnstile entry.</span>
             </td>
           </tr>`;
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        if (typeof initIcons === 'function') initIcons();
         return;
       }
 
       tbody.innerHTML = records.map(r => {
-        const checkInDate = r.check_in_time ? new Date(r.check_in_time) : new Date();
+        const checkInDate = r.check_in_time ? new Date(String(r.check_in_time).replace(' ', 'T')) : new Date();
         const dateStr = checkInDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const timeStr = checkInDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const duration = r.check_out_time ? 'Completed' : 'Active Session';
@@ -2970,7 +3470,7 @@ async function renderAttendanceView() {
             </td>
           </tr>`;
       }).join('');
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+      if (typeof initIcons === 'function') initIcons();
     }
   } catch (err) {
     console.warn('Attendance load error:', err);
@@ -2978,54 +3478,64 @@ async function renderAttendanceView() {
 }
 
 async function simulateTurnstileCheckIn() {
-  const store = window.fitSyncStore;
-  const user = store?.state?.user;
-  const userId = user?.id || null;
+  const dash = window._latestDashboardData || window.__CURRENT_DASHBOARD__ || {};
+  const membership = dash.membership || {};
+  const gymId = membership.gym_id ? parseInt(membership.gym_id, 10) : 1;
 
-  // Flash pass card visually
-  const card = document.querySelector('.turnstile-pass-card');
-  if (card) {
-    card.style.boxShadow = '0 0 30px #22C55E';
-    card.style.borderColor = '#22C55E';
-    setTimeout(() => {
-      card.style.boxShadow = '';
-      card.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-    }, 1500);
-  }
-
-  // Post to backend database (Workflow D: Live Turnstile Check-In & Capacity Telemetry)
   try {
     const res = await fetch('api/attendance.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: userId,
-        gym_id: 1,
+        gym_id: gymId,
         action: 'check_in',
         method: 'turnstile'
       })
     });
     const json = await res.json();
+    const card = document.querySelector('.turnstile-pass-card');
     if (json.success) {
-      showToast('Turnstile Pass Verified • Facility Occupancy Updated!', 'success');
+      if (card) {
+        card.style.boxShadow = '0 0 30px #22C55E';
+        card.style.borderColor = '#22C55E';
+        setTimeout(() => {
+          card.style.boxShadow = '';
+          card.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+        }, 1500);
+      }
+      showToast(json.message || 'Turnstile Pass Verified • Facility Occupancy Updated!', 'success');
       renderAttendanceView();
+      loadAttendanceCalendar(currentCalYear, currentCalMonth);
       syncUserDashboardFromDb();
+    } else {
+      if (card) {
+        card.style.boxShadow = '0 0 24px #EF4444';
+        card.style.borderColor = '#EF4444';
+        setTimeout(() => {
+          card.style.boxShadow = '';
+          card.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+        }, 1500);
+      }
+      showToast(json.message || json.error || 'Check-in rejected.', 'warning');
     }
   } catch (err) {
     console.warn('Attendance sync err:', err);
+    showToast('Server error recording check-in.', 'danger');
   }
 }
 
 function exportAttendanceCSV() {
-  let csv = "Date,CheckIn_Time,Duration,Branch,Zone,Method,Status\n";
-  attendanceLogs.forEach(r => {
-    csv += `"${r.date}","${r.time}","${r.duration}","${r.branch}","${r.zone}","${r.method}","${r.status}"\n`;
+  const rows = Array.from(document.querySelectorAll('#attendanceLogsTbody tr'));
+  let csv = "Date,Status,Branch,Method,Verification\n";
+  rows.forEach(tr => {
+    const cols = Array.from(tr.querySelectorAll('td')).map(td => `"${td.innerText.replace(/\s+/g, ' ').trim().replace(/"/g, '""')}"`);
+    if (cols.length >= 4) csv += cols.join(',') + "\n";
   });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `fitsync_turnstile_attendance_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `fitsync_turnstile_attendance_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -3088,11 +3598,8 @@ async function loadAttendanceCalendar(year, month) {
     titleEl.textContent = `${monthNames[month - 1]} ${year}`;
   }
 
-  const user = window.currentUser || (window.fitSyncStore && window.fitSyncStore.getUser && window.fitSyncStore.getUser()) || {};
-  const userId = user.id || 8;
-
   try {
-    const res = await fetch(`api/user/attendance_calendar.php?user_id=${userId}&year=${year}&month=${month}`);
+    const res = await fetch(`api/user/attendance_calendar.php?year=${year}&month=${month}`);
     const json = await res.json();
     if (json.success && json.data) {
       renderAttendanceCalendarGrid(json.data);
@@ -3182,8 +3689,8 @@ async function handleCalendarCheckIn() {
     btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:14px;height:14px;"></i> Verifying...';
   }
 
-  const user = window.currentUser || (window.fitSyncStore && window.fitSyncStore.getUser && window.fitSyncStore.getUser()) || {};
-  const userId = user.id || 8;
+  const dash = window._latestDashboardData || window.__CURRENT_DASHBOARD__ || {};
+  const gymId = (dash.membership && dash.membership.gym_id) ? parseInt(dash.membership.gym_id, 10) : 1;
 
   try {
     const res = await fetch('api/user/attendance_calendar.php', {
@@ -3191,8 +3698,7 @@ async function handleCalendarCheckIn() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'checkin',
-        user_id: userId,
-        gym_id: 1,
+        gym_id: gymId,
         method: 'turnstile'
       })
     });
@@ -3200,19 +3706,16 @@ async function handleCalendarCheckIn() {
     if (result.success) {
       if (typeof showToast === 'function') {
         showToast(result.message || 'Check-in verified! Attendance logged.', 'success');
-      } else {
-        alert(result.message || 'Check-in verified!');
       }
       loadAttendanceCalendar(currentCalYear, currentCalMonth);
-      loadUserProfileData(); // updates streak
+      renderAttendanceView();
+      loadUserProfileData();
       if (typeof syncUserDashboardFromDb === 'function') {
         syncUserDashboardFromDb();
       }
     } else {
       if (typeof showToast === 'function') {
         showToast(result.error || result.message || 'Check-in failed.', 'warning');
-      } else {
-        alert(result.error || result.message);
       }
     }
   } catch (err) {
@@ -3232,7 +3735,7 @@ async function loadUserProfileData() {
     const res = await fetch('api/user/profile.php');
     const json = await res.json();
     if (!json.success || !json.data) {
-      console.warn('Profile fetch unsuccessful:', json.error);
+      console.warn('Profile fetch unsuccessful:', json.error || json.message);
       return;
     }
 
@@ -3242,6 +3745,7 @@ async function loadUserProfileData() {
     const m = (d.measurements && d.measurements.history) ? d.measurements.history : [];
     const n = d.notifications || {};
     const t = d.trainer || {};
+    const perms = d.data_permissions || d.permissions || {};
     const streak = u.streak_days || 0;
 
     // Synchronize authoritative user identity across store and global UI elements
@@ -3269,25 +3773,25 @@ async function loadUserProfileData() {
     if (avatarEl && u.avatar) avatarEl.src = u.avatar;
 
     const ageEl = document.getElementById('profHeaderAge');
-    if (ageEl) ageEl.textContent = u.age ? `${u.age} Years` : '24 Years';
+    if (ageEl) ageEl.textContent = u.age ? `${u.age} Years` : '--';
 
     const heightEl = document.getElementById('profHeaderHeight');
-    if (heightEl) heightEl.textContent = u.height_cm ? `${u.height_cm} cm` : '175 cm';
+    if (heightEl) heightEl.textContent = u.height_cm ? `${u.height_cm} cm` : '--';
 
     const weightEl = document.getElementById('profHeaderWeight');
-    if (weightEl) weightEl.textContent = u.weight_kg ? `${u.weight_kg} kg` : '72.4 kg';
+    if (weightEl) weightEl.textContent = u.weight_kg ? `${u.weight_kg} kg` : '--';
 
     const gymEl = document.getElementById('profHeaderGym');
-    if (gymEl) gymEl.textContent = u.home_gym || 'FitZone Fitness Hub';
+    if (gymEl) gymEl.textContent = u.home_gym || 'No Gym Connected';
 
     const goalEl = document.getElementById('profHeaderGoal');
-    if (goalEl) goalEl.textContent = u.goal_title || 'Build Muscle';
+    if (goalEl) goalEl.textContent = u.goal_title || 'General Fitness';
 
     const tierEl = document.getElementById('profHeaderTier');
-    if (tierEl) tierEl.textContent = u.membership_tier || 'FitZone Platinum Elite';
+    if (tierEl) tierEl.textContent = u.membership_tier || 'No Active Plan';
 
     const streakEl = document.getElementById('profHeaderStreak');
-    if (streakEl) streakEl.textContent = `${streak} Days 🔥`;
+    if (streakEl) streakEl.textContent = `${streak} Days`;
 
     // SECTION B: Steppers & Selects
     const ctrlWeight = document.getElementById('ctrlWeight');
@@ -3311,19 +3815,19 @@ async function loadUserProfileData() {
 
     // SECTION C: Biometrics
     const bmiVal = document.getElementById('bioBmiVal');
-    if (bmiVal) bmiVal.textContent = b.bmi || '23.6';
+    if (bmiVal) bmiVal.textContent = b.bmi || '--';
 
     const bmiCat = document.getElementById('bioBmiCategory');
-    if (bmiCat) bmiCat.textContent = b.bmi_category || 'Normal Weight';
+    if (bmiCat) bmiCat.textContent = b.bmi_category || '--';
 
     const bmrVal = document.getElementById('bioBmrVal');
-    if (bmrVal) bmrVal.innerHTML = `${b.bmr ? Number(b.bmr).toLocaleString() : '1,704'} <span style="font-size: 15px; font-weight: 600;">kcal</span>`;
+    if (bmrVal) bmrVal.innerHTML = `${b.bmr ? Number(b.bmr).toLocaleString() : '--'} <span style="font-size: 15px; font-weight: 600;">kcal</span>`;
 
     const tdeeVal = document.getElementById('bioTdeeVal');
-    if (tdeeVal) tdeeVal.innerHTML = `${b.tdee ? Number(b.tdee).toLocaleString() : '2,641'} <span style="font-size: 15px; font-weight: 600;">kcal</span>`;
+    if (tdeeVal) tdeeVal.innerHTML = `${b.tdee ? Number(b.tdee).toLocaleString() : '--'} <span style="font-size: 15px; font-weight: 600;">kcal</span>`;
 
     const fatVal = document.getElementById('bioBodyFatVal');
-    if (fatVal) fatVal.textContent = b.body_fat_pct ? `${b.body_fat_pct}%` : '17.9%';
+    if (fatVal) fatVal.textContent = b.body_fat_pct ? `${b.body_fat_pct}%` : '--';
 
     // SECTION D: Milestones
     renderMilestonesTable(m);
@@ -3344,18 +3848,25 @@ async function loadUserProfileData() {
     if (document.getElementById('notifCoach')) document.getElementById('notifCoach').checked = n.coach_messages !== false;
     if (document.getElementById('notifAnnouncements')) document.getElementById('notifAnnouncements').checked = n.gym_announcements !== false;
 
+    // SECTION H2: Trainer Data Permissions
+    if (document.getElementById('permViewMeasurements')) document.getElementById('permViewMeasurements').checked = perms.can_view_measurements !== false && perms.can_view_measurements !== 0;
+    if (document.getElementById('permViewNutrition')) document.getElementById('permViewNutrition').checked = perms.can_view_nutrition !== false && perms.can_view_nutrition !== 0;
+    if (document.getElementById('permViewAssessments')) document.getElementById('permViewAssessments').checked = perms.can_view_assessments !== false && perms.can_view_assessments !== 0;
+    if (document.getElementById('permViewPhotos')) document.getElementById('permViewPhotos').checked = perms.can_view_progress_photos === true || perms.can_view_progress_photos === 1;
+    if (document.getElementById('permViewWorkouts')) document.getElementById('permViewWorkouts').checked = perms.can_view_workouts !== false && perms.can_view_workouts !== 0;
+
     // SECTION I: Account Details
     const acctEmail = document.getElementById('acctEmail');
-    if (acctEmail) acctEmail.textContent = u.email || 'athlete@fitsync.ai';
+    if (acctEmail) acctEmail.textContent = u.email || '--';
 
     const acctGym = document.getElementById('acctHomeGym');
-    if (acctGym) acctGym.textContent = u.home_gym || 'FitZone Fitness Hub';
+    if (acctGym) acctGym.textContent = u.home_gym || 'No Gym Connected';
 
     const acctTier = document.getElementById('acctTier');
-    if (acctTier) acctTier.textContent = u.membership_tier || 'FitZone Platinum Elite';
+    if (acctTier) acctTier.textContent = u.membership_tier || 'No Active Plan';
 
     const acctCoach = document.getElementById('acctCoachName');
-    if (acctCoach) acctCoach.textContent = t.name ? `Coach ${t.name}` : 'Coach Vikram';
+    if (acctCoach) acctCoach.textContent = t.name ? t.name : 'Not assigned';
 
     if (window.initIcons) initIcons();
   } catch (err) {
@@ -3411,16 +3922,12 @@ async function saveBodyStatsAndRecalculate() {
   const goal   = document.getElementById('ctrlGoal')?.value || 'Build Muscle';
   const activity = document.getElementById('ctrlActivity')?.value || 'moderately_active';
 
-  const user = window.currentUser || (window.fitSyncStore && window.fitSyncStore.getUser && window.fitSyncStore.getUser()) || {};
-  const userId = user.id || 8;
-
   try {
     const res = await fetch('api/user/profile.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'save_body_stats',
-        user_id: userId,
         weight: weight,
         height: height,
         age: age,
@@ -3475,16 +3982,12 @@ async function saveMilestoneMeasurement() {
   const arms  = parseFloat(document.getElementById('milestoneArms')?.value) || null;
   const notes = document.getElementById('milestoneNotes')?.value || '';
 
-  const user = window.currentUser || (window.fitSyncStore && window.fitSyncStore.getUser && window.fitSyncStore.getUser()) || {};
-  const userId = user.id || 8;
-
   try {
     const res = await fetch('api/user/profile.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'record_milestone',
-        user_id: userId,
         weight: weight,
         waist: waist,
         chest: chest,
@@ -3639,16 +4142,12 @@ async function handleProfilePasswordChange(e) {
     return;
   }
 
-  const user = window.currentUser || (window.fitSyncStore && window.fitSyncStore.getUser && window.fitSyncStore.getUser()) || {};
-  const userId = user.id || 8;
-
   try {
     const res = await fetch('api/user/profile.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'change_password',
-        user_id: userId,
         current_password: curPwd,
         new_password: newPwd
       })
@@ -3693,16 +4192,12 @@ async function saveNotificationPreferences() {
   const notifCoach = document.getElementById('notifCoach')?.checked ? 1 : 0;
   const notifAnnouncements = document.getElementById('notifAnnouncements')?.checked ? 1 : 0;
 
-  const user = window.currentUser || (window.fitSyncStore && window.fitSyncStore.getUser && window.fitSyncStore.getUser()) || {};
-  const userId = user.id || 8;
-
   try {
     const res = await fetch('api/user/profile.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'save_notifications',
-        user_id: userId,
         workout_reminders: notifWorkout,
         nutrition_alerts: notifNutrition,
         coach_messages: notifCoach,
@@ -3712,10 +4207,688 @@ async function saveNotificationPreferences() {
     const result = await res.json();
     if (result.success) {
       if (typeof showToast === 'function') showToast('Notification preference saved.', 'success');
+    } else if (typeof showToast === 'function') {
+      showToast(result.message || result.error || 'Unable to save preferences.', 'warning');
     }
   } catch (err) {
     console.warn('Error saving notifications:', err);
   }
+}
+
+async function saveTrainerDataPermissions() {
+  const pm = document.getElementById('permViewMeasurements')?.checked ? 1 : 0;
+  const pn = document.getElementById('permViewNutrition')?.checked ? 1 : 0;
+  const pa = document.getElementById('permViewAssessments')?.checked ? 1 : 0;
+  const pp = document.getElementById('permViewPhotos')?.checked ? 1 : 0;
+  const pw = document.getElementById('permViewWorkouts')?.checked ? 1 : 0;
+
+  try {
+    const res = await fetch('api/user/profile.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save_data_permissions',
+        can_view_measurements: pm,
+        can_view_nutrition: pn,
+        can_view_assessments: pa,
+        can_view_progress_photos: pp,
+        can_view_workouts: pw
+      })
+    });
+    const result = await res.json();
+    if (result.success) {
+      if (typeof showToast === 'function') showToast('Trainer data sharing permissions updated.', 'success');
+    } else if (typeof showToast === 'function') {
+      showToast(result.message || result.error || 'Could not update data permissions.', 'danger');
+    }
+  } catch (err) {
+    console.warn('Error updating permissions:', err);
+  }
+}
+
+// ==========================================================================
+// MEMBERSHIP & GYMS DIRECTORY CONTROLLER (DB-Backed)
+// ==========================================================================
+let activeGymFilterChip = 'all';
+
+function setGymFilterChip(filterVal) {
+  activeGymFilterChip = filterVal || 'all';
+  document.querySelectorAll('#gymFilterChipsRow .filter-chip').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-gym-filter') === activeGymFilterChip);
+  });
+  renderGymsDirectoryFromCache();
+}
+
+function renderGymsDirectoryFromCache() {
+  const grid = document.getElementById('gymsDirectoryGrid');
+  if (!grid) return;
+
+  const gyms = Array.isArray(window.__USER_GYMS_DIRECTORY__) ? window.__USER_GYMS_DIRECTORY__ : [];
+  const current = window.__USER_CURRENT_MEMBERSHIP__ || null;
+  const q = (document.getElementById('gymSearchInput')?.value || '').trim().toLowerCase();
+  const facFilter = (document.getElementById('gymFacilityFilter')?.value || 'all').trim().toLowerCase();
+
+  const filtered = gyms.filter(g => {
+    const facs = Array.isArray(g.facilities) ? g.facilities : [];
+    const hay = [
+      g.name, g.city, g.state, g.address_line1, g.description, g.hours_summary,
+      ...facs,
+      ...(Array.isArray(g.equipment) ? g.equipment : [])
+    ].join(' ').toLowerCase();
+    if (q && !hay.includes(q)) return false;
+    if (facFilter !== 'all' && !facs.some(f => String(f).toLowerCase() === facFilter)) return false;
+    if (activeGymFilterChip !== 'all') {
+      if ((g.city || '').toLowerCase() !== activeGymFilterChip.toLowerCase() && !hay.includes(activeGymFilterChip.toLowerCase())) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 36px 20px; text-align: center; background: #F8FAFC; border: 1px dashed var(--border-color); border-radius: var(--radius-md);">
+        <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">No Active Partner Gyms Found</h4>
+        <p style="font-size: 13px; color: var(--text-secondary); max-width: 440px; margin: 0 auto;">
+          ${gyms.length === 0
+            ? 'No active gyms are currently open for public discovery. Once a Gym Owner activates their facility, it appears here automatically.'
+            : 'No gyms matched your search or filter. Try clearing the search box.'}
+        </p>
+      </div>`;
+    return;
+  }
+
+  const imgs = ['assets/images/gym_fitzone.jpg', 'assets/images/gym_powerhouse.jpg', 'assets/images/gym_crossfit.jpg', 'assets/images/gym_elite.jpg'];
+  grid.innerHTML = filtered.map((g, idx) => {
+    const isCurrentGym = current && parseInt(current.gym_id, 10) === parseInt(g.id, 10);
+    const plans = Array.isArray(g.plans) ? g.plans : [];
+    const coverImg = g.cover_url || g.logo_url || imgs[idx % imgs.length];
+    const facTags = (Array.isArray(g.facilities) ? g.facilities : []).slice(0, 3);
+    const eqSummary = (Array.isArray(g.equipment) && g.equipment.length) ? g.equipment.slice(0, 3).join(', ') : '';
+    const planButtonsHtml = plans.map(p => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;margin-top:6px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#0F172A;">${escapeHtml(p.name)}</div>
+          <div style="font-size:11px;color:#64748B;">${p.duration_months} mo • ₹${Number(p.price || 0).toLocaleString()}</div>
+        </div>
+        <button type="button" class="btn-primary-block" style="width:auto;padding:6px 12px;font-size:11px;" onclick="openEnrollConfirmationModal(${g.id}, ${p.id}, ${isCurrentGym ? 'true' : 'false'})">
+          ${isCurrentGym && current.status === 'active' ? 'Renew / Switch' : (isCurrentGym && current.status === 'pending' ? 'Pending' : 'Enroll')}
+        </button>
+      </div>
+    `).join('');
+
+    const enrollBtnHtml = plans.length > 0
+      ? `<button type="button" class="btn-primary-block" style="width: 100%; margin-top: 4px; font-size: 12px;" onclick="openEnrollConfirmationModal(${g.id}, ${plans[0].id}, ${isCurrentGym ? 'true' : 'false'})">${isCurrentGym && current.status === 'active' ? 'Manage / Renew Plan' : (isCurrentGym && current.status === 'pending' ? 'Enrollment Pending Approval' : 'Enroll / Join Gym')}</button>`
+      : '';
+
+    return `
+      <div class="gym-card">
+        <img src="${escapeHtml(coverImg)}" class="gym-card-img" alt="${escapeHtml(g.name)}" onerror="this.src='assets/images/bench_press.jpg'">
+        <div class="gym-card-body">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <h4 style="font-size: 15px; font-weight: 700;">${escapeHtml(g.name)}</h4>
+            ${isCurrentGym ? `<span class="badge-active">${escapeHtml(String(current.status).toUpperCase())}</span>` : `<span class="stat-badge-pill badge-healthy">Open for Enrollment</span>`}
+          </div>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${escapeHtml(g.address_line1 || '')}${g.city ? ', ' + escapeHtml(g.city) : ''} • ${g.rating || '4.8'} ★</p>
+          <p style="font-size: 11px; color: #64748B; margin-bottom: 4px;">⏰ ${escapeHtml(g.hours_summary || 'Hours configured by gym')} • 📞 ${escapeHtml(g.phone || '--')}</p>
+          ${g.description ? `<p style="font-size: 11px; color: #475569; margin-bottom: 6px; line-height: 1.4;">${escapeHtml(g.description)}</p>` : ''}
+          ${facTags.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">${facTags.map(f => `<span class="tag-badge">${escapeHtml(f)}</span>`).join('')}</div>` : ''}
+          ${eqSummary ? `<div style="font-size:11px;color:#64748B;margin-bottom:8px;">⚙️ ${escapeHtml(eqSummary)}</div>` : ''}
+          <div style="margin-top: auto; display: flex; flex-direction: column; gap: 6px;">
+            ${planButtonsHtml || '<div style="font-size:12px;color:#64748B;">Contact gym desk for membership pricing.</div>'}
+            ${enrollBtnHtml}
+            <button type="button" class="btn-secondary" style="width: 100%; font-size: 12px;" onclick="openGymDetailsModal(${g.id})">View Gym Details</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openEnrollConfirmationModal(gymId, planId = 0, isRenewal = false) {
+  const gyms = Array.isArray(window.__USER_GYMS_DIRECTORY__) ? window.__USER_GYMS_DIRECTORY__ : [];
+  const g = gyms.find(x => parseInt(x.id, 10) === parseInt(gymId, 10));
+  if (!g) return;
+
+  const plans = Array.isArray(g.plans) ? g.plans : [];
+  if (plans.length === 0) {
+    if (typeof showToast === 'function') showToast('This gym has not published active membership plans yet.', 'warning');
+    return;
+  }
+
+  document.getElementById('enrollConfirmGymId').value = String(g.id);
+  document.getElementById('enrollConfirmIsRenewal').value = isRenewal ? '1' : '0';
+  document.getElementById('enrollConfirmGymName').textContent = g.name;
+  document.getElementById('enrollConfirmGymLoc').textContent = `${[g.address_line1, g.city, g.state, g.postal_code].filter(Boolean).join(', ')} • ${g.phone || ''}`;
+  document.getElementById('enrollConfirmGymHours').textContent = `Hours: ${g.hours_summary || 'See gym desk'}`;
+
+  const sel = document.getElementById('enrollConfirmPlanSelect');
+  sel.innerHTML = plans.map(p =>
+    `<option value="${p.id}" ${parseInt(p.id, 10) === parseInt(planId, 10) ? 'selected' : ''}>${escapeHtml(p.name)} — ${p.duration_months} month(s) • ₹${Number(p.price || 0).toLocaleString()}</option>`
+  ).join('');
+
+  const errBox = document.getElementById('enrollConfirmAlert');
+  if (errBox) { errBox.style.display = 'none'; errBox.textContent = ''; }
+
+  updateEnrollPlanSummary();
+  if (typeof openModal === 'function') openModal('enrollConfirmationModal');
+}
+
+function updateEnrollPlanSummary() {
+  const gymId = parseInt(document.getElementById('enrollConfirmGymId')?.value || '0', 10);
+  const planId = parseInt(document.getElementById('enrollConfirmPlanSelect')?.value || '0', 10);
+  const gyms = Array.isArray(window.__USER_GYMS_DIRECTORY__) ? window.__USER_GYMS_DIRECTORY__ : [];
+  const g = gyms.find(x => parseInt(x.id, 10) === gymId);
+  const plan = (g && Array.isArray(g.plans)) ? g.plans.find(p => parseInt(p.id, 10) === planId) : null;
+  const sumEl = document.getElementById('enrollConfirmPlanSummary');
+  if (!sumEl) return;
+  if (!plan) {
+    sumEl.textContent = 'Select a membership plan above.';
+    return;
+  }
+  sumEl.innerHTML = `
+    <strong>${escapeHtml(plan.name)}</strong> (${plan.duration_months} month${plan.duration_months > 1 ? 's' : ''}) — <strong>₹${Number(plan.price || 0).toLocaleString()}</strong><br>
+    <span style="font-size:11px;">Submitting creates a <strong>Pending</strong> enrollment request in MySQL. Your membership activates after Gym Owner approval.</span>
+  `;
+}
+
+async function confirmSubmitEnrollment() {
+  const gymId = parseInt(document.getElementById('enrollConfirmGymId')?.value || '0', 10);
+  const planId = parseInt(document.getElementById('enrollConfirmPlanSelect')?.value || '0', 10);
+  const isRenewal = document.getElementById('enrollConfirmIsRenewal')?.value === '1';
+  const btn = document.getElementById('btnConfirmEnrollment');
+  const errBox = document.getElementById('enrollConfirmAlert');
+  if (errBox) { errBox.style.display = 'none'; errBox.textContent = ''; }
+  if (!gymId || !planId) return;
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
+  try {
+    const res = await fetch('api/user/membership.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: isRenewal ? 'renew' : 'request',
+        gym_id: gymId,
+        plan_id: planId
+      })
+    });
+    const json = await res.json();
+    if (res.ok && json.success) {
+      if (typeof closeModal === 'function') closeModal('enrollConfirmationModal');
+      if (typeof showToast === 'function') showToast(json.message || 'Enrollment request submitted!', 'success');
+      await loadMembershipPortalData();
+      if (typeof syncUserDashboardFromDb === 'function') await syncUserDashboardFromDb();
+    } else {
+      const msg = json.message || json.error || 'Unable to submit enrollment request.';
+      if (errBox) { errBox.style.display = 'block'; errBox.textContent = msg; }
+      else if (typeof showToast === 'function') showToast(msg, 'danger');
+    }
+  } catch (err) {
+    if (errBox) { errBox.style.display = 'block'; errBox.textContent = 'Network error while submitting enrollment.'; }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Enrollment Request'; }
+  }
+}
+
+function openGymDetailsModal(gymId) {
+  const gyms = Array.isArray(window.__USER_GYMS_DIRECTORY__) ? window.__USER_GYMS_DIRECTORY__ : [];
+  const g = gyms.find(x => parseInt(x.id, 10) === parseInt(gymId, 10));
+  if (!g) return;
+
+  const current = window.__USER_CURRENT_MEMBERSHIP__ || null;
+  const isCurrent = current && parseInt(current.gym_id, 10) === parseInt(g.id, 10);
+
+  const hTitle = document.getElementById('gymModalHeaderTitle');
+  const cover = document.getElementById('gymModalCoverImg');
+  const gName = document.getElementById('gymModalGymName');
+  const badge = document.getElementById('gymModalStatusBadge');
+  const desc = document.getElementById('gymModalDescription');
+  const box = document.getElementById('gymModalDetailsBox');
+  const plansBox = document.getElementById('gymModalPlansBox');
+  const primaryBtn = document.getElementById('gymModalPrimaryActionBtn');
+
+  if (hTitle) hTitle.textContent = `${g.name}${g.city ? ' – ' + g.city : ''}`;
+  if (cover) cover.src = g.cover_url || g.logo_url || 'assets/images/gym_fitzone.jpg';
+  if (gName) gName.textContent = g.name;
+  if (badge) badge.textContent = isCurrent ? `${String(current.status).toUpperCase()} MEMBER` : String(g.status || 'active').toUpperCase();
+  if (desc) desc.textContent = g.description || 'Verified FitSync partner fitness facility.';
+
+  const hoursLines = Array.isArray(g.operating_hours) && g.operating_hours.length
+    ? g.operating_hours.map(h => `${h.day_label}: ${h.is_closed ? 'Closed' : `${h.open_time}–${h.close_time}`}`).join(' | ')
+    : (g.hours_summary || 'See gym desk');
+
+  if (box) {
+    box.innerHTML = `
+      <div>📍 <strong>Address:</strong> ${escapeHtml([g.address_line1, g.address_line2, g.city, g.state, g.postal_code].filter(Boolean).join(', '))}</div>
+      <div>📞 <strong>Contact:</strong> ${escapeHtml(g.phone || '--')} • ${escapeHtml(g.email || '--')}</div>
+      <div>⏰ <strong>Operating Hours:</strong> ${escapeHtml(hoursLines)}</div>
+      <div>🏋️ <strong>Facilities:</strong> ${escapeHtml((g.facilities && g.facilities.length) ? g.facilities.join(', ') : 'General Gym Floor')}</div>
+      <div>⚙️ <strong>Equipment:</strong> ${escapeHtml((g.equipment && g.equipment.length) ? g.equipment.join(', ') : 'Standard Free Weights & Machines')}</div>
+    `;
+  }
+
+  const plans = Array.isArray(g.plans) ? g.plans : [];
+  if (plansBox) {
+    plansBox.innerHTML = plans.length
+      ? `<strong style="font-size:12px;color:#0F172A;">Available Membership Plans:</strong>` + plans.map(p => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;">
+          <div style="font-size:12px;"><strong>${escapeHtml(p.name)}</strong> (${p.duration_months} mo) — ₹${Number(p.price || 0).toLocaleString()}</div>
+          <button type="button" class="btn-primary-block" style="width:auto;padding:5px 12px;font-size:11px;" onclick="requestGymMembership(${g.id}, ${p.id}, ${isCurrent ? 'true' : 'false'}); closeModal('gymDetailsModal');">Request Membership</button>
+        </div>`).join('')
+      : '<div style="font-size:12px;color:#64748B;">No membership plans published yet.</div>';
+  }
+
+  if (primaryBtn) {
+    primaryBtn.style.display = (isCurrent && current.status === 'active') ? 'inline-flex' : 'none';
+  }
+
+  if (typeof openModal === 'function') openModal('gymDetailsModal');
+}
+
+async function loadMembershipPortalData() {
+  try {
+    const res = await fetch('api/user/membership.php', { cache: 'no-store' });
+    if (!res.ok) return;
+    const json = await res.json();
+    if (!json.success || !json.data) return;
+
+    const current = json.data.current_membership || null;
+    const history = Array.isArray(json.data.history) ? json.data.history : [];
+    const gyms = Array.isArray(json.data.gyms) ? json.data.gyms : [];
+    window.__USER_GYMS_DIRECTORY__ = gyms;
+    window.__USER_CURRENT_MEMBERSHIP__ = current;
+
+    const badgeEl = document.getElementById('memBannerBadge');
+    const titleEl = document.getElementById('memBannerTitle');
+    const metaEl = document.getElementById('memBannerMeta');
+    const extraEl = document.getElementById('memBannerExtra');
+    const actionsEl = document.getElementById('memBannerActions');
+
+    if (current) {
+      const st = String(current.status || 'pending').toUpperCase();
+      if (badgeEl) {
+        badgeEl.textContent = st;
+        badgeEl.style.background = st === 'ACTIVE' ? '#DCFCE7' : (st === 'PENDING' ? '#FEF3C7' : '#FEE2E2');
+        badgeEl.style.color = st === 'ACTIVE' ? '#166534' : (st === 'PENDING' ? '#92400E' : '#991B1B');
+      }
+      if (titleEl) {
+        titleEl.textContent = `${current.gym_name || 'FitSync Partner Gym'} — ${current.plan_name || 'Membership Plan'}`;
+      }
+      if (metaEl) {
+        metaEl.textContent = `Requested: ${(current.created_at || current.start_date || '--').slice(0, 10)} • Valid Till: ${current.end_date || 'Pending Approval'} • Amount: ₹${Number(current.price || 0).toLocaleString()} • Pass Token: ${current.qr_code_token || 'Pending'}`;
+      }
+      if (extraEl) {
+        let ownerResp = 'Awaiting Gym Owner review';
+        if (st === 'ACTIVE') ownerResp = current.approved_at ? `Approved ${String(current.approved_at).slice(0, 16)}` : 'Approved & Active';
+        else if (st === 'REJECTED') ownerResp = current.rejection_reason ? `Declined: ${current.rejection_reason}` : 'Declined by Gym Owner';
+        else if (st === 'EXPIRED') ownerResp = 'Membership term ended';
+        else if (st === 'CANCELLED') ownerResp = 'Cancelled';
+
+        const coachHtml = current.assigned_coach_name
+          ? `<span>Assigned Coach: <strong>${escapeHtml(current.assigned_coach_name)}</strong></span> <button type="button" class="btn-secondary" style="padding:3px 9px;font-size:11px;" onclick="switchView('coach_chat')">Message Coach</button>`
+          : `<span>Assigned Coach: <strong>Unassigned</strong></span>`;
+        extraEl.innerHTML = `<span>Owner Response: <strong>${escapeHtml(ownerResp)}</strong></span> • ${coachHtml}`;
+      }
+      if (actionsEl) {
+        let btns = '';
+        if (st === 'ACTIVE') {
+          btns += `<button type="button" class="btn-primary-block" style="width: auto; padding: 8px 18px;" onclick="switchView('attendance')">Open Turnstile Pass</button>`;
+          btns += `<button type="button" class="btn-secondary" style="padding: 8px 16px;" onclick="openEnrollConfirmationModal(${current.gym_id}, ${current.plan_id}, true)">Renew Plan</button>`;
+        }
+        if (st === 'ACTIVE' || st === 'PENDING') {
+          btns += `<button type="button" class="btn-secondary" style="padding: 8px 14px; color: #DC2626; border-color: rgba(239,68,68,0.35);" onclick="cancelMyMembership(${current.id})">Cancel</button>`;
+        }
+        actionsEl.innerHTML = btns;
+      }
+    } else {
+      if (badgeEl) {
+        badgeEl.textContent = 'NO MEMBERSHIP';
+        badgeEl.style.background = '#E2E8F0';
+        badgeEl.style.color = '#475569';
+      }
+      if (titleEl) titleEl.textContent = 'No Active Gym Membership';
+      if (metaEl) metaEl.textContent = 'Select a verified gym branch below to enroll or renew your membership.';
+      if (extraEl) extraEl.innerHTML = '';
+      if (actionsEl) actionsEl.innerHTML = '';
+    }
+
+    // Populate facility filter dropdown dynamically
+    const facSel = document.getElementById('gymFacilityFilter');
+    if (facSel) {
+      const curFac = facSel.value || 'all';
+      const facs = Array.from(new Set(gyms.flatMap(g => Array.isArray(g.facilities) ? g.facilities : []).filter(Boolean))).sort();
+      facSel.innerHTML = '<option value="all">All Facilities</option>' +
+        facs.map(f => `<option value="${escapeHtml(f)}" ${curFac === f ? 'selected' : ''}>${escapeHtml(f)}</option>`).join('');
+    }
+
+    // Populate filter chips dynamically from real DB cities
+    const chipsRow = document.getElementById('gymFilterChipsRow');
+    if (chipsRow) {
+      const cities = Array.from(new Set(gyms.map(g => g.city).filter(Boolean))).slice(0, 4);
+      chipsRow.innerHTML = `<button type="button" class="filter-chip ${activeGymFilterChip === 'all' ? 'active' : ''}" data-gym-filter="all" onclick="setGymFilterChip('all')">All Branches (${gyms.length})</button>` +
+        cities.map(c => `<button type="button" class="filter-chip ${activeGymFilterChip === c ? 'active' : ''}" data-gym-filter="${escapeHtml(c)}" onclick="setGymFilterChip('${escapeHtml(c)}')">${escapeHtml(c)}</button>`).join('');
+    }
+
+    renderGymsDirectoryFromCache();
+    renderMembershipHistory(history);
+  } catch (err) {
+    console.warn('Failed to load membership portal:', err);
+  }
+}
+
+function renderMembershipHistory(history) {
+  const container = document.getElementById('memberEnrollmentHistoryContainer');
+  const countBadge = document.getElementById('memHistoryCountBadge');
+  const list = Array.isArray(history) ? history : [];
+  if (countBadge) countBadge.textContent = `${list.length} Record${list.length === 1 ? '' : 's'}`;
+  if (!container) return;
+
+  if (list.length === 0) {
+    container.innerHTML = '<div style="padding: 18px; text-align: center; color: #64748B; font-size: 13px;">No enrollment requests submitted yet. Choose a gym above and click Enroll to get started.</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <table class="fs-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 1px solid #E2E8F0; color: #64748B;">
+          <th style="padding: 8px 10px;">GYM</th>
+          <th style="padding: 8px 10px;">SELECTED PLAN</th>
+          <th style="padding: 8px 10px;">REQUEST DATE</th>
+          <th style="padding: 8px 10px;">STATUS</th>
+          <th style="padding: 8px 10px;">OWNER RESPONSE</th>
+          <th style="padding: 8px 10px;">ASSIGNED COACH</th>
+          <th style="padding: 8px 10px; text-align: right;">ACTION</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.map(h => {
+          const st = String(h.status || 'pending').toUpperCase();
+          const stStyle = st === 'ACTIVE'
+            ? 'background:#DCFCE7;color:#166534;'
+            : (st === 'PENDING' ? 'background:#FEF3C7;color:#92400E;' : 'background:#FEE2E2;color:#991B1B;');
+          let resp = 'Pending Owner Review';
+          if (st === 'ACTIVE') resp = h.approved_at ? `Approved ${String(h.approved_at).slice(0, 10)}` : 'Approved';
+          else if (st === 'REJECTED') resp = h.rejection_reason ? `Declined: ${h.rejection_reason}` : 'Declined';
+          else if (st === 'CANCELLED') resp = 'Cancelled by member';
+          else if (st === 'EXPIRED') resp = `Ended ${h.end_date || ''}`;
+
+          const coachHtml = h.assigned_coach_name
+            ? `<strong>${escapeHtml(h.assigned_coach_name)}</strong>`
+            : '<span style="color:#64748B;">Unassigned</span>';
+          const actionBtn = (st === 'ACTIVE' || st === 'PENDING')
+            ? `<button type="button" class="btn-secondary" style="padding:3px 8px;font-size:11px;color:#DC2626;" onclick="cancelMyMembership(${h.id})">Cancel</button>`
+            : '--';
+
+          return `
+            <tr style="border-bottom: 1px solid #F1F5F9;">
+              <td style="padding: 8px 10px;"><strong>${escapeHtml(h.gym_name || 'Gym')}</strong><div style="font-size:11px;color:#64748B;">${escapeHtml(h.gym_city || '')}</div></td>
+              <td style="padding: 8px 10px;">${escapeHtml(h.plan_name || 'Plan')}<div style="font-size:11px;color:#64748B;">₹${Number(h.price || 0).toLocaleString()}</div></td>
+              <td style="padding: 8px 10px;">${escapeHtml((h.created_at || h.start_date || '--').slice(0, 10))}</td>
+              <td style="padding: 8px 10px;"><span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;${stStyle}">${escapeHtml(st)}</span></td>
+              <td style="padding: 8px 10px;">${escapeHtml(resp)}</td>
+              <td style="padding: 8px 10px;">${coachHtml}</td>
+              <td style="padding: 8px 10px; text-align: right;">${actionBtn}</td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function requestGymMembership(gymId, planId, isRenewal = false) {
+  try {
+    const res = await fetch('api/user/membership.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: isRenewal ? 'renew' : 'request',
+        gym_id: gymId,
+        plan_id: planId
+      })
+    });
+    const json = await res.json();
+    if (json.success) {
+      if (typeof showToast === 'function') showToast(json.message || 'Membership request submitted!', 'success');
+      loadMembershipPortalData();
+      if (typeof syncUserDashboardFromDb === 'function') syncUserDashboardFromDb();
+    } else {
+      if (typeof showToast === 'function') showToast(json.message || json.error || 'Membership request failed.', 'danger');
+    }
+  } catch (err) {
+    console.warn('Membership request err:', err);
+  }
+}
+
+async function cancelMyMembership(membershipId) {
+  if (!confirm('Are you sure you want to cancel this gym membership? Turnstile check-in access will be disabled.')) return;
+  try {
+    const res = await fetch('api/user/membership.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'cancel',
+        membership_id: membershipId
+      })
+    });
+    const json = await res.json();
+    if (json.success) {
+      if (typeof showToast === 'function') showToast(json.message || 'Membership cancelled.', 'info');
+      loadMembershipPortalData();
+      if (typeof syncUserDashboardFromDb === 'function') syncUserDashboardFromDb();
+    } else {
+      if (typeof showToast === 'function') showToast(json.message || json.error || 'Unable to cancel membership.', 'danger');
+    }
+  } catch (err) {
+    console.warn('Cancel membership err:', err);
+  }
+}
+
+// ==========================================================================
+// ASSIGNED WORKOUT SYNCHRONIZATION & SESSION LOGGING (DB-Backed)
+// ==========================================================================
+function applyServerWorkoutData(workoutData) {
+  if (!workoutData) return;
+  window.__LATEST_WORKOUT_DATA__ = workoutData;
+
+  const activePlan = workoutData.plan || workoutData.active_plan || null;
+  const days = Array.isArray(workoutData.days) ? workoutData.days : [];
+  const sessions = Array.isArray(workoutData.sessions) ? workoutData.sessions : (Array.isArray(workoutData.completed_sessions) ? workoutData.completed_sessions : []);
+
+  // Map server assigned plan days into FitSyncStore's workoutPlans structure if present
+  if (activePlan && days.length > 0 && window.fitSyncStore?.state?.workouts) {
+    const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    const mappedPlans = {};
+    days.forEach((day, idx) => {
+      const key = dayKeys[(parseInt(day.day_number || idx + 1, 10) - 1) % 7] || `day${idx + 1}`;
+      const exercises = Array.isArray(day.exercises) ? day.exercises : [];
+      mappedPlans[key] = {
+        planDayId: day.id,
+        dayName: day.focus_area || day.day_name || `Day ${day.day_number || idx + 1}`,
+        dayKey: key,
+        isRest: exercises.length === 0,
+        exercises: exercises.map(ex => {
+          const targetSets = parseInt(ex.target_sets || 3, 10);
+          const repsVal = parseInt(String(ex.target_reps || '10').replace(/[^\d].*$/, ''), 10) || 10;
+          const setsArr = [];
+          for (let s = 1; s <= targetSets; s++) {
+            setsArr.push({
+              set: s,
+              reps: repsVal,
+              weight: ex.target_weight_kg && parseFloat(ex.target_weight_kg) > 0 ? parseFloat(ex.target_weight_kg) : 'Bodyweight',
+              done: false,
+              exerciseId: ex.exercise_id,
+              planDayId: day.id
+            });
+          }
+          return {
+            exercise_id: ex.exercise_id,
+            plan_day_id: day.id,
+            name: ex.exercise_name || ex.name || 'Exercise',
+            muscle: ex.muscle_group_name || ex.muscle_group || 'Full Body',
+            equipment: ex.equipment_required || ex.equipment_needed || 'Gym Equipment',
+            target: `Target: ${targetSets} sets × ${ex.target_reps || '10'} reps`,
+            image: ex.image_path || 'assets/images/bench_press.jpg',
+            sets: setsArr
+          };
+        })
+      };
+    });
+
+    window.fitSyncStore.state.workouts.assignedPlanTitle = activePlan.plan_name || activePlan.name || activePlan.title || 'Assigned Training Plan';
+    window.fitSyncStore.state.workouts.assignedPlanMeta = `${activePlan.goal || activePlan.goal_focus || 'Strength'} • Coach: ${activePlan.trainer_name || 'Assigned Coach'}`;
+    window.fitSyncStore.state.workouts.plans = Object.assign({}, window.fitSyncStore.state.workouts.plans || {}, mappedPlans);
+
+    const firstActiveKey = Object.keys(mappedPlans)[0];
+    if (firstActiveKey && document.getElementById('view-workouts')?.classList.contains('active')) {
+      if (typeof renderWorkoutExercises === 'function') {
+        renderWorkoutExercises(mappedPlans[firstActiveKey]);
+      }
+      if (typeof updateWorkoutHeaderStats === 'function') {
+        updateWorkoutHeaderStats(mappedPlans[firstActiveKey]);
+      }
+    }
+  }
+
+  renderWorkoutModalList(workoutData);
+  renderCompletedWorkoutsHistory(sessions);
+}
+
+async function loadWorkoutPlanFromDb() {
+  try {
+    const res = await fetch('api/workouts.php');
+    if (!res.ok) return;
+    const json = await res.json();
+    if (json.success && json.data) {
+      applyServerWorkoutData(json.data);
+    }
+  } catch (err) {
+    console.warn('Workout load error:', err);
+  }
+}
+
+function renderWorkoutModalList(workoutData) {
+  const listEl = document.getElementById('workoutModalExerciseList');
+  const headingEl = document.getElementById('workoutModalHeading');
+  if (!listEl) return;
+
+  const days = workoutData && Array.isArray(workoutData.days) ? workoutData.days : [];
+  const activePlan = workoutData ? (workoutData.plan || workoutData.active_plan) : null;
+
+  if (!activePlan || days.length === 0) {
+    if (headingEl) headingEl.textContent = 'Assigned Routine Exercises';
+    listEl.innerHTML = `
+      <div style="padding: 16px; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 10px; font-size: 13px; color: #64748B; text-align: center;">
+        No coach workout plan assigned yet. You can still log a custom workout session by clicking Complete Session below.
+      </div>`;
+    return;
+  }
+
+  const firstDay = workoutData.today_day || days[0];
+  const exercises = Array.isArray(firstDay.exercises) ? firstDay.exercises : [];
+  if (headingEl) headingEl.textContent = `${activePlan.plan_name || activePlan.name || activePlan.title || 'Workout'} — ${firstDay.focus_area || firstDay.day_name || 'Day 1'}`;
+
+  if (exercises.length === 0) {
+    listEl.innerHTML = `<div style="padding:12px;color:#64748B;font-size:13px;">No exercises listed on this training day.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = exercises.map((ex, i) => `
+    <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;cursor:pointer;">
+      <span style="display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" class="wk-modal-ex-cb" data-idx="${i}" data-ex-id="${ex.exercise_id || ''}" data-ex-name="${escapeHtml(ex.exercise_name || ex.name)}" data-sets="${ex.target_sets || 3}" data-reps="${escapeHtml(ex.target_reps || '10')}" data-weight="${ex.target_weight_kg || 0}" checked>
+        <span>
+          <strong style="font-size:13px;color:#0F172A;display:block;">${escapeHtml(ex.exercise_name || ex.name)}</strong>
+          <small style="font-size:11px;color:#64748B;">${ex.target_sets || 3} sets × ${escapeHtml(ex.target_reps || '10')} reps ${ex.target_weight_kg ? '@ ' + ex.target_weight_kg + ' kg' : ''}</small>
+        </span>
+      </span>
+      <span class="fs-badge fs-badge-blue">${escapeHtml(ex.muscle_group_name || ex.muscle_group || 'Training')}</span>
+    </label>
+  `).join('');
+}
+
+async function completeWorkoutModalSession() {
+  const btn = document.getElementById('btnCompleteWorkoutSession');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Saving Session...';
+  }
+
+  try {
+    const checkboxes = Array.from(document.querySelectorAll('.wk-modal-ex-cb:checked'));
+    const exercisesPayload = checkboxes.map(cb => {
+      const setsCount = parseInt(cb.getAttribute('data-sets') || '3', 10);
+      const repsVal = parseInt(String(cb.getAttribute('data-reps') || '10').replace(/[^\d].*$/, ''), 10) || 10;
+      const wtVal = parseFloat(cb.getAttribute('data-weight') || '0') || 0;
+      const setsArr = [];
+      for (let s = 1; s <= setsCount; s++) {
+        setsArr.push({ set: s, reps: repsVal, weight: wtVal });
+      }
+      return {
+        exercise_id: parseInt(cb.getAttribute('data-ex-id') || '0', 10) || null,
+        name: cb.getAttribute('data-ex-name') || 'Training Exercise',
+        sets: setsArr
+      };
+    });
+
+    const latestWk = window.__LATEST_WORKOUT_DATA__ || {};
+    const firstDayId = latestWk.days && latestWk.days[0] ? latestWk.days[0].id : null;
+
+    const res = await fetch('api/workouts.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'complete_session',
+        plan_day_id: firstDayId,
+        duration_minutes: 45,
+        notes: 'Completed via Member Workout Player',
+        exercises: exercisesPayload
+      })
+    });
+    const json = await res.json();
+    if (json.success) {
+      if (typeof showToast === 'function') showToast(json.message || 'Workout session saved to database!', 'success');
+      if (typeof closeAllModals === 'function') closeAllModals();
+      await loadWorkoutPlanFromDb();
+      if (typeof syncUserDashboardFromDb === 'function') syncUserDashboardFromDb();
+    } else {
+      if (typeof showToast === 'function') showToast(json.message || json.error || 'Failed to save workout session.', 'danger');
+    }
+  } catch (err) {
+    console.warn('Complete workout error:', err);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Complete Session';
+    }
+  }
+}
+
+function renderCompletedWorkoutsHistory(sessions) {
+  const container = document.getElementById('wkCompletedHistoryContainer');
+  const badge = document.getElementById('wkSessionsCountBadge');
+  const list = Array.isArray(sessions) ? sessions : [];
+  if (badge) badge.textContent = `${list.length} ${list.length === 1 ? 'Session' : 'Sessions'}`;
+  if (!container) return;
+
+  if (list.length === 0) {
+    container.innerHTML = 'No completed workout sessions recorded yet.';
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      ${list.map(s => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;">
+          <div>
+            <div style="font-weight:700;color:#0F172A;font-size:13px;">${escapeHtml(s.plan_title || s.focus_area || 'Training Session')}</div>
+            <div style="font-size:11px;color:#64748B;">${escapeHtml(s.completed_at || s.started_at || '')} • ${s.duration_minutes || 45} mins</div>
+          </div>
+          <div style="text-align:right;">
+            <span class="fs-badge fs-badge-green">${Number(s.total_volume_kg || 0).toLocaleString()} kg volume</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
 }
 
 // Window exports
@@ -3733,6 +4906,18 @@ window.deleteMilestoneMeasurement = deleteMilestoneMeasurement;
 window.handleSaveProfileDetails = handleSaveProfileDetails;
 window.handleProfilePasswordChange = handleProfilePasswordChange;
 window.saveNotificationPreferences = saveNotificationPreferences;
+window.saveTrainerDataPermissions = saveTrainerDataPermissions;
+window.loadMembershipPortalData = loadMembershipPortalData;
+window.requestGymMembership = requestGymMembership;
+window.cancelMyMembership = cancelMyMembership;
+window.loadWorkoutPlanFromDb = loadWorkoutPlanFromDb;
+window.applyServerWorkoutData = applyServerWorkoutData;
+window.renderWorkoutModalList = renderWorkoutModalList;
+window.completeWorkoutModalSession = completeWorkoutModalSession;
+window.renderCompletedWorkoutsHistory = renderCompletedWorkoutsHistory;
+window.pollCoachChatMessages = pollCoachChatMessages;
+window.retryCoachMessage = retryCoachMessage;
+window.clearCoachChatHistory = clearCoachChatHistory;
 window.openEditMealModal = openEditMealModal;
 window.resetMealForm = resetMealForm;
 window.deleteMealEntry = deleteMealEntry;

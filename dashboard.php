@@ -1,9 +1,9 @@
 <?php
-/**
- * FitSync AI — Dashboard Router
- * Directs visitors to the primary interactive application UI
- */
 declare(strict_types=1);
 
-header('Location: index.html');
+require_once __DIR__ . '/config/bootstrap.php';
+requireRole('user');
+$_SESSION['active_portal'] = 'user';
+
+header('Location: index.html#dashboard');
 exit;

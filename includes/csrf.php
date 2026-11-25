@@ -13,7 +13,11 @@ declare(strict_types=1);
 function generateCsrfToken(): string {
     if (session_status() !== PHP_SESSION_ACTIVE) {
         if (!headers_sent()) {
-            session_start();
+            if (function_exists('initSecureSession')) {
+                initSecureSession();
+            } else {
+                session_start();
+            }
         }
     }
 
@@ -51,7 +55,11 @@ function csrfInput(): string {
  */
 function validateCsrfToken(?string $token): bool {
     if (session_status() !== PHP_SESSION_ACTIVE) {
-        return false;
+        if (function_exists('initSecureSession')) {
+            initSecureSession();
+        } else {
+            return false;
+        }
     }
 
     if (empty($_SESSION['csrf_token']) || empty($token)) {
@@ -63,7 +71,7 @@ function validateCsrfToken(?string $token): bool {
 
 /**
  * Enforce valid CSRF token for state-changing HTTP requests.
- * Checks $_POST['csrf_token'] and HTTP_X_CSRF_TOKEN header.
+ * Checks $_POST['csrf_token'], HTTP_X_CSRF_TOKEN header, and JSON body.
  *
  * @return void
  */
@@ -80,10 +88,12 @@ function requireCsrfToken(): void {
     }
 
     if (!validateCsrfToken($token)) {
-        if (isAjaxRequest()) {
+        if (isAjaxRequest() || strpos($_SERVER['SCRIPT_NAME'] ?? '', '/api/') !== false) {
             jsonResponse([
                 'success' => false,
-                'message' => 'CSRF security token validation failed. Please refresh the page.'
+                'message' => 'CSRF security token validation failed. Please refresh the page.',
+                'error'   => 'CSRF security token validation failed. Please refresh the page.',
+                'data'    => null
             ], 403);
         } else {
             http_response_code(403);

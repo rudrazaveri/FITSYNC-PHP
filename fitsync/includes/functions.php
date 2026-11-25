@@ -113,30 +113,33 @@ function sanitizeString(string $str): string {
 }
 
 /**
- * Resolves the authoritative active member user ID strictly from the authenticated session.
- * For member endpoints, never allows query parameter tampering (?user_id=) to leak or override identity.
- * Fallback to active member in DB occurs only when unauthenticated during initial discovery.
+ * Output a standardized JSON response with success, message, and data fields.
+ *
+ * @param bool $success
+ * @param string $message
+ * @param mixed $data
+ * @param int $statusCode
+ * @return void
+ */
+function apiResponse(bool $success, string $message = '', $data = null, int $statusCode = 200): void {
+    $payload = [
+        'success' => $success,
+        'message' => $message,
+        'data'    => $data
+    ];
+    if (!$success) {
+        $payload['error'] = $message;
+    }
+    jsonResponse($payload, $statusCode);
+}
+
+/**
+ * Resolves the authoritative active user ID strictly from the authenticated PHP session.
+ * Never trusts client-supplied query/body IDs and never falls back to another user's ID.
  */
 function getActiveMemberUserId(): int {
     if (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] > 0) {
         return (int)$_SESSION['user_id'];
     }
-
-    // Fallback strictly for unauthenticated presentation
-    $db = getDbConnection();
-    if ($db) {
-        try {
-            $stmt = $db->query("SELECT id FROM users WHERE role = 'user' AND status = 'active' ORDER BY id ASC LIMIT 1");
-            $uid = $stmt->fetchColumn();
-            if ($uid) {
-                return (int)$uid;
-            }
-            $stmt = $db->query("SELECT id FROM users WHERE role = 'user' ORDER BY id ASC LIMIT 1");
-            $uid = $stmt->fetchColumn();
-            if ($uid) {
-                return (int)$uid;
-            }
-        } catch (Throwable $e) {}
-    }
-    return 1;
+    return 0;
 }

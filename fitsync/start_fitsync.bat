@@ -7,11 +7,19 @@ echo ===========================================================================
 echo                FITSYNC AI - UNIFIED FITNESS MANAGEMENT PLATFORM
 echo                           Single Port 8080 Launcher
 echo ===============================================================================
- echo(
+echo(
 
 cd /d "%~dp0"
 
-REM 1. Detect PHP Binary
+REM 1. Ensure .env Configuration Exists (for fresh clones)
+if not exist ".env" (
+    if exist ".env.example" (
+        copy /Y ".env.example" ".env" >NUL
+        echo [OK] Created .env from .env.example
+    )
+)
+
+REM 2. Detect PHP Binary
 set "PHP_BIN="
 if exist "C:\xampp\php\php.exe" (
     set "PHP_BIN=C:\xampp\php\php.exe"
@@ -32,7 +40,7 @@ if "%PHP_BIN%"=="" (
 )
 echo [OK] Using PHP: %PHP_BIN%
 
-REM 2. Ensure MySQL Database Service is Running
+REM 3. Ensure MySQL Database Service is Running
 tasklist /fi "imagename eq mysqld.exe" 2>NUL | find /i "mysqld.exe" >NUL
 if errorlevel 1 (
     echo [*] MySQL is not running. Attempting to start MySQL engine...
@@ -54,15 +62,50 @@ if errorlevel 1 (
     echo [OK] MySQL Service is active and running.
 )
 
-REM 3. Display Portal Access URLs
+REM 4. Auto-Initialize fitsync_db Schema on First Run (if missing)
+set "MYSQL_BIN="
+if exist "C:\xampp\mysql\bin\mysql.exe" (
+    set "MYSQL_BIN=C:\xampp\mysql\bin\mysql.exe"
+) else if exist "D:\xampp\mysql\bin\mysql.exe" (
+    set "MYSQL_BIN=D:\xampp\mysql\bin\mysql.exe"
+) else (
+    where mysql >NUL 2>&1
+    if not errorlevel 1 set "MYSQL_BIN=mysql"
+)
+
+if not "%MYSQL_BIN%"=="" (
+    tasklist /fi "imagename eq mysqld.exe" 2>NUL | find /i "mysqld.exe" >NUL
+    if not errorlevel 1 (
+        "%MYSQL_BIN%" -u root -e "USE fitsync_db;" >NUL 2>&1
+        if errorlevel 1 (
+            set "SCHEMA_FILE="
+            if exist "database\fitsync_mysql_schema.sql" set "SCHEMA_FILE=database\fitsync_mysql_schema.sql"
+            if "!SCHEMA_FILE!"=="" if exist "..\database\fitsync_mysql_schema.sql" set "SCHEMA_FILE=..\database\fitsync_mysql_schema.sql"
+            if not "!SCHEMA_FILE!"=="" (
+                echo [*] Database 'fitsync_db' not found. Importing !SCHEMA_FILE!...
+                "%MYSQL_BIN%" -u root < "!SCHEMA_FILE!" >NUL 2>&1
+                if not errorlevel 1 (
+                    echo [OK] Database 'fitsync_db' initialized successfully.
+                ) else (
+                    echo [WARNING] Automatic schema import failed. Please import !SCHEMA_FILE! manually.
+                )
+            )
+        ) else (
+            echo [OK] Database 'fitsync_db' verified.
+        )
+    )
+)
+
+REM 5. Display Portal Access URLs
 echo(
 echo ===============================================================================
 echo   Portals Ready on Unified Port 8080:
 echo(
-echo   [1] Member Portal:      http://localhost:8080/index.html
-echo   [2] Trainer Portal:     http://localhost:8080/trainer/index.html
-echo   [3] Gym Owner Portal:   http://localhost:8080/gym_owner/index.html
-echo   [4] Primary Gateway:    http://localhost:8080/
+echo   [1] Login / Register:   http://localhost:8080/login.php
+echo   [2] Member Portal:      http://localhost:8080/index.html
+echo   [3] Trainer Portal:     http://localhost:8080/trainer/index.html
+echo   [4] Gym Owner Portal:   http://localhost:8080/gym_owner/index.html
+echo   [5] Admin Portal:       http://localhost:8080/admin/index.html
 echo ===============================================================================
 echo(
 echo [*] Launching browser at http://localhost:8080/index.html in 2 seconds...

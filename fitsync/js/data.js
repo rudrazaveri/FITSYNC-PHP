@@ -45,56 +45,7 @@ const DEFAULT_FITSYNC_DATA = {
     startDate: "--",
     turnstileCode: "--"
   },
-  gyms: [
-    {
-      id: "gym-1",
-      name: "FitZone Gym",
-      location: "Kothrud, Pune",
-      rating: 4.9,
-      reviews: 320,
-      status: "Active Membership",
-      amenities: ["Olympic Platforms", "Steam & Sauna", "Crossfit Turf", "Biometric Turnstile"],
-      image: "assets/images/gym_fitzone.jpg",
-      hours: "5:30 AM – 10:30 PM",
-      phone: "+91 20 2544 1122"
-    },
-    {
-      id: "gym-2",
-      name: "PowerHouse Arena",
-      location: "Baner, Pune",
-      rating: 4.8,
-      reviews: 245,
-      status: "All-Access Included",
-      amenities: ["Hammer Strength Iso-Lateral", "Recovery Lounge", "Boxing Ring"],
-      image: "assets/images/gym_powerhouse.jpg",
-      hours: "6:00 AM – 11:00 PM",
-      phone: "+91 20 2729 3344"
-    },
-    {
-      id: "gym-3",
-      name: "Metro Crossfit Studio",
-      location: "Viman Nagar, Pune",
-      rating: 4.8,
-      reviews: 180,
-      status: "All-Access Included",
-      amenities: ["Rogue Rig", "Kettlebells", "Rowing Ergometers"],
-      image: "assets/images/gym_crossfit.jpg",
-      hours: "6:00 AM – 10:00 PM",
-      phone: "+91 20 2663 8899"
-    },
-    {
-      id: "gym-4",
-      name: "Elite Iron Republic",
-      location: "Kalyani Nagar, Pune",
-      rating: 4.9,
-      reviews: 410,
-      status: "All-Access Included",
-      amenities: ["Eleiko Calibrated Plates", "Ice Baths", "Physio Clinic"],
-      image: "assets/images/gym_elite.jpg",
-      hours: "24 Hours Open",
-      phone: "+91 20 4122 7700"
-    }
-  ],
+  gyms: [],
   trainers: [],
   todayWorkout: {
     title: "No Workout Scheduled",

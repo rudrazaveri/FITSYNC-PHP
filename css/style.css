@@ -3232,9 +3232,15 @@ body {
 
 .auth-role-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .auth-role-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .auth-role-card {

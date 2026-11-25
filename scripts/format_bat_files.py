@@ -1,6 +1,6 @@
 import os
 
-content_main = """@echo off
+content_main = r"""@echo off
 setlocal enabledelayedexpansion
 title FitSync AI - Unified Fitness Platform (Port 8080)
 color 0B
@@ -13,12 +13,20 @@ echo(
 
 cd /d "%~dp0"
 
-REM 1. Detect PHP Binary
+REM 1. Ensure .env Configuration Exists (for fresh clones)
+if not exist ".env" (
+    if exist ".env.example" (
+        copy /Y ".env.example" ".env" >NUL
+        echo [OK] Created .env from .env.example
+    )
+)
+
+REM 2. Detect PHP Binary
 set "PHP_BIN="
-if exist "C:\\xampp\\php\\php.exe" (
-    set "PHP_BIN=C:\\xampp\\php\\php.exe"
-) else if exist "D:\\xampp\\php\\php.exe" (
-    set "PHP_BIN=D:\\xampp\\php\\php.exe"
+if exist "C:\xampp\php\php.exe" (
+    set "PHP_BIN=C:\xampp\php\php.exe"
+) else if exist "D:\xampp\php\php.exe" (
+    set "PHP_BIN=D:\xampp\php\php.exe"
 ) else (
     where php >NUL 2>&1
     if not errorlevel 1 set "PHP_BIN=php"
@@ -27,22 +35,22 @@ if exist "C:\\xampp\\php\\php.exe" (
 if "%PHP_BIN%"=="" (
     color 0C
     echo [ERROR] PHP executable was not found on your system!
-    echo         Please install PHP or XAMPP at C:\\xampp\\php\\php.exe to continue.
+    echo         Please install PHP or XAMPP at C:\xampp\php\php.exe to continue.
     echo(
     pause
     exit /b 1
 )
 echo [OK] Using PHP: %PHP_BIN%
 
-REM 2. Ensure MySQL Database Service is Running
+REM 3. Ensure MySQL Database Service is Running
 tasklist /fi "imagename eq mysqld.exe" 2>NUL | find /i "mysqld.exe" >NUL
 if errorlevel 1 (
     echo [*] MySQL is not running. Attempting to start MySQL engine...
-    if exist "C:\\xampp\\mysql\\bin\\mysqld.exe" (
-        start /b "" "C:\\xampp\\mysql\\bin\\mysqld.exe" --defaults-file="C:\\xampp\\mysql\\bin\\my.ini" --standalone
+    if exist "C:\xampp\mysql\bin\mysqld.exe" (
+        start /b "" "C:\xampp\mysql\bin\mysqld.exe" --defaults-file="C:\xampp\mysql\bin\my.ini" --standalone
         timeout /t 2 /nobreak >NUL
-    ) else if exist "D:\\xampp\\mysql\\bin\\mysqld.exe" (
-        start /b "" "D:\\xampp\\mysql\\bin\\mysqld.exe" --defaults-file="D:\\xampp\\mysql\\bin\\my.ini" --standalone
+    ) else if exist "D:\xampp\mysql\bin\mysqld.exe" (
+        start /b "" "D:\xampp\mysql\bin\mysqld.exe" --defaults-file="D:\xampp\mysql\bin\my.ini" --standalone
         timeout /t 2 /nobreak >NUL
     )
     tasklist /fi "imagename eq mysqld.exe" 2>NUL | find /i "mysqld.exe" >NUL
@@ -56,15 +64,50 @@ if errorlevel 1 (
     echo [OK] MySQL Service is active and running.
 )
 
-REM 3. Display Portal Access URLs
+REM 4. Auto-Initialize fitsync_db Schema on First Run (if missing)
+set "MYSQL_BIN="
+if exist "C:\xampp\mysql\bin\mysql.exe" (
+    set "MYSQL_BIN=C:\xampp\mysql\bin\mysql.exe"
+) else if exist "D:\xampp\mysql\bin\mysql.exe" (
+    set "MYSQL_BIN=D:\xampp\mysql\bin\mysql.exe"
+) else (
+    where mysql >NUL 2>&1
+    if not errorlevel 1 set "MYSQL_BIN=mysql"
+)
+
+if not "%MYSQL_BIN%"=="" (
+    tasklist /fi "imagename eq mysqld.exe" 2>NUL | find /i "mysqld.exe" >NUL
+    if not errorlevel 1 (
+        "%MYSQL_BIN%" -u root -e "USE fitsync_db;" >NUL 2>&1
+        if errorlevel 1 (
+            set "SCHEMA_FILE="
+            if exist "database\fitsync_mysql_schema.sql" set "SCHEMA_FILE=database\fitsync_mysql_schema.sql"
+            if "!SCHEMA_FILE!"=="" if exist "..\database\fitsync_mysql_schema.sql" set "SCHEMA_FILE=..\database\fitsync_mysql_schema.sql"
+            if not "!SCHEMA_FILE!"=="" (
+                echo [*] Database 'fitsync_db' not found. Importing !SCHEMA_FILE!...
+                "%MYSQL_BIN%" -u root < "!SCHEMA_FILE!" >NUL 2>&1
+                if not errorlevel 1 (
+                    echo [OK] Database 'fitsync_db' initialized successfully.
+                ) else (
+                    echo [WARNING] Automatic schema import failed. Please import !SCHEMA_FILE! manually.
+                )
+            )
+        ) else (
+            echo [OK] Database 'fitsync_db' verified.
+        )
+    )
+)
+
+REM 5. Display Portal Access URLs
 echo(
 echo ===============================================================================
 echo   Portals Ready on Unified Port 8080:
 echo(
-echo   [1] Member Portal:      http://localhost:8080/index.html
-echo   [2] Trainer Portal:     http://localhost:8080/trainer/index.html
-echo   [3] Gym Owner Portal:   http://localhost:8080/gym_owner/index.html
-echo   [4] Primary Gateway:    http://localhost:8080/
+echo   [1] Login / Register:   http://localhost:8080/login.php
+echo   [2] Member Portal:      http://localhost:8080/index.html
+echo   [3] Trainer Portal:     http://localhost:8080/trainer/index.html
+echo   [4] Gym Owner Portal:   http://localhost:8080/gym_owner/index.html
+echo   [5] Admin Portal:       http://localhost:8080/admin/index.html
 echo ===============================================================================
 echo(
 echo [*] Launching browser at http://localhost:8080/index.html in 2 seconds...
@@ -86,7 +129,7 @@ if errorlevel 1 (
 pause
 """
 
-content_php = """@echo off
+content_php = r"""@echo off
 setlocal enabledelayedexpansion
 title FitSync AI - PHP Backend Service (Port 8080)
 color 0A
@@ -98,12 +141,20 @@ echo(
 
 cd /d "%~dp0"
 
-REM 1. Detect PHP Binary
+REM 1. Ensure .env Configuration Exists
+if not exist ".env" (
+    if exist ".env.example" (
+        copy /Y ".env.example" ".env" >NUL
+        echo [OK] Created .env from .env.example
+    )
+)
+
+REM 2. Detect PHP Binary
 set "PHP_BIN="
-if exist "C:\\xampp\\php\\php.exe" (
-    set "PHP_BIN=C:\\xampp\\php\\php.exe"
-) else if exist "D:\\xampp\\php\\php.exe" (
-    set "PHP_BIN=D:\\xampp\\php\\php.exe"
+if exist "C:\xampp\php\php.exe" (
+    set "PHP_BIN=C:\xampp\php\php.exe"
+) else if exist "D:\xampp\php\php.exe" (
+    set "PHP_BIN=D:\xampp\php\php.exe"
 ) else (
     where php >NUL 2>&1
     if not errorlevel 1 set "PHP_BIN=php"
@@ -112,7 +163,7 @@ if exist "C:\\xampp\\php\\php.exe" (
 if "%PHP_BIN%"=="" (
     color 0C
     echo [ERROR] PHP executable not found!
-    echo         Please install PHP or XAMPP at C:\\xampp\\php\\php.exe to continue.
+    echo         Please install PHP or XAMPP at C:\xampp\php\php.exe to continue.
     pause
     exit /b 1
 )
@@ -121,7 +172,7 @@ echo [OK] PHP Executable : %PHP_BIN%
 "%PHP_BIN%" -v | findstr /i "PHP"
 echo(
 
-REM 2. Check MySQL Database Engine
+REM 3. Check MySQL Database Engine
 tasklist /fi "imagename eq mysqld.exe" 2>NUL | find /i "mysqld.exe" >NUL
 if errorlevel 1 (
     echo [WARNING] MySQL is not currently running. API database requests may fail.
@@ -133,9 +184,11 @@ if errorlevel 1 (
 echo(
 echo ===============================================================================
 echo   Serving FitSync AI on http://127.0.0.1:8080
+echo   - Login / Register:  http://localhost:8080/login.php
 echo   - Member Portal:     http://localhost:8080/index.html
 echo   - Trainer Portal:    http://localhost:8080/trainer/index.html
 echo   - Gym Owner Portal:  http://localhost:8080/gym_owner/index.html
+echo   - Admin Portal:      http://localhost:8080/admin/index.html
 echo(
 echo   Press Ctrl+C to terminate the PHP server.
 echo ===============================================================================

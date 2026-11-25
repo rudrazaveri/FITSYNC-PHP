@@ -1,9 +1,7 @@
 <?php
 /**
  * FitSync AI — API: User Dashboard Real Data
- *
- * Returns real database statistics for the authenticated member.
- * Zero fabricated or hardcoded metrics.
+ * Enforces session authentication & strict user isolation.
  */
 
 declare(strict_types=1);
@@ -13,19 +11,14 @@ require_once __DIR__ . '/../../includes/FitSyncDataService.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
-$userId = getActiveMemberUserId();
+$authUser = requireApiAuth(['user', 'admin']);
+$userId = (int)$authUser['id'];
 
 try {
     $service = FitSyncDataService::getInstance();
     $data = $service->getUserDashboard($userId);
-    echo json_encode([
-        'success' => true,
-        'data'    => $data
-    ]);
+    apiResponse(true, 'Dashboard synchronized.', $data);
 } catch (Throwable $e) {
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'error'   => $e->getMessage()
-    ]);
+    error_log('[FitSync user/dashboard.php] ' . $e->getMessage());
+    apiResponse(false, 'Unable to load dashboard data.', null, 500);
 }

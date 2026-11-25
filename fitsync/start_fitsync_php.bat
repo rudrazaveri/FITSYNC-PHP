@@ -10,7 +10,15 @@ echo(
 
 cd /d "%~dp0"
 
-REM 1. Detect PHP Binary
+REM 1. Ensure .env Configuration Exists
+if not exist ".env" (
+    if exist ".env.example" (
+        copy /Y ".env.example" ".env" >NUL
+        echo [OK] Created .env from .env.example
+    )
+)
+
+REM 2. Detect PHP Binary
 set "PHP_BIN="
 if exist "C:\xampp\php\php.exe" (
     set "PHP_BIN=C:\xampp\php\php.exe"
@@ -33,7 +41,7 @@ echo [OK] PHP Executable : %PHP_BIN%
 "%PHP_BIN%" -v | findstr /i "PHP"
 echo(
 
-REM 2. Check MySQL Database Engine
+REM 3. Check MySQL Database Engine
 tasklist /fi "imagename eq mysqld.exe" 2>NUL | find /i "mysqld.exe" >NUL
 if errorlevel 1 (
     echo [WARNING] MySQL is not currently running. API database requests may fail.
@@ -45,9 +53,11 @@ if errorlevel 1 (
 echo(
 echo ===============================================================================
 echo   Serving FitSync AI on http://127.0.0.1:8080
+echo   - Login / Register:  http://localhost:8080/login.php
 echo   - Member Portal:     http://localhost:8080/index.html
 echo   - Trainer Portal:    http://localhost:8080/trainer/index.html
 echo   - Gym Owner Portal:  http://localhost:8080/gym_owner/index.html
+echo   - Admin Portal:      http://localhost:8080/admin/index.html
 echo(
 echo   Press Ctrl+C to terminate the PHP server.
 echo ===============================================================================

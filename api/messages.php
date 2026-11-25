@@ -1,9 +1,9 @@
 <?php
 /**
- * FitSync AI — API: Coach Chat & Direct Messaging (Workflow B)
+ * FitSync AI — API: Two-Way Real-Time Coach Chat & Direct Messaging (Workflow B)
  *
- * Persists messages to central conversations and messages tables.
- * Enables live bidirectional chat between User and Assigned Trainer.
+ * Strictly enforces session identity and conversation/assignment authorization.
+ * Supports incremental polling (?after_id=), unread counts, and read receipts.
  */
 
 declare(strict_types=1);
@@ -13,131 +13,115 @@ require_once __DIR__ . '/../includes/FitSyncDataService.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
+$authUser = requireApiAuth(['user', 'trainer', 'gym_owner', 'admin']);
+$currentUserId = (int)$authUser['id'];
+
 $service = FitSyncDataService::getInstance();
 $db = $service->getDb();
+if (!$db) {
+    apiResponse(false, 'Database connection unavailable.', null, 500);
+}
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-// GET: Retrieve conversation messages
+// GET: Retrieve conversation messages & unread counts
 if ($method === 'GET') {
-    $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : (isset($_GET['viewer_id']) ? (int)$_GET['viewer_id'] : 0);
-    if (!$currentUserId) {
-        $currentUserId = getActiveMemberUserId();
+    $withUserId     = isset($_GET['with_user']) ? (int)$_GET['with_user'] : (isset($_GET['coach_id']) ? (int)$_GET['coach_id'] : 0);
+    $conversationId = isset($_GET['conversation_id']) ? (int)$_GET['conversation_id'] : 0;
+    $afterId        = isset($_GET['after_id']) ? max(0, (int)$_GET['after_id']) : 0;
+
+    // For a member/user who didn't pass with_user, resolve their active assigned trainer
+    if ($conversationId <= 0 && $withUserId <= 0 && $authUser['role'] === 'user') {
+        $aStmt = $db->prepare("SELECT trainer_user_id FROM trainer_assignments WHERE user_id = :uid AND status = 'active' LIMIT 1");
+        $aStmt->execute([':uid' => $currentUserId]);
+        $withUserId = (int)$aStmt->fetchColumn();
     }
 
-    $withUserId = isset($_GET['with_user']) ? (int)$_GET['with_user'] : (isset($_GET['coach_id']) ? (int)$_GET['coach_id'] : 0);
-    if (!$withUserId) {
-        $aStmt = $db ? $db->prepare("SELECT trainer_user_id FROM trainer_assignments WHERE user_id = :uid AND status = 'active' LIMIT 1") : null;
-        if ($aStmt) {
-            $aStmt->execute([':uid' => $currentUserId]);
-            $withUserId = (int)$aStmt->fetchColumn();
-        }
-        if (!$withUserId) {
-            $withUserId = 1; // Default to primary coach (Kabir Khan)
-        }
-    }
-    $conversationId = isset($_GET['conversation_id']) ? (int)$_GET['conversation_id'] : null;
-
-    if (!$currentUserId && !$withUserId && !$conversationId) {
-        echo json_encode([
+    if ($conversationId <= 0 && $withUserId <= 0) {
+        jsonResponse([
             'success'         => true,
+            'message'         => 'No active conversation partner assigned.',
             'conversation_id' => 0,
-            'messages'        => []
+            'unread_total'    => $service->getUnreadMessagesCount($currentUserId),
+            'messages'        => [],
+            'data'            => ['conversation_id' => 0, 'messages' => [], 'unread_total' => $service->getUnreadMessagesCount($currentUserId)]
         ]);
-        exit;
     }
 
     try {
-        if ($conversationId === null) {
-            // Verify both users exist in users table
-            $chk1 = $db ? $db->query("SELECT id FROM users WHERE id = " . (int)$currentUserId)->fetchColumn() : false;
-            $chk2 = $db ? $db->query("SELECT id FROM users WHERE id = " . (int)$withUserId)->fetchColumn() : false;
-
-            if (!$chk1 || !$chk2) {
-                echo json_encode([
-                    'success'         => true,
-                    'conversation_id' => 0,
-                    'messages'        => []
-                ]);
-                exit;
+        if ($conversationId > 0) {
+            $conv = $service->assertConversationParticipant($conversationId, $currentUserId);
+            if (($authUser['role'] ?? '') !== 'admin') {
+                $service->assertCanMessage((int)$conv['participant_one_id'], (int)$conv['participant_two_id']);
             }
-
+        } else {
             $conversationId = $service->getOrCreateConversation($currentUserId, $withUserId);
         }
 
-        $messages = $service->getConversationMessages($conversationId, $currentUserId);
+        $messages = $service->getConversationMessages($conversationId, $currentUserId, $afterId);
+        $unreadTotal = $service->getUnreadMessagesCount($currentUserId);
 
-        echo json_encode([
+        jsonResponse([
             'success'         => true,
+            'message'         => 'Messages loaded.',
             'conversation_id' => $conversationId,
-            'messages'        => $messages
+            'unread_total'    => $unreadTotal,
+            'messages'        => $messages,
+            'data' => [
+                'conversation_id' => $conversationId,
+                'unread_total'    => $unreadTotal,
+                'messages'        => $messages
+            ]
         ]);
+    } catch (RuntimeException $e) {
+        apiResponse(false, $e->getMessage(), null, 403);
     } catch (Throwable $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        error_log('[FitSync messages.php GET] ' . $e->getMessage());
+        apiResponse(false, 'Unable to load conversation messages.', null, 500);
     }
-    exit;
 }
 
-// POST: Send new message
+// POST: Send new message strictly from authenticated session user
 if ($method === 'POST') {
+    requireCsrfToken();
+
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true) ?: $_POST;
 
-    $senderId    = isset($input['sender_id']) ? (int)$input['sender_id'] : (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0);
-    if (!$senderId) {
-        $senderId = getActiveMemberUserId();
+    $senderId = $currentUserId; // Never trust sender_id from client!
+
+    $recipientId = isset($input['recipient_id'])
+        ? (int)$input['recipient_id']
+        : (isset($input['receiver_id'])
+            ? (int)$input['receiver_id']
+            : (isset($input['with_user']) ? (int)$input['with_user'] : 0));
+    if ($recipientId <= 0 && $authUser['role'] === 'user') {
+        $aStmt = $db->prepare("SELECT trainer_user_id FROM trainer_assignments WHERE user_id = :uid AND status = 'active' LIMIT 1");
+        $aStmt->execute([':uid' => $senderId]);
+        $recipientId = (int)$aStmt->fetchColumn();
     }
 
-    $recipientId = isset($input['recipient_id']) ? (int)$input['recipient_id'] : (isset($input['receiver_id']) ? (int)$input['receiver_id'] : 0);
-    if (!$recipientId) {
-        if ($senderId === 1) {
-            $recipientId = 2; // Trainer replying to member
-        } else {
-            $aStmt = $db ? $db->prepare("SELECT trainer_user_id FROM trainer_assignments WHERE user_id = :uid AND status = 'active' LIMIT 1") : null;
-            if ($aStmt) {
-                $aStmt->execute([':uid' => $senderId]);
-                $recipientId = (int)$aStmt->fetchColumn();
-            }
-            if (!$recipientId) $recipientId = 1;
-        }
-    }
     $messageText = trim((string)($input['message_text'] ?? ($input['text'] ?? ($input['message'] ?? ''))));
 
     if (empty($messageText)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Message text cannot be empty.']);
-        exit;
+        apiResponse(false, 'Message text cannot be empty.', null, 400);
     }
 
-    if (!$senderId || !$recipientId) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Both sender_id and recipient_id are required.']);
-        exit;
-    }
-
-    // Verify sender and recipient exist
-    $chkSender = $db ? $db->query("SELECT id FROM users WHERE id = " . (int)$senderId)->fetchColumn() : false;
-    $chkRecipient = $db ? $db->query("SELECT id FROM users WHERE id = " . (int)$recipientId)->fetchColumn() : false;
-
-    if (!$chkSender || !$chkRecipient) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Sender or recipient does not exist in users directory.']);
-        exit;
+    if ($recipientId <= 0) {
+        apiResponse(false, 'No assigned trainer or valid recipient found.', null, 400);
     }
 
     try {
         $result = $service->sendMessage($senderId, $recipientId, $messageText);
-        echo json_encode([
-            'success' => true,
-            'data'    => $result
-        ]);
+        apiResponse(true, 'Message sent.', $result);
+    } catch (RuntimeException $e) {
+        apiResponse(false, $e->getMessage(), null, 403);
+    } catch (InvalidArgumentException $e) {
+        apiResponse(false, $e->getMessage(), null, 400);
     } catch (Throwable $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        error_log('[FitSync messages.php POST] ' . $e->getMessage());
+        apiResponse(false, 'Unable to send message.', null, 500);
     }
-    exit;
 }
 
-http_response_code(405);
-echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+apiResponse(false, 'Method not allowed', null, 405);

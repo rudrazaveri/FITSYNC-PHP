@@ -97,23 +97,85 @@ $pageTitle = 'Platform Admin — FitSync AI';
         <img src="<?= asset('assets/images/logo.jpg') ?>" alt="Logo" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #a855f7;" onerror="this.style.display='none'">
       </div>
 
-      <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 18px; margin-bottom: 28px;">
+      <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 18px; margin-bottom: 24px;">
         <h4 style="color: #a855f7; font-size: 1rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
           <i class="bi bi-shield-check"></i> Authenticated in Platform Administration
         </h4>
         <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 0; line-height: 1.5;">
-          Root platform administration privileges confirmed. Global system health, multi-tenant gym approvals, and trainer certification verifications will be managed here.
+          Review and verify newly registered Gyms and Trainers before granting unrestricted platform access.
         </p>
+      </div>
+
+      <div id="adminVerificationsPanel" style="margin-bottom: 24px;">
+        <h4 style="color: #ffffff; font-size: 1rem; margin-bottom: 10px;">Pending Platform Verifications</h4>
+        <div id="adminPendingLists" style="font-size: 0.88rem; color: #94a3b8;">Loading pending verifications...</div>
       </div>
 
       <div style="display: flex; gap: 12px; align-items: center;">
         <span style="color: #64748b; font-size: 0.85rem;">Session Active (Role: Platform Admin)</span>
-        <a href="<?= url('logout.php') ?>" class="btn-action btn-logout" style="margin-left: auto;">
+        <a href="<?= url('logout.php?portal_ctx=admin') ?>" class="btn-action btn-logout" style="margin-left: auto;">
           <i class="bi bi-box-arrow-right"></i> Sign Out
         </a>
       </div>
     </div>
   </div>
 
+  <script src="<?= asset('js/api_client.js') ?>"></script>
+  <script>
+    async function loadAdminVerifications() {
+      const box = document.getElementById('adminPendingLists');
+      if (!box) return;
+      try {
+        if (typeof window.fitSyncRefreshSession === 'function') {
+          await window.fitSyncRefreshSession('admin', '../login.php');
+        }
+        const res = await fetch('../api/admin/verifications.php');
+        const json = await res.json();
+        if (!json.success || !json.data) {
+          box.innerText = json.message || 'Unable to load verification queue.';
+          return;
+        }
+        const gyms = json.data.pending_gyms || [];
+        const trainers = json.data.pending_trainers || [];
+        if (gyms.length === 0 && trainers.length === 0) {
+          box.innerHTML = '<div style="padding:12px;border:1px dashed rgba(255,255,255,0.12);border-radius:8px;">No pending gym or trainer verifications.</div>';
+          return;
+        }
+        let html = '';
+        gyms.forEach(g => {
+          html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:8px;margin-bottom:8px;">
+            <div><strong style="color:#fff;">Gym: ${g.gym_name}</strong> (${g.city}, ${g.state})<div style="font-size:12px;color:#94a3b8;">Owner: ${g.owner_name} (${g.owner_email})</div></div>
+            <div style="display:flex;gap:6px;">
+              <button type="button" onclick="reviewEntity('gym', ${g.gym_id}, 'approve')" style="background:#10b981;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;">Approve</button>
+              <button type="button" onclick="reviewEntity('gym', ${g.gym_id}, 'reject')" style="background:#ef4444;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;">Reject</button>
+            </div>
+          </div>`;
+        });
+        trainers.forEach(t => {
+          html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:8px;margin-bottom:8px;">
+            <div><strong style="color:#fff;">Trainer: ${t.full_name}</strong> (${t.email})<div style="font-size:12px;color:#94a3b8;">${t.certification_name || ''} • ${t.certifying_body || ''} • ${t.experience_years} yrs</div></div>
+            <div style="display:flex;gap:6px;">
+              <button type="button" onclick="reviewEntity('trainer', ${t.user_id}, 'approve')" style="background:#10b981;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;">Verify</button>
+              <button type="button" onclick="reviewEntity('trainer', ${t.user_id}, 'reject')" style="background:#ef4444;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;">Reject</button>
+            </div>
+          </div>`;
+        });
+        box.innerHTML = html;
+      } catch (e) {
+        box.innerText = 'Error loading verification queue.';
+      }
+    }
+    async function reviewEntity(entityType, entityId, decision) {
+      const res = await fetch('../api/admin/verifications.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entity_type: entityType, entity_id: entityId, decision: decision })
+      });
+      const json = await res.json();
+      alert(json.message || 'Updated.');
+      loadAdminVerifications();
+    }
+    window.addEventListener('DOMContentLoaded', loadAdminVerifications);
+  </script>
 </body>
 </html>

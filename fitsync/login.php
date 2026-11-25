@@ -7,20 +7,45 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/config/bootstrap.php';
+initSecureSession();
 
-// If already logged in, redirect directly to portal
-if (isLoggedIn()) {
-    redirectByRole($_SESSION['role'] ?? 'user');
+if (!empty($_GET['next']) && is_string($_GET['next'])) {
+    setIntendedRedirectUrl($_GET['next']);
+}
+
+$requestedPortalCtx = normalizePortalKey((string)($_GET['portal_ctx'] ?? ''));
+$switchAccount = !empty($_GET['switch_account']) || ($requestedPortalCtx !== '' && isLoggedIn() && !hasRole($requestedPortalCtx));
+$authLinkParams = [];
+if ($switchAccount) {
+    $authLinkParams['switch_account'] = '1';
+}
+if ($requestedPortalCtx !== '') {
+    $authLinkParams['portal_ctx'] = $requestedPortalCtx;
+}
+$authLinkQuery = !empty($authLinkParams) ? ('?' . http_build_query($authLinkParams)) : '';
+
+// Already authenticated users go straight to their authorized active portal unless explicitly switching accounts
+if (isLoggedIn() && !$switchAccount) {
+    $activePortal = (string)($_SESSION['active_portal'] ?? $_SESSION['role'] ?? 'user');
+    redirectByRole($activePortal);
 }
 
 $errorMessage = '';
 $successMessage = '';
 $infoMessage = '';
 
-if (isset($_GET['registered'])) {
+if ($switchAccount && isLoggedIn()) {
+    $curUser = currentUser();
+    $curRoleLabel = getPortalDisplayName((string)($curUser['role'] ?? 'user'));
+    $targetPortalCtx = normalizePortalKey((string)($_GET['portal_ctx'] ?? ''));
+    $targetLabel = $targetPortalCtx !== '' ? getPortalDisplayName($targetPortalCtx) : 'another portal';
+    $infoMessage = 'Multi-Tab Mode: Currently signed in as ' . ($curUser['full_name'] ?: $curUser['email']) . " ({$curRoleLabel}). Signing in for {$targetLabel} below keeps your other open portal tab active.";
+} elseif (isset($_GET['registered'])) {
     $successMessage = 'Account created successfully! You can now sign in with your credentials.';
 } elseif (isset($_GET['logged_out'])) {
     $infoMessage = 'You have been signed out successfully.';
+} elseif ($flash = getFlash('warning')) {
+    $infoMessage = $flash;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -30,8 +55,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $result = authenticateUser($email, $password, $remember);
     if ($result['success']) {
-        $role = $_SESSION['role'] ?? 'user';
-        redirectByRole($role);
+        $dest = $result['redirect'] ?? getRedirectUrlForRole($_SESSION['role'] ?? 'user');
+        header('Location: ' . $dest);
+        exit;
     } else {
         $errorMessage = $result['message'] ?? 'Invalid email address or password.';
     }
@@ -274,12 +300,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     <?php endif; ?>
 
-    <form method="POST" action="login.php">
+    <form method="POST" action="login.php<?= htmlspecialchars($authLinkQuery) ?>">
       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(getCsrfToken()) ?>">
 
       <div class="form-group">
         <label class="form-label" for="loginEmail">Email Address</label>
-        <input type="email" id="loginEmail" name="email" class="form-input" placeholder="e.g. sneha.reddy@fitsync.health" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required autofocus>
+        <input type="email" id="loginEmail" name="email" class="form-input" placeholder="you@example.com" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required autofocus>
       </div>
 
       <div class="form-group">
@@ -303,14 +329,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </button>
     </form>
 
-    <div class="quick-roles">
-      <strong>Active Accounts (Authoritative DB):</strong><br>
-      • Member: <code>sneha.reddy@fitsync.health</code><br>
-      • Trainer: <code>kabir.khan@fitsync.health</code>
-    </div>
-
     <div class="auth-footer">
-      Don't have an account yet? <a href="register.php">Create Member Account</a>
+      Don't have an account yet? <a href="register.php<?= htmlspecialchars($authLinkQuery) ?>">Create FitSync Account</a>
     </div>
   </div>
 

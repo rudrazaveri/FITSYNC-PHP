@@ -68,6 +68,16 @@ CREATE TABLE `users` (
 ALTER TABLE `files` ADD CONSTRAINT `fk_files_owner` 
     FOREIGN KEY (`owner_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
+DROP TABLE IF EXISTS `user_roles`;
+CREATE TABLE `user_roles` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `user_id` BIGINT UNSIGNED NOT NULL,
+    `role` ENUM('user','trainer','gym_owner','admin') NOT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_user_role` (`user_id`, `role`),
+    CONSTRAINT `fk_user_roles_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `auth_tokens`;
 CREATE TABLE `auth_tokens` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -145,6 +155,7 @@ CREATE TABLE `user_profiles` (
     `height_cm` DECIMAL(5,2) DEFAULT NULL,
     `weight_kg` DECIMAL(5,2) DEFAULT NULL,
     `fitness_experience` ENUM('beginner','intermediate','advanced','elite') NOT NULL DEFAULT 'intermediate',
+    `preferred_gym_id` BIGINT UNSIGNED DEFAULT NULL,
     `emergency_contact_name` VARCHAR(100) DEFAULT NULL,
     `emergency_contact_phone` VARCHAR(30) DEFAULT NULL,
     `emergency_contact_relation` VARCHAR(50) DEFAULT NULL,
@@ -179,6 +190,9 @@ CREATE TABLE `trainer_profiles` (
     `certification_year` INT DEFAULT NULL,
     `experience_years` INT NOT NULL DEFAULT 0,
     `specializations_summary` VARCHAR(255) DEFAULT NULL,
+    `qualifications` VARCHAR(255) DEFAULT NULL,
+    `areas_of_expertise` VARCHAR(255) DEFAULT NULL,
+    `training_approach` TEXT DEFAULT NULL,
     `bio` TEXT DEFAULT NULL,
     `hourly_rate` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     `rating` DECIMAL(3,2) NOT NULL DEFAULT 5.00,
@@ -262,16 +276,21 @@ CREATE TABLE `gyms` (
     `city` VARCHAR(100) NOT NULL,
     `state` VARCHAR(100) NOT NULL,
     `postal_code` VARCHAR(20) NOT NULL,
+    `country` VARCHAR(100) NOT NULL DEFAULT 'India',
+    `description` TEXT DEFAULT NULL,
     `latitude` DECIMAL(10,7) DEFAULT NULL,
     `longitude` DECIMAL(10,7) DEFAULT NULL,
+    `logo_file_id` BIGINT UNSIGNED DEFAULT NULL,
     `cover_photo_id` BIGINT UNSIGNED DEFAULT NULL,
     `rating` DECIMAL(3,2) NOT NULL DEFAULT 4.80,
-    `status` ENUM('active','inactive','pending_approval') NOT NULL DEFAULT 'active',
+    `capacity` INT UNSIGNED NOT NULL DEFAULT 50,
+    `status` ENUM('active','inactive','pending_approval','suspended') NOT NULL DEFAULT 'active',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX `idx_gyms_owner` (`owner_user_id`),
     INDEX `idx_gyms_city` (`city`),
     CONSTRAINT `fk_gyms_owner` FOREIGN KEY (`owner_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_gyms_logo` FOREIGN KEY (`logo_file_id`) REFERENCES `files` (`id`) ON DELETE SET NULL,
     CONSTRAINT `fk_gyms_cover` FOREIGN KEY (`cover_photo_id`) REFERENCES `files` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -340,6 +359,8 @@ CREATE TABLE `gym_trainers` (
     `gym_id` BIGINT UNSIGNED NOT NULL,
     `trainer_user_id` BIGINT UNSIGNED NOT NULL,
     `employment_type` ENUM('full_time','part_time','freelance') NOT NULL DEFAULT 'full_time',
+    `status` ENUM('pending','invited','active','rejected','inactive') NOT NULL DEFAULT 'active',
+    `initiated_by` ENUM('trainer','gym_owner') NOT NULL DEFAULT 'trainer',
     `is_active` TINYINT(1) NOT NULL DEFAULT 1,
     `joined_at` DATE NOT NULL,
     PRIMARY KEY (`gym_id`, `trainer_user_id`),
@@ -371,7 +392,7 @@ CREATE TABLE `memberships` (
     `gym_id` BIGINT UNSIGNED NOT NULL,
     `start_date` DATE NOT NULL,
     `end_date` DATE NOT NULL,
-    `status` ENUM('active','expired','cancelled','frozen') NOT NULL DEFAULT 'active',
+    `status` ENUM('pending','active','expired','cancelled','frozen','rejected') NOT NULL DEFAULT 'active',
     `qr_code_token` VARCHAR(255) NOT NULL UNIQUE,
     `auto_renew` TINYINT(1) NOT NULL DEFAULT 0,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -422,6 +443,26 @@ CREATE TABLE `reassignment_requests` (
     CONSTRAINT `fk_rr_assignment` FOREIGN KEY (`assignment_id`) REFERENCES `trainer_assignments` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_rr_req_user` FOREIGN KEY (`requested_by_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_rr_pref_trainer` FOREIGN KEY (`preferred_trainer_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `member_trainer_requests`;
+CREATE TABLE `member_trainer_requests` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `member_user_id` BIGINT UNSIGNED NOT NULL,
+    `trainer_user_id` BIGINT UNSIGNED NOT NULL,
+    `gym_id` BIGINT UNSIGNED DEFAULT NULL,
+    `notes` TEXT DEFAULT NULL,
+    `status` ENUM('pending','approved','rejected','cancelled') NOT NULL DEFAULT 'pending',
+    `reviewed_by_user_id` BIGINT UNSIGNED DEFAULT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_mtr_member` (`member_user_id`),
+    INDEX `idx_mtr_trainer` (`trainer_user_id`),
+    INDEX `idx_mtr_gym` (`gym_id`),
+    CONSTRAINT `fk_mtr_member` FOREIGN KEY (`member_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_mtr_trainer` FOREIGN KEY (`trainer_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_mtr_gym` FOREIGN KEY (`gym_id`) REFERENCES `gyms` (`id`) ON DELETE SET NULL,
+    CONSTRAINT `fk_mtr_reviewer` FOREIGN KEY (`reviewed_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `trainer_data_permissions`;
@@ -1404,5 +1445,35 @@ INSERT INTO `trainer_notes` (`user_id`, `trainer_user_id`, `note_type`, `note_te
 -- 18. Sample Fitness Assessment
 INSERT INTO `fitness_assessments` (`user_id`, `assessed_by_user_id`, `assessment_date`, `height_cm`, `weight_kg`, `age`, `gender`, `activity_level`, `bmr_kcal`, `tdee_kcal`, `target_calories_kcal`, `target_protein_g`, `target_carbs_g`, `target_fat_g`, `bmi`, `body_fat_us_navy`, `notes`) VALUES
 (6, 3, '2026-01-10', 168.00, 62.50, 24, 'female', 1.550, 1420, 2201, 2200, 125, 275, 60, 22.1, 21.5, 'Initial assessment by Coach Raj; target hypertrophy surplus.');
+
+-- 19. Reference Catalog Lookups (Specializations, Facilities, Equipment)
+INSERT IGNORE INTO `specializations` (`name`, `slug`, `description`) VALUES
+('Strength Training', 'strength-training', 'Barbell, powerlifting, and maximal force development'),
+('Weight Loss', 'weight-loss', 'Caloric expenditure, metabolic conditioning, and sustainable fat loss'),
+('Muscle Building', 'muscle-building', 'Hypertrophy programming and progressive overload splits'),
+('Functional Fitness', 'functional-fitness', 'Athletic movement, kettlebells, core bracing, and mobility'),
+('Cardio and Endurance', 'cardio-endurance', 'Aerobic capacity, HIIT intervals, and cardiovascular conditioning'),
+('Yoga', 'yoga', 'Flexibility, breathwork, balance, and recovery flow'),
+('General Fitness', 'general-fitness', 'Balanced health, strength, and lifestyle wellness');
+
+INSERT IGNORE INTO `facilities` (`name`, `icon`) VALUES
+('Locker Room & Showers', 'lock'),
+('Steam & Sauna', 'flame'),
+('Olympic Lifting Platforms', 'dumbbell'),
+('Cardio Theater', 'heart-pulse'),
+('Personal Training Studio', 'users'),
+('24/7 Turnstile Access', 'clock'),
+('Parking Available', 'car'),
+('Nutrition & Recovery Bar', 'coffee');
+
+INSERT IGNORE INTO `equipment` (`name`, `category`, `icon`) VALUES
+('Barbells & Squat Racks', 'Free Weights', 'dumbbell'),
+('Dumbbells & Kettlebells', 'Free Weights', 'dumbbell'),
+('Cable & Pulley Stations', 'Machines', 'activity'),
+('Treadmills & Rowers', 'Cardio', 'zap'),
+('Spin & Assault Bikes', 'Cardio', 'wind'),
+('Bench Press & Plate Loaded', 'Strength', 'shield'),
+('Turf Track & Sleds', 'Functional', 'flame'),
+('Yoga Mats & Mobility Tools', 'Recovery', 'heart');
 
 SET FOREIGN_KEY_CHECKS = 1;

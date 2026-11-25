@@ -111,13 +111,13 @@
         <span style="font-weight:800; font-size:15px; color:#fff; letter-spacing:-0.3px;">FitSync AI</span>
       </a>
       <div style="display:flex; align-items:center; gap:8px;">
-        <a href="gym_owner/index.html" style="font-size:12px; font-weight:600; padding:6px 14px; border-radius:9999px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(37,99,235,0.2); color:#60a5fa; border:1px solid rgba(96,165,250,0.4);">
+        <a href="switch_portal.php?to=gym_owner" style="font-size:12px; font-weight:600; padding:6px 14px; border-radius:9999px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(37,99,235,0.2); color:#60a5fa; border:1px solid rgba(96,165,250,0.4);">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M10 12h4"></path><path d="M10 8h4"></path><path d="M14 21v-3a2 2 0 0 0-4 0v3"></path><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"></path><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path></svg> Gym Owner Portal
         </a>
-        <a href="trainer/index.html" style="font-size:12px; font-weight:600; padding:6px 14px; border-radius:9999px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.1);">
+        <a href="switch_portal.php?to=trainer" style="font-size:12px; font-weight:600; padding:6px 14px; border-radius:9999px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.1);">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"></path><path d="m2.5 21.5 1.4-1.4"></path><path d="m20.1 3.9 1.4-1.4"></path><path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"></path><path d="m9.6 14.4 4.8-4.8"></path></svg> Trainer Portal
         </a>
-        <a href="index.html?guest=true" style="font-size:12px; font-weight:600; padding:6px 14px; border-radius:9999px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.1);">
+        <a href="switch_portal.php?to=user" style="font-size:12px; font-weight:600; padding:6px 14px; border-radius:9999px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.1);">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Member Portal
         </a>
       </div>
@@ -164,13 +164,13 @@
       <!-- Gym Owner Profile Badge -->
       <div class="sidebar-user" title="Gym Owner Profile">
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
-          <div class="user-avatar-circle" style="background:#10B981; color:#fff; font-size:13px; font-weight:700;">VS</div>
+          <div class="user-avatar-circle" id="ownerAvatarInitials" style="background:#10B981; color:#fff; font-size:13px; font-weight:700;">GO</div>
           <div class="user-meta" style="min-width:0; overflow:hidden;">
-            <h4 style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Vikram Singhania</h4>
+            <h4 id="ownerSidebarName" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Gym Owner</h4>
             <span style="font-size: 11px; color: #10B981; font-weight: 600;">Facility Owner</span>
           </div>
         </div>
-        <a href="./" class="btn-sidebar-user-logout" title="Exit to Member Portal">
+        <a href="logout.php?portal_ctx=gym_owner" class="btn-sidebar-user-logout" title="Sign Out" style="color:#EF4444; display:inline-flex; align-items:center; justify-content:center; padding:6px; border-radius:6px; text-decoration:none;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path></svg>
         </a>
       </div>
@@ -187,20 +187,32 @@
           <span class="nav-label">Member Roster</span>
           <span class="nav-badge" id="sidebarBadgeMembers">0</span>
         </a>
+        <a class="sidebar-nav-item" data-tab="gyms" href="javascript:void(0)" onclick="switchOwnerTab('gyms')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12h4"></path><path d="M10 8h4"></path><path d="M14 21v-3a2 2 0 0 0-4 0v3"></path><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"></path><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path></svg>
+          <span class="nav-label">My Gyms &amp; Branches</span>
+        </a>
         <a class="sidebar-nav-item" data-tab="telemetry" href="javascript:void(0)" onclick="switchOwnerTab('telemetry')">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg>
           <span class="nav-label">Facility Telemetry</span>
+        </a>
+        <a class="sidebar-nav-item" data-tab="notifications" href="javascript:void(0)" onclick="switchOwnerTab('notifications')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg>
+          <span class="nav-label">Notifications</span>
+          <span class="nav-badge" id="sidebarBadgeOwnerNotifs" style="background:#EF4444;color:#fff;display:none;">0</span>
         </a>
       </nav>
 
       <!-- Portal Switcher Links -->
       <div style="margin-top: auto; padding: 16px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
         <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700;">Cross-Portal Switcher</span>
-        <a href="trainer/index.html" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); text-decoration: none; padding: 6px 10px; background: #F8FAFC; border-radius: 6px;">
+        <a href="switch_portal.php?to=trainer" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); text-decoration: none; padding: 6px 10px; background: #F8FAFC; border-radius: 6px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; color: var(--primary-blue);"><path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"></path><path d="m2.5 21.5 1.4-1.4"></path><path d="m20.1 3.9 1.4-1.4"></path><path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"></path><path d="m9.6 14.4 4.8-4.8"></path></svg> View as Trainer
         </a>
-        <a href="index.html?guest=true" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); text-decoration: none; padding: 6px 10px; background: #F8FAFC; border-radius: 6px;">
+        <a href="switch_portal.php?to=user" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); text-decoration: none; padding: 6px 10px; background: #F8FAFC; border-radius: 6px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; color: #10B981;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> View as Athlete
+        </a>
+        <a href="logout.php?portal_ctx=gym_owner" style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #DC2626; text-decoration: none; padding: 7px 10px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; color: #DC2626;"><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path></svg> Sign Out
         </a>
       </div>
     </aside>
@@ -212,11 +224,14 @@
         <!-- Welcome Banner -->
         <section class="welcome-banner" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);">
           <div>
-            <div class="welcome-date"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; vertical-align:middle;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg> FitZone Fitness Hub • Main Sector Branch</div>
-            <h2 class="welcome-heading">Welcome, <span class="highlight-name" style="color: #10B981;">Vikram Singhania</span>! 🏢</h2>
-            <p class="welcome-subtitle">Authoritative Facility Administration: Register new coaches, onboard athletes, and assign training rosters.</p>
+            <div class="welcome-date" id="ownerFacilityTitle"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; vertical-align:middle;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg> FitSync Partner Facility</div>
+            <h2 class="welcome-heading">Welcome, <span class="highlight-name" id="ownerWelcomeName" style="color: #10B981;">Gym Owner</span>! 🏢</h2>
+            <p class="welcome-subtitle">Authoritative Facility Administration: Register new coaches, approve memberships, and assign training rosters.</p>
           </div>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn-secondary" style="padding: 10px 16px; font-weight: 700;" onclick="openRegisterGymModal()">
+              + Register Gym
+            </button>
             <button type="button" class="btn-primary-block" style="width: auto; padding: 10px 18px; background: #10B981; border: none;" onclick="openAddCoachModal()">
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 6px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg> + Add New Coach
             </button>
@@ -237,7 +252,7 @@
             </div>
             <div>
               <div class="stat-value" id="statTotalMembers">0 Athletes</div>
-              <div class="stat-trend-green">Active facility accounts</div>
+              <div class="stat-trend-green" id="statMembersSub">0 Platform Registered • 0 Pending</div>
             </div>
           </div>
 
@@ -246,11 +261,11 @@
               <div class="stat-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);">
                 <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
               </div>
-              <span class="stat-label">Certified Coaches</span>
+              <span class="stat-label">Gym Coaching Staff</span>
             </div>
             <div>
               <div class="stat-value" id="statTotalCoaches">0 Coaches</div>
-              <div class="stat-trend-green">100% Verified Credentials</div>
+              <div class="stat-trend-green" id="statCoachesSub">0 Registered Trainers • 0 Requests</div>
             </div>
           </div>
 
@@ -289,8 +304,14 @@
           <button type="button" class="owner-tab-btn" id="btnTabMembers" onclick="switchOwnerTab('members')">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg> Registered Athletes & Assignments
           </button>
+          <button type="button" class="owner-tab-btn" id="btnTabGyms" onclick="switchOwnerTab('gyms')">
+            My Gyms &amp; Branches
+          </button>
           <button type="button" class="owner-tab-btn" id="btnTabTelemetry" onclick="switchOwnerTab('telemetry')">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M5 21v-6"></path><path d="M12 21V3"></path><path d="M19 21V9"></path></svg> Facility Analytics & QR Check-ins
+          </button>
+          <button type="button" class="owner-tab-btn" id="btnTabNotifications" onclick="switchOwnerTab('notifications')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg> Notifications <span id="tabOwnerNotifCount"></span>
           </button>
         </div>
 
@@ -298,6 +319,28 @@
              TAB 1: COACHES STAFF MANAGEMENT
              ================================================================ -->
         <section id="owner-tab-coaches" class="owner-section-tab active">
+          <!-- Pending Trainer Affiliation Requests -->
+          <div class="fs-card" id="ownerTrainerRequestsCard" style="margin-bottom: 18px; border-color: rgba(37, 99, 235, 0.3); display: none;">
+            <div class="card-header-row">
+              <h3 class="card-title">Pending Trainer Affiliation Requests</h3>
+              <span class="fs-badge fs-badge-orange" id="ownerPendingTrainersBadge">0 Pending</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="fs-table">
+                <thead>
+                  <tr>
+                    <th>TRAINER</th>
+                    <th>SPECIALIZATION &amp; CREDENTIALS</th>
+                    <th>EMPLOYMENT TYPE</th>
+                    <th>VERIFICATION</th>
+                    <th style="text-align: right;">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="ownerTrainerRequestsTbody"></tbody>
+              </table>
+            </div>
+          </div>
+
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
             <div>
               <h3 style="font-size: 18px; font-weight: 700; color: var(--text-main);">Certified Coaching Staff</h3>
@@ -312,15 +355,110 @@
           <div class="trainers-grid" id="ownerCoachesGrid">
             <!-- Dynamically populated by renderOwnerCoaches() -->
           </div>
+
+          <!-- FITSYNC REGISTERED TRAINERS PLATFORM DIRECTORY -->
+          <div class="fs-card" id="ownerRegisteredTrainersCard" style="margin-top: 22px;">
+            <div class="card-header-row" style="flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 class="card-title">FitSync Registered Trainers</h3>
+                <p style="font-size: 12px; color: var(--text-secondary);">Platform-registered trainers directory. Invite unaffiliated trainers, approve affiliation requests, or manage associations.</p>
+              </div>
+              <span class="fs-badge fs-badge-blue" id="registeredTrainersCountBadge">0 Trainers</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+              <input type="text" id="trDirSearchInput" class="auth-input" placeholder="Search trainer by name..." oninput="renderRegisteredTrainersDirectory()">
+              <select id="trDirSpecFilter" class="auth-input" onchange="renderRegisteredTrainersDirectory()">
+                <option value="all">All Specializations</option>
+              </select>
+              <select id="trDirVerifFilter" class="auth-input" onchange="renderRegisteredTrainersDirectory()">
+                <option value="all">All Verification Status</option>
+                <option value="verified">Verified</option>
+                <option value="pending_verification">Pending Verification</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <select id="trDirAssocFilter" class="auth-input" onchange="renderRegisteredTrainersDirectory()">
+                <option value="all">All Gym Associations</option>
+                <option value="not_associated">Not Associated</option>
+                <option value="pending">Request Pending</option>
+                <option value="invited">Invited by Gym</option>
+                <option value="active">Active at This Gym</option>
+                <option value="rejected">Rejected</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="fs-table">
+                <thead>
+                  <tr>
+                    <th>TRAINER &amp; CONTACT</th>
+                    <th>SPECIALIZATION &amp; EXP</th>
+                    <th>VERIFICATION</th>
+                    <th>GYM AFFILIATIONS</th>
+                    <th>ASSOCIATION STATUS</th>
+                    <th style="text-align: right;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="ownerRegisteredTrainersTbody">
+                  <tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:16px;">Loading registered trainers...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </section>
 
         <!-- ================================================================
              TAB 2: REGISTERED MEMBERS & ATHLETES
              ================================================================ -->
         <section id="owner-tab-members" class="owner-section-tab">
+          <!-- Pending Membership Requests Card (Workflow F) -->
+          <div class="fs-card" id="ownerMembershipRequestsCard" style="margin-bottom: 18px; border-color: rgba(245, 158, 11, 0.35);">
+            <div class="card-header-row">
+              <h3 class="card-title">Pending Membership &amp; Renewal Requests</h3>
+              <span class="fs-badge fs-badge-orange" id="ownerPendingRequestsBadge">0 Pending</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="fs-table">
+                <thead>
+                  <tr>
+                    <th>MEMBER &amp; CONTACT</th>
+                    <th>GYM &amp; PLAN</th>
+                    <th>REQUEST DATE</th>
+                    <th>STATUS &amp; COACH</th>
+                    <th style="text-align: right;">DECISION</th>
+                  </tr>
+                </thead>
+                <tbody id="ownerRequestsTbody">
+                  <tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:16px;">No pending membership requests.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Member Trainer Assignment Requests Card -->
+          <div class="fs-card" id="ownerMemberTrainerRequestsCard" style="margin-bottom: 18px; border-color: rgba(16, 185, 129, 0.35); display: none;">
+            <div class="card-header-row">
+              <h3 class="card-title">Member Trainer Assignment Requests</h3>
+              <span class="fs-badge fs-badge-green" id="ownerMemberTrainerReqBadge">0 Pending</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="fs-table">
+                <thead>
+                  <tr>
+                    <th>MEMBER</th>
+                    <th>REQUESTED TRAINER</th>
+                    <th>NOTES</th>
+                    <th>DATE</th>
+                    <th style="text-align: right;">DECISION</th>
+                  </tr>
+                </thead>
+                <tbody id="ownerMemberTrainerReqTbody"></tbody>
+              </table>
+            </div>
+          </div>
+
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
             <div>
-              <h3 style="font-size: 18px; font-weight: 700; color: var(--text-main);">Registered Athletes & Coach Assignments</h3>
+              <h3 style="font-size: 18px; font-weight: 700; color: var(--text-main);">Active Gym Members &amp; Coach Assignments</h3>
               <p style="font-size: 12px; color: var(--text-secondary);">Assign, reassign, or register athletes to personal coaches.</p>
             </div>
             <button type="button" class="btn-primary-block" style="width: auto; padding: 8px 16px;" onclick="openAddMemberModal()">
@@ -329,14 +467,21 @@
           </div>
 
           <div class="fs-card">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;" id="ownerRosterFilterBar">
+              <button type="button" class="owner-tab-btn active" data-rseg="active_all" onclick="setRosterFilterSegment('active_all')">Active Members</button>
+              <button type="button" class="owner-tab-btn" data-rseg="assigned" onclick="setRosterFilterSegment('assigned')">Coach Assigned</button>
+              <button type="button" class="owner-tab-btn" data-rseg="unassigned" onclick="setRosterFilterSegment('unassigned')">Unassigned Coach</button>
+              <button type="button" class="owner-tab-btn" onclick="setMemberDirectorySegment('pending'); document.getElementById('ownerRegisteredMembersCard')?.scrollIntoView({behavior:'smooth'});">Pending Enrollments</button>
+              <button type="button" class="owner-tab-btn" onclick="setMemberDirectorySegment('inactive'); document.getElementById('ownerRegisteredMembersCard')?.scrollIntoView({behavior:'smooth'});">Expired / Rejected</button>
+            </div>
             <div style="overflow-x: auto;">
               <table class="fs-table">
                 <thead>
                   <tr>
                     <th>ATHLETE NAME</th>
-                    <th>EMAIL & PHONE</th>
-                    <th>GOAL & TIER</th>
-                    <th>CURRENT WEIGHT</th>
+                    <th>EMAIL &amp; PHONE</th>
+                    <th>GOAL &amp; JOINED</th>
+                    <th>ACTIVITY &amp; WEIGHT</th>
                     <th>ASSIGNED COACH</th>
                     <th>STATUS</th>
                     <th style="text-align: right;">ACTION</th>
@@ -344,6 +489,50 @@
                 </thead>
                 <tbody id="ownerMembersTableBody">
                   <!-- Dynamically populated by renderOwnerMembers() -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- FITSYNC REGISTERED MEMBERS PLATFORM DIRECTORY -->
+          <div class="fs-card" id="ownerRegisteredMembersCard" style="margin-top: 20px;">
+            <div class="card-header-row" style="flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 class="card-title">FitSync Registered Members</h3>
+                <p style="font-size: 12px; color: var(--text-secondary);">Centralized FitSync member directory with privacy-scoped visibility and gym membership history.</p>
+              </div>
+              <span class="fs-badge fs-badge-blue" id="registeredMembersCountBadge">0 Members</span>
+            </div>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;" id="memDirSegmentBar">
+              <button type="button" class="owner-tab-btn active" data-seg="all" onclick="setMemberDirectorySegment('all')">All Platform Members</button>
+              <button type="button" class="owner-tab-btn" data-seg="selected_gym" onclick="setMemberDirectorySegment('selected_gym')">Selected This Gym</button>
+              <button type="button" class="owner-tab-btn" data-seg="pending" onclick="setMemberDirectorySegment('pending')">Pending Requests</button>
+              <button type="button" class="owner-tab-btn" data-seg="active" onclick="setMemberDirectorySegment('active')">Active Gym Members</button>
+              <button type="button" class="owner-tab-btn" data-seg="inactive" onclick="setMemberDirectorySegment('inactive')">Rejected / Inactive</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 14px;">
+              <input type="text" id="memDirSearchInput" class="auth-input" placeholder="Search member by name, goal, or plan..." oninput="renderRegisteredMembersDirectory()">
+              <select id="memDirGoalFilter" class="auth-input" onchange="renderRegisteredMembersDirectory()">
+                <option value="all">All Fitness Goals</option>
+              </select>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="fs-table">
+                <thead>
+                  <tr>
+                    <th>MEMBER</th>
+                    <th>CONTACT (PRIVACY SCOPED)</th>
+                    <th>FITNESS GOAL</th>
+                    <th>MEMBERSHIP STATUS &amp; PLAN</th>
+                    <th>ASSIGNED TRAINER</th>
+                    <th style="text-align: right;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="ownerRegisteredMembersTbody">
+                  <tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:16px;">Loading registered members...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -368,6 +557,40 @@
                 <div style="font-weight: 600; font-size: 13px; color: var(--text-main); margin-bottom: 2px;">No Turnstile Check-Ins Yet Today</div>
                 <span style="font-size: 11px;">When enrolled members tap their Turnstile QR pass at the entrance gate, live access logs appear here.</span>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             TAB 5: MY GYMS & BRANCHES REGISTRATION / EDITING
+             ================================================================ -->
+        <section id="owner-tab-gyms" class="owner-section-tab">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="font-size: 18px; font-weight: 700; color: var(--text-main);">My Gyms &amp; Branches</h3>
+              <p style="font-size: 12px; color: var(--text-secondary);">Register new gym branches, update operating hours/details, manage membership plans, and control User Portal visibility.</p>
+            </div>
+            <button type="button" class="btn-primary-block" style="width: auto; padding: 8px 16px;" onclick="openRegisterGymModal()">+ Register New Gym</button>
+          </div>
+          <div id="ownerGymsGrid" class="trainers-grid">
+            <div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--text-secondary);">Loading your gyms...</div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             TAB 4: GYM OWNER NOTIFICATIONS
+             ================================================================ -->
+        <section id="owner-tab-notifications" class="owner-section-tab">
+          <div class="fs-card">
+            <div class="card-header-row">
+              <div>
+                <h3 class="card-title">Gym Notifications &amp; Audit Alerts</h3>
+                <p style="font-size: 12px; color: var(--text-secondary);">Real-time notifications for membership requests, trainer affiliations, and trainer requests.</p>
+              </div>
+              <button type="button" class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="markAllOwnerNotificationsRead()">Mark All Read</button>
+            </div>
+            <div id="ownerNotificationsList" style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="padding: 20px; text-align: center; color: var(--text-secondary);">Loading notifications...</div>
             </div>
           </div>
         </section>
@@ -460,6 +683,7 @@
       </div>
 
       <form onsubmit="handleCreateMemberSubmit(event)">
+        <div id="addMemberAlert" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px;"></div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
           <div class="auth-form-group">
             <label class="auth-label">Athlete Full Name</label>
@@ -473,18 +697,18 @@
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
           <div class="auth-form-group">
-            <label class="auth-label">Phone Number</label>
-            <input type="text" id="newMemberPhone" class="auth-input" placeholder="+91 98765 11000" value="+91 98">
+            <label class="auth-label">Phone Number (Optional)</label>
+            <input type="text" id="newMemberPhone" class="auth-input" placeholder="+91 98765 11000" value="">
           </div>
           <div class="auth-form-group">
-            <label class="auth-label">Gender & Bodyweight (kg)</label>
+            <label class="auth-label">Gender &amp; Bodyweight (kg)</label>
             <div style="display: flex; gap: 8px;">
               <select id="newMemberGender" class="auth-input" style="flex: 1;">
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
               </select>
-              <input type="number" id="newMemberWeight" class="auth-input" placeholder="65" value="68" style="width: 80px;" required>
+              <input type="number" id="newMemberWeight" class="auth-input" placeholder="65" value="68" min="20" max="350" step="0.1" style="width: 80px;" required>
             </div>
           </div>
         </div>
@@ -494,43 +718,190 @@
             <label class="auth-label">Primary Fitness Goal</label>
             <select id="newMemberGoal" class="auth-input">
               <option value="Build Muscle (Hypertrophy Surplus)">Build Muscle (Hypertrophy)</option>
-              <option value="Fat Loss & Caloric Deficit">Fat Loss & Leaning</option>
-              <option value="Strength & Powerlifting Peak">Strength & Powerlifting</option>
+              <option value="Fat Loss & Caloric Deficit">Fat Loss &amp; Leaning</option>
+              <option value="Strength & Powerlifting Peak">Strength &amp; Powerlifting</option>
               <option value="Functional Conditioning">Functional Conditioning</option>
             </select>
           </div>
           <div class="auth-form-group">
-            <label class="auth-label">Membership Tier</label>
+            <label class="auth-label">Membership Plan / Tier</label>
             <select id="newMemberTier" class="auth-input">
-              <option value="Gold Pass (Multi-Gym)">Gold Pass (Multi-Gym)</option>
-              <option value="VIP Athlete (Unlimited PT)">VIP Athlete (Unlimited PT)</option>
-              <option value="Standard Single-Branch">Standard Single-Branch</option>
+              <option value="">Standard Membership</option>
             </select>
           </div>
         </div>
 
-        <!-- DYNAMIC COACH ASSIGNMENT SELECTOR -->
-        <div class="auth-form-group" style="margin-bottom: 20px;">
-          <label class="auth-label">Assign Personal Coach</label>
-          <select id="newMemberCoachSelect" class="auth-input" required>
-            <!-- Populated dynamically with all active coaches -->
-          </select>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+          <div class="auth-form-group">
+            <label class="auth-label">Assign Personal Coach</label>
+            <select id="newMemberCoachSelect" class="auth-input">
+              <!-- Populated dynamically with all active coaches -->
+            </select>
+          </div>
+          <div class="auth-form-group">
+            <label class="auth-label">Initial Portal Password (Optional)</label>
+            <input type="password" id="newMemberPassword" class="auth-input" placeholder="Default: Member@123" minlength="6">
+          </div>
         </div>
 
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
           <button type="button" class="btn-secondary" onclick="closeAddMemberModal()">Cancel</button>
-          <button type="submit" class="btn-primary-block" style="width: auto; padding: 10px 22px;">Enroll Athlete</button>
+          <button type="submit" class="btn-primary-block" id="btnSubmitAddMember" style="width: auto; padding: 10px 22px;">Enroll Athlete</button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- ================================================================
+       MODAL 3: REGISTER OR EDIT GYM / BRANCH
+       ================================================================ -->
+  <div class="modal-backdrop" id="modalRegisterGym" onclick="if(event.target === this) closeRegisterGymModal()">
+    <div class="auth-card-container" style="max-width: 680px; width: 92%; max-height: 90vh; overflow-y: auto; padding: 26px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <h3 id="regGymModalTitle" style="font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Register New Gym / Branch</h3>
+          <span style="font-size: 12px; color: var(--text-secondary);">Saved directly in MySQL and synchronized with the User Portal Gym Discovery directory</span>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeRegisterGymModal()" style="font-size: 24px; background: none; border: none; cursor: pointer; color: var(--text-secondary);">&times;</button>
+      </div>
+      <form onsubmit="handleSaveGymSubmit(event)">
+        <input type="hidden" id="editGymIdInput" value="0">
+        <div id="saveGymAlert" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px;"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="auth-form-group"><label class="auth-label">Gym Name *</label><input type="text" id="fgGymName" class="auth-input" required placeholder="e.g. Apex Iron Studio"></div>
+          <div class="auth-form-group"><label class="auth-label">Status</label>
+            <select id="fgGymStatus" class="auth-input">
+              <option value="active">Active (Visible in User Portal)</option>
+              <option value="inactive">Inactive (Hidden / Closed for joins)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="auth-form-group"><label class="auth-label">Contact Email *</label><input type="email" id="fgGymEmail" class="auth-input" required placeholder="desk@gym.com"></div>
+          <div class="auth-form-group"><label class="auth-label">Contact Phone *</label><input type="text" id="fgGymPhone" class="auth-input" required placeholder="+91 20 2500 1122"></div>
+        </div>
+        <div class="auth-form-group" style="margin-bottom: 12px;"><label class="auth-label">Street Address *</label><input type="text" id="fgGymAddr" class="auth-input" required placeholder="Plot 14, Main Road"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+          <div class="auth-form-group"><label class="auth-label">City *</label><input type="text" id="fgGymCity" class="auth-input" required placeholder="Pune"></div>
+          <div class="auth-form-group"><label class="auth-label">State *</label><input type="text" id="fgGymState" class="auth-input" required placeholder="Maharashtra"></div>
+          <div class="auth-form-group"><label class="auth-label">Postal Code *</label><input type="text" id="fgGymPin" class="auth-input" required placeholder="411004"></div>
+          <div class="auth-form-group"><label class="auth-label">Capacity</label><input type="number" id="fgGymCap" class="auth-input" value="80" min="5"></div>
+        </div>
+        <div class="auth-form-group" style="margin-bottom: 12px;"><label class="auth-label">Description</label><input type="text" id="fgGymDesc" class="auth-input" placeholder="Facility overview, training focus, and ambiance"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="auth-form-group"><label class="auth-label">Open Time</label><input type="time" id="fgGymOpen" class="auth-input" value="06:00"></div>
+          <div class="auth-form-group"><label class="auth-label">Close Time</label><input type="time" id="fgGymClose" class="auth-input" value="22:00"></div>
+          <div class="auth-form-group" style="display:flex;align-items:flex-end;padding-bottom:8px;"><label style="font-size:12px;display:flex;align-items:center;gap:6px;"><input type="checkbox" id="fgGymSunOpen" checked> Open Sundays</label></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="auth-form-group"><label class="auth-label">Facilities (comma separated)</label><input type="text" id="fgGymFac" class="auth-input" value="Olympic Platforms, Locker Rooms, Steam & Sauna"></div>
+          <div class="auth-form-group"><label class="auth-label">Equipment (comma separated)</label><input type="text" id="fgGymEq" class="auth-input" value="Squat Racks, Dumbbells, Cable Machines"></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+          <div class="auth-form-group"><label class="auth-label">Membership Plan Name</label><input type="text" id="fgPlanName" class="auth-input" value="Monthly All-Floor Pass"></div>
+          <div class="auth-form-group"><label class="auth-label">Price (₹)</label><input type="number" id="fgPlanPrice" class="auth-input" value="1999" min="0"></div>
+          <div class="auth-form-group"><label class="auth-label">Months</label><input type="number" id="fgPlanMonths" class="auth-input" value="1" min="1" max="36"></div>
+        </div>
+        <div class="auth-form-group" style="margin-bottom: 16px;">
+          <label class="auth-label">Gym Photo / Logo (Optional: JPG, PNG, WEBP)</label>
+          <input type="file" id="fgGymLogo" class="auth-input" accept="image/jpeg,image/png,image/webp" style="padding: 6px 10px;">
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn-secondary" onclick="closeRegisterGymModal()">Cancel</button>
+          <button type="submit" class="btn-primary-block" id="btnSaveGymSubmit" style="width: auto; padding: 10px 22px;">Save Gym to Database</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: ADD MEMBERSHIP PLAN -->
+  <div class="modal-backdrop" id="modalAddGymPlan" onclick="if(event.target === this) closeAddPlanModal()">
+    <div class="auth-card-container" style="max-width: 460px; width: 92%; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 17px; font-weight: 700; color: var(--text-main);">Add Membership Plan</h3>
+        <button type="button" class="modal-close-btn" onclick="closeAddPlanModal()" style="font-size: 22px; background: none; border: none; cursor: pointer;">&times;</button>
+      </div>
+      <form onsubmit="handleAddGymPlanSubmit(event)">
+        <input type="hidden" id="addPlanGymIdInput" value="0">
+        <div class="auth-form-group" style="margin-bottom: 10px;"><label class="auth-label">Plan Name *</label><input type="text" id="addPlanNameInput" class="auth-input" required placeholder="e.g. Quarterly Transformation Pass"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div class="auth-form-group"><label class="auth-label">Price (₹) *</label><input type="number" id="addPlanPriceInput" class="auth-input" required min="0" value="4999"></div>
+          <div class="auth-form-group"><label class="auth-label">Duration (Months) *</label><input type="number" id="addPlanMonthsInput" class="auth-input" required min="1" max="36" value="3"></div>
+        </div>
+        <div class="auth-form-group" style="margin-bottom: 14px;"><label class="auth-label">Description</label><input type="text" id="addPlanDescInput" class="auth-input" placeholder="Includes gym floor, lockers, and coaching eligibility"></div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn-secondary" onclick="closeAddPlanModal()">Cancel</button>
+          <button type="submit" class="btn-primary-block" style="width: auto; padding: 9px 18px;">Save Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 5: REJECT MEMBERSHIP REASON -->
+  <div class="modal-backdrop" id="modalRejectMembership" onclick="if(event.target === this) closeRejectMembershipModal()">
+    <div class="auth-card-container" style="max-width: 460px; width: 92%; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="font-size: 17px; font-weight: 700; color: var(--text-main);">Decline Enrollment Request</h3>
+        <button type="button" class="modal-close-btn" onclick="closeRejectMembershipModal()" style="font-size: 22px; background: none; border: none; cursor: pointer;">&times;</button>
+      </div>
+      <p id="rejectMemLabel" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Optionally provide feedback explaining why this request was declined.</p>
+      <input type="hidden" id="rejectMembershipIdInput" value="0">
+      <div class="auth-form-group" style="margin-bottom: 14px;">
+        <label class="auth-label">Rejection Reason (Optional)</label>
+        <textarea id="rejectReasonInput" class="auth-input" style="height: 76px; padding: 8px 10px;" placeholder="e.g. Slot capacity reached for evening batch; please apply for morning batch."></textarea>
+      </div>
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" onclick="closeRejectMembershipModal()">Cancel</button>
+        <button type="button" class="btn-delete-item" style="padding: 9px 18px; font-size: 12px;" onclick="submitMembershipRejection()">Confirm Decline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: ASSIGN COACH & ASSIGNMENT HISTORY -->
+  <div class="modal-backdrop" id="modalAssignCoachDetails" onclick="if(event.target === this) closeAssignCoachModal()">
+    <div class="auth-card-container" style="max-width: 680px; width: 94%; max-height: 90vh; overflow-y: auto; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div>
+          <h3 style="font-size: 18px; font-weight: 700; color: var(--text-main);" id="assignModalMemberTitle">Assign Coach</h3>
+          <span style="font-size: 12px; color: var(--text-secondary);" id="assignModalMemberMeta">Select an active coach from your gym or review assignment history</span>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeAssignCoachModal()" style="font-size: 22px; background: none; border: none; cursor: pointer;">&times;</button>
+      </div>
+      <input type="hidden" id="assignModalMemberEmail" value="">
+      <div id="assignModalCoachesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-bottom: 18px;"></div>
+      <div style="border-top: 1px solid var(--border-color); padding-top: 14px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">Coach Assignment History</h4>
+        <div id="assignModalHistoryBox" style="font-size: 12px; color: var(--text-secondary);">No assignment history recorded yet.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT LOGIC & STORE INTEGRATION -->
+  <script src="js/api_client.js"></script>
   <script src="js/data.js"></script>
   <script>
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    let ownerDirState = {
+      memSegment: 'all',
+      rosterSegment: 'active_all',
+      activeGymId: 0
+    };
+    let ownerLoadInFlight = false;
+    let addingMemberInFlight = false;
+    let savingGymInFlight = false;
+
     function switchOwnerTab(tabId) {
       document.querySelectorAll('.owner-section-tab').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.owner-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.owner-tab-btn:not([data-seg])').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.sidebar-nav-item').forEach(link => link.classList.remove('active'));
 
       const target = document.getElementById('owner-tab-' + tabId);
@@ -547,42 +918,584 @@
 
     // Authoritative Data Loader from Database
     async function loadOwnerData() {
+      if (ownerLoadInFlight) return;
+      ownerLoadInFlight = true;
       try {
-        const res = await fetch('api/gym_owner/dashboard.php');
+        const gParam = ownerDirState.activeGymId > 0 ? `?gym_id=${ownerDirState.activeGymId}` : '';
+        const res = await fetch(`api/gym_owner/dashboard.php${gParam}`, { cache: 'no-store' });
+        if (res.status === 401 || res.status === 403) {
+          if (typeof window.fitSyncRefreshSession === 'function') {
+            await window.fitSyncRefreshSession('gym_owner', 'login.php');
+          }
+          return;
+        }
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
             const d = json.data;
+            window.__OWNER_DASH__ = d;
             const coaches = Array.isArray(d.coaches) ? d.coaches : [];
+            const regTrainers = Array.isArray(d.registered_trainers) ? d.registered_trainers : [];
+            const trainerRequests = Array.isArray(d.pending_trainer_requests) ? d.pending_trainer_requests : [];
             const members = Array.isArray(d.members) ? d.members : [];
+            const regMembers = Array.isArray(d.registered_members) ? d.registered_members : [];
+            const requests = Array.isArray(d.membership_requests) ? d.membership_requests : [];
+            const memTrainerReqs = Array.isArray(d.member_trainer_requests) ? d.member_trainer_requests : [];
+            const logs = Array.isArray(d.turnstile_logs) ? d.turnstile_logs : [];
+            const notifs = Array.isArray(d.notifications) ? d.notifications : [];
 
-            // Update Telemetry Cards & Sidebar Badges
-            document.getElementById('statTotalMembers').innerText = `${d.stats.members_count} Athletes`;
-            document.getElementById('statTotalCoaches').innerText = `${d.stats.coaches_count} Coaches`;
-            document.getElementById('sidebarBadgeCoaches').innerText = d.stats.coaches_count;
-            document.getElementById('sidebarBadgeMembers').innerText = d.stats.members_count;
-            document.getElementById('statFacilityLoad').innerText = `${d.stats.capacity_pct}% Load`;
-            document.getElementById('statRevenue').innerText = d.stats.formatted_revenue;
+            const owner = d.owner || window.__AUTHENTICATED_USER__ || {};
+            const gym = d.gym || {};
+            const ownerName = owner.full_name || 'Gym Owner';
+            const initials = ownerName.trim().split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase() || 'GO';
 
-            if (window.fitSyncStore) {
-              window.fitSyncStore.state.trainers = coaches;
-              window.fitSyncStore.state.members = members;
+            if (document.getElementById('ownerAvatarInitials')) document.getElementById('ownerAvatarInitials').innerText = initials;
+            if (document.getElementById('ownerSidebarName')) document.getElementById('ownerSidebarName').innerText = ownerName;
+            if (document.getElementById('ownerWelcomeName')) document.getElementById('ownerWelcomeName').innerText = ownerName;
+            if (document.getElementById('ownerFacilityTitle') && gym.name) {
+              const stTag = gym.status === 'pending_approval' ? ' • Pending Verification' : (gym.status === 'active' ? ' • Verified' : '');
+              document.getElementById('ownerFacilityTitle').innerText = `${gym.name}${gym.city ? ' • ' + gym.city : ''}${stTag}`;
             }
 
+            // Update Telemetry Cards & Dynamic Counts (100% DB calculated)
+            const stats = d.stats || {};
+            document.getElementById('statTotalMembers').innerText = `${stats.members_count || 0} Active`;
+            if (document.getElementById('statMembersSub')) {
+              document.getElementById('statMembersSub').innerText = `${stats.registered_members_count || 0} Platform • ${stats.pending_requests || 0} Pending`;
+            }
+            document.getElementById('statTotalCoaches').innerText = `${stats.coaches_count || 0} Associated`;
+            if (document.getElementById('statCoachesSub')) {
+              document.getElementById('statCoachesSub').innerText = `${stats.registered_trainers_count || 0} Registered • ${stats.pending_trainer_requests_count || 0} Requests`;
+            }
+            document.getElementById('sidebarBadgeCoaches').innerText = stats.coaches_count || 0;
+            document.getElementById('sidebarBadgeMembers').innerText = stats.members_count || 0;
+            document.getElementById('statFacilityLoad').innerText = `${stats.capacity_pct || 0}% Load`;
+            document.getElementById('statRevenue').innerText = stats.formatted_revenue || '₹0';
+
+            const unreadN = parseInt(stats.unread_notifications || 0, 10);
+            const notifBadge = document.getElementById('sidebarBadgeOwnerNotifs');
+            if (notifBadge) {
+              notifBadge.innerText = unreadN;
+              notifBadge.style.display = unreadN > 0 ? 'inline-block' : 'none';
+            }
+            const tabNotifCount = document.getElementById('tabOwnerNotifCount');
+            if (tabNotifCount) tabNotifCount.innerText = unreadN > 0 ? `(${unreadN})` : '';
+
+            populateDirectoryFilters(regTrainers, regMembers);
             renderOwnerCoaches(coaches, members);
+            renderOwnerTrainerRequests(trainerRequests, gym.id || 0);
+            renderRegisteredTrainersDirectory();
+            renderOwnerRequests(requests);
+            renderMemberTrainerRequests(memTrainerReqs);
             renderOwnerMembers(members, coaches);
+            renderRegisteredMembersDirectory();
+            renderOwnerCheckinLogs(logs);
+            renderOwnerNotifications(notifs);
+            renderOwnerGyms(Array.isArray(d.owned_gyms) ? d.owned_gyms : [], gym.id || 0);
             populateCoachSelector(coaches);
+            populatePlanSelector(Array.isArray(d.membership_plans) ? d.membership_plans : []);
             return;
           }
         }
       } catch (err) {
         console.warn('Dashboard fetch error:', err);
+      } finally {
+        ownerLoadInFlight = false;
       }
 
-      // Safe fallback rendering with zero fabricated numbers
       renderOwnerCoaches([], []);
+      renderOwnerTrainerRequests([], 0);
+      renderRegisteredTrainersDirectory();
       renderOwnerMembers([], []);
+      renderOwnerRequests([]);
+      renderMemberTrainerRequests([]);
+      renderRegisteredMembersDirectory();
+      renderOwnerCheckinLogs([]);
+      renderOwnerNotifications([]);
+      renderOwnerGyms([], 0);
       populateCoachSelector([]);
+      populatePlanSelector([]);
+    }
+
+    function populateDirectoryFilters(regTrainers, regMembers) {
+      const specSel = document.getElementById('trDirSpecFilter');
+      if (specSel) {
+        const cur = specSel.value;
+        const specs = Array.from(new Set(
+          (regTrainers || []).flatMap(t => Array.isArray(t.specialties) ? t.specialties : []).filter(Boolean)
+        )).sort();
+        specSel.innerHTML = '<option value="all">All Specializations</option>' +
+          specs.map(s => `<option value="${escapeHtml(s)}" ${cur === s ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('');
+      }
+      const goalSel = document.getElementById('memDirGoalFilter');
+      if (goalSel) {
+        const cur = goalSel.value;
+        const goals = Array.from(new Set(
+          (regMembers || []).map(m => m.fitness_goal).filter(Boolean)
+        )).sort();
+        goalSel.innerHTML = '<option value="all">All Fitness Goals</option>' +
+          goals.map(g => `<option value="${escapeHtml(g)}" ${cur === g ? 'selected' : ''}>${escapeHtml(g)}</option>`).join('');
+      }
+    }
+
+    function renderRegisteredTrainersDirectory() {
+      const tbody = document.getElementById('ownerRegisteredTrainersTbody');
+      const badge = document.getElementById('registeredTrainersCountBadge');
+      const d = window.__OWNER_DASH__ || {};
+      const list = Array.isArray(d.registered_trainers) ? d.registered_trainers : [];
+      const gymId = (d.gym && d.gym.id) ? d.gym.id : 0;
+
+      const q = (document.getElementById('trDirSearchInput')?.value || '').trim().toLowerCase();
+      const specF = document.getElementById('trDirSpecFilter')?.value || 'all';
+      const verifF = document.getElementById('trDirVerifFilter')?.value || 'all';
+      const assocF = document.getElementById('trDirAssocFilter')?.value || 'all';
+
+      const filtered = list.filter(t => {
+        if (q && !(t.name || '').toLowerCase().includes(q) && !(t.specialization || '').toLowerCase().includes(q)) return false;
+        if (specF !== 'all' && !(t.specialties || []).includes(specF)) return false;
+        if (verifF !== 'all' && t.verification_status !== verifF) return false;
+        if (assocF !== 'all' && t.association_status !== assocF) return false;
+        return true;
+      });
+
+      if (badge) badge.innerText = `${filtered.length} of ${list.length} Trainers`;
+      if (!tbody) return;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:18px;">No FitSync registered trainers match the selected filters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(t => {
+        const verifCls = t.verification_status === 'verified' ? 'fs-badge-green' : (t.verification_status === 'rejected' ? 'fs-badge-red' : 'fs-badge-orange');
+        const assocMap = {
+          not_associated: ['Not Associated', 'fs-badge-blue'],
+          pending: ['Request Pending', 'fs-badge-orange'],
+          invited: ['Invitation Sent', 'fs-badge-orange'],
+          active: ['Active at This Gym', 'fs-badge-green'],
+          rejected: ['Rejected', 'fs-badge-red'],
+          inactive: ['Inactive', 'fs-badge-blue']
+        };
+        const [assocLabel, assocCls] = assocMap[t.association_status] || ['Not Associated', 'fs-badge-blue'];
+        const gymsHtml = (t.gym_affiliations && t.gym_affiliations.length)
+          ? escapeHtml(t.gym_affiliations.join(', '))
+          : '<span style="color:var(--text-muted);">No active gym</span>';
+
+        let actionBtns = `<button type="button" class="btn-secondary" style="padding:4px 9px;font-size:11px;margin-right:4px;" onclick="openOwnerTrainerPreview(${t.user_id})">View</button>`;
+        if (t.association_status === 'pending') {
+          actionBtns += `<button type="button" class="btn-primary-block" style="width:auto;padding:4px 9px;font-size:11px;background:#10B981;border:none;margin-right:4px;" onclick="handleTrainerAssociation(${gymId}, ${t.user_id}, 'approve')">Approve</button>`;
+          actionBtns += `<button type="button" class="btn-delete-item" style="padding:4px 9px;font-size:11px;" onclick="handleTrainerAssociation(${gymId}, ${t.user_id}, 'reject')">Reject</button>`;
+        } else if (t.association_status === 'active') {
+          actionBtns += `<button type="button" class="btn-delete-item" style="padding:4px 9px;font-size:11px;" onclick="handleTrainerAssociation(${gymId}, ${t.user_id}, 'deactivate')">Deactivate</button>`;
+        } else if (t.association_status === 'invited') {
+          actionBtns += `<span style="font-size:11px;color:#D97706;font-weight:600;">Awaiting Trainer</span>`;
+        } else {
+          actionBtns += `<button type="button" class="btn-primary-block" style="width:auto;padding:4px 9px;font-size:11px;" onclick="handleTrainerAssociation(${gymId}, ${t.user_id}, 'invite')">Invite to Gym</button>`;
+        }
+
+        return `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <img src="${escapeHtml(t.avatar || 'assets/images/trainer_raj.jpg')}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" alt="${escapeHtml(t.name)}">
+                <div>
+                  <strong style="color:var(--text-main);">${escapeHtml(t.name)}</strong>
+                  <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(t.email)} • ${escapeHtml(t.phone)}</div>
+                  <div style="font-size:10px;color:var(--text-secondary);">Joined ${escapeHtml((t.registered_at || '').slice(0, 10))}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <strong>${escapeHtml(t.specialization)}</strong>
+              <div style="font-size:11px;color:var(--text-secondary);">${t.experience_years || 0} yrs • ${escapeHtml(t.qualifications || '--')}</div>
+            </td>
+            <td><span class="fs-badge ${verifCls}">${escapeHtml(String(t.verification_status).replace('_', ' ').toUpperCase())}</span></td>
+            <td style="font-size:12px;">${gymsHtml}</td>
+            <td><span class="fs-badge ${assocCls}">${assocLabel}</span></td>
+            <td style="text-align:right;white-space:nowrap;">${actionBtns}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    function setMemberDirectorySegment(seg) {
+      ownerDirState.memSegment = seg;
+      document.querySelectorAll('#memDirSegmentBar button').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-seg') === seg);
+      });
+      renderRegisteredMembersDirectory();
+    }
+
+    function renderRegisteredMembersDirectory() {
+      const tbody = document.getElementById('ownerRegisteredMembersTbody');
+      const badge = document.getElementById('registeredMembersCountBadge');
+      const d = window.__OWNER_DASH__ || {};
+      const list = Array.isArray(d.registered_members) ? d.registered_members : [];
+      const coaches = Array.isArray(d.coaches) ? d.coaches : [];
+      const seg = ownerDirState.memSegment || 'all';
+      const q = (document.getElementById('memDirSearchInput')?.value || '').trim().toLowerCase();
+      const goalF = document.getElementById('memDirGoalFilter')?.value || 'all';
+
+      const filtered = list.filter(m => {
+        if (seg === 'selected_gym' && !m.selected_this_gym) return false;
+        if (seg === 'pending' && m.membership_status !== 'pending') return false;
+        if (seg === 'active' && m.membership_status !== 'active') return false;
+        if (seg === 'inactive' && !['rejected', 'cancelled', 'expired', 'frozen'].includes(m.membership_status)) return false;
+        if (q && !(m.name || '').toLowerCase().includes(q) && !(m.fitness_goal || '').toLowerCase().includes(q) && !(m.selected_plan || '').toLowerCase().includes(q)) return false;
+        if (goalF !== 'all' && m.fitness_goal !== goalF) return false;
+        return true;
+      });
+
+      if (badge) badge.innerText = `${filtered.length} of ${list.length} Members`;
+      if (!tbody) return;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:18px;">No FitSync registered members match this filter.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(m => {
+        const stCls = m.membership_status === 'active' ? 'fs-badge-green' : (m.membership_status === 'pending' ? 'fs-badge-orange' : (m.membership_status === 'none' ? 'fs-badge-blue' : 'fs-badge-red'));
+        const stLabel = m.membership_status === 'none' ? (m.selected_this_gym ? 'SELECTED GYM' : 'PLATFORM') : String(m.membership_status).toUpperCase();
+        const initials = (m.name || 'MB').trim().split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase();
+
+        let actions = `<button type="button" class="btn-secondary" style="padding:4px 9px;font-size:11px;margin-right:4px;" onclick="openOwnerMemberPreview(${m.user_id})">Preview</button>`;
+        if (m.membership_status === 'pending' && m.membership_id) {
+          actions += `<button type="button" class="btn-primary-block" style="width:auto;padding:4px 9px;font-size:11px;background:#10B981;border:none;margin-right:4px;" onclick="handleMembershipDecision(${m.membership_id}, 'approve')">Approve</button>`;
+          actions += `<button type="button" class="btn-delete-item" style="padding:4px 9px;font-size:11px;" onclick="openRejectMembershipModal(${m.membership_id}, '${escapeHtml(m.name)}')">Reject</button>`;
+        } else if (m.membership_status === 'active') {
+          const coachOpts = coaches.map(c => `<option value="${c.id}" ${m.assigned_trainer_id === c.user_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+          actions += `<select class="coach-assign-select" style="padding:3px 6px;font-size:11px;margin-right:4px;" onchange="handleReassignCoach('${escapeHtml(m.email)}', this.value)"><option value="">Assign Coach...</option>${coachOpts}</select>`;
+          actions += `<button type="button" class="btn-secondary" style="padding:4px 8px;font-size:11px;" onclick="openAssignCoachModal(${m.user_id}, '${escapeHtml(m.email)}')">Coaches</button>`;
+        }
+
+        return `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="user-avatar-circle" style="width:34px;height:34px;font-size:12px;background:var(--light-blue-bg);color:var(--primary-blue);">${initials}</div>
+                <div>
+                  <strong style="color:var(--text-main);">${escapeHtml(m.name)}</strong>
+                  <div style="font-size:10px;color:var(--text-secondary);">Registered ${escapeHtml((m.registration_date || '').slice(0, 10))}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="font-size:12px;">${escapeHtml(m.email)}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(m.phone)}</div>
+            </td>
+            <td><span class="fs-badge fs-badge-blue">${escapeHtml(m.fitness_goal)}</span></td>
+            <td>
+              <span class="fs-badge ${stCls}">${escapeHtml(stLabel)}</span>
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${escapeHtml(m.selected_plan || 'No plan')}</div>
+            </td>
+            <td style="font-size:12px;">${escapeHtml(m.assigned_trainer_name || 'Unassigned')}</td>
+            <td style="text-align:right;white-space:nowrap;">${actions}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    function renderMemberTrainerRequests(reqs) {
+      const card = document.getElementById('ownerMemberTrainerRequestsCard');
+      const tbody = document.getElementById('ownerMemberTrainerReqTbody');
+      const badge = document.getElementById('ownerMemberTrainerReqBadge');
+      const list = Array.isArray(reqs) ? reqs : [];
+      if (badge) badge.innerText = `${list.length} Pending`;
+      if (!card || !tbody) return;
+      if (list.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = 'block';
+      tbody.innerHTML = list.map(r => `
+        <tr>
+          <td><strong>${escapeHtml(r.member_name)}</strong><div style="font-size:11px;color:var(--text-muted);">${escapeHtml(r.member_email)}</div></td>
+          <td><strong>${escapeHtml(r.trainer_name)}</strong><div style="font-size:11px;color:var(--text-secondary);">${escapeHtml(r.trainer_spec || '')}</div></td>
+          <td style="font-size:12px;">${escapeHtml(r.notes || '--')}</td>
+          <td style="font-size:11px;">${escapeHtml((r.created_at || '').slice(0, 16))}</td>
+          <td style="text-align:right;">
+            <button type="button" class="btn-primary-block" style="width:auto;padding:5px 10px;font-size:11px;background:#10B981;border:none;margin-right:4px;" onclick="handleMemberTrainerReqDecision(${r.id}, 'approve')">Approve &amp; Assign</button>
+            <button type="button" class="btn-delete-item" style="padding:5px 10px;font-size:11px;" onclick="handleMemberTrainerReqDecision(${r.id}, 'reject')">Reject</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function handleMemberTrainerReqDecision(requestId, decision) {
+      try {
+        const res = await fetch('api/gym_owner/member_trainer_request_action.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ request_id: requestId, decision: decision })
+        });
+        const json = await res.json();
+        alert(json.message || 'Updated.');
+        await loadOwnerData();
+      } catch (err) {
+        console.error('Member trainer request decision err:', err);
+      }
+    }
+
+    async function handleTrainerAssociation(gymId, trainerUserId, action) {
+      try {
+        const res = await fetch('api/gym_owner/trainer_affiliation_action.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gym_id: gymId, trainer_user_id: trainerUserId, action: action })
+        });
+        const json = await res.json();
+        alert(json.message || 'Association updated.');
+        await loadOwnerData();
+      } catch (err) {
+        console.error('Trainer association error:', err);
+      }
+    }
+
+    function openOwnerTrainerPreview(trainerUserId) {
+      const list = (window.__OWNER_DASH__ && window.__OWNER_DASH__.registered_trainers) || [];
+      const t = list.find(x => x.user_id === trainerUserId);
+      if (!t) return;
+      alert(
+        `Trainer Profile: ${t.name}\n` +
+        `Verification: ${String(t.verification_status).toUpperCase()}\n` +
+        `Specialization: ${t.specialization}\n` +
+        `Experience: ${t.experience_years} Years\n` +
+        `Qualifications: ${t.qualifications}\n` +
+        `Certification: ${t.certification_name}${t.certifying_body ? ' (' + t.certifying_body + ')' : ''}\n` +
+        `Current Gym Affiliations: ${(t.gym_affiliations && t.gym_affiliations.length) ? t.gym_affiliations.join(', ') : 'None'}\n` +
+        `Contact: ${t.email} | ${t.phone}\n` +
+        `Bio: ${t.bio || 'No biography provided'}`
+      );
+    }
+
+    function openOwnerMemberPreview(memberUserId) {
+      const list = (window.__OWNER_DASH__ && window.__OWNER_DASH__.registered_members) || [];
+      const m = list.find(x => x.user_id === memberUserId);
+      if (!m) return;
+      alert(
+        `Member Profile: ${m.name}\n` +
+        `Contact: ${m.email} | ${m.phone}\n` +
+        `Fitness Goal: ${m.fitness_goal} (${m.fitness_experience})\n` +
+        `Registered: ${m.registration_date}\n` +
+        `Gym Membership Status: ${String(m.membership_status).toUpperCase()} (${m.selected_plan})\n` +
+        `Membership History Entries at This Gym: ${m.gym_history_count || 0}\n` +
+        `Assigned Trainer: ${m.assigned_trainer_name || 'Unassigned'}`
+      );
+    }
+
+    function renderOwnerNotifications(notifs) {
+      const box = document.getElementById('ownerNotificationsList');
+      if (!box) return;
+      const list = Array.isArray(notifs) ? notifs : [];
+      if (list.length === 0) {
+        box.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-secondary);">No notifications yet.</div>`;
+        return;
+      }
+      box.innerHTML = list.map(n => `
+        <div onclick="handleOwnerNotificationClick(${Number(n.id || 0)}, '${escapeHtml(n.entity_type || '')}')" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px;border-radius:8px;border:1px solid var(--border-color);background:${n.is_read ? '#fff' : '#EFF6FF'};cursor:pointer;">
+          <div>
+            <strong style="font-size:13px;color:var(--text-main);">${escapeHtml(n.title)}</strong>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${escapeHtml(n.body)}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${escapeHtml(n.created_at || '')}</div>
+          </div>
+          ${!n.is_read ? `<span class="fs-badge fs-badge-blue">New</span>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function handleOwnerNotificationClick(notifId, entityType) {
+      try {
+        if (notifId > 0) {
+          await fetch('api/notifications.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: notifId })
+          });
+        }
+      } catch (err) {
+        console.warn('Mark owner notif read err:', err);
+      }
+      const tabMap = {
+        membership: 'members',
+        member_trainer_request: 'members',
+        trainer_assignment: 'members',
+        trainer_affiliation: 'coaches',
+        gym_registration: 'gyms'
+      };
+      switchOwnerTab(tabMap[entityType] || 'members');
+      await loadOwnerData();
+    }
+
+    async function markAllOwnerNotificationsRead() {
+      try {
+        await fetch('api/notifications.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        await loadOwnerData();
+      } catch (err) {
+        console.warn('Mark notifications err:', err);
+      }
+    }
+
+    function renderOwnerTrainerRequests(reqs, gymId) {
+      const card = document.getElementById('ownerTrainerRequestsCard');
+      const tbody = document.getElementById('ownerTrainerRequestsTbody');
+      const badge = document.getElementById('ownerPendingTrainersBadge');
+      const list = Array.isArray(reqs) ? reqs : [];
+      if (badge) badge.innerText = `${list.length} Pending`;
+      if (!card || !tbody) return;
+      if (list.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = 'block';
+      tbody.innerHTML = list.map(t => `
+        <tr>
+          <td>
+            <strong>${escapeHtml(t.full_name)}</strong>
+            <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(t.email)} • ${escapeHtml(t.mobile || '--')}</div>
+          </td>
+          <td>
+            <strong>${escapeHtml(t.specializations_summary || 'General Fitness')}</strong>
+            <div style="font-size:11px;color:var(--text-secondary);">${escapeHtml(t.certification_name || '--')} (${escapeHtml(t.certifying_body || '--')}) • ${t.experience_years || 0} yrs</div>
+          </td>
+          <td style="font-size:12px;">${escapeHtml(String(t.employment_type || 'full_time').replace('_', ' '))} • ${escapeHtml(String(t.affiliation_status || 'pending').toUpperCase())}</td>
+          <td><span class="fs-badge fs-badge-orange">${escapeHtml(String(t.trainer_verification_status || 'pending_verification').replace('_', ' ').toUpperCase())}</span></td>
+          <td style="text-align:right;">
+            ${t.affiliation_status === 'pending' ? `
+              <button type="button" class="btn-primary-block" style="width:auto;padding:5px 10px;font-size:11px;background:#10B981;border:none;margin-right:4px;" onclick="handleTrainerAffiliationDecision(${gymId}, ${t.trainer_user_id}, 'approve')">Approve</button>
+              <button type="button" class="btn-delete-item" style="padding:5px 10px;font-size:11px;" onclick="handleTrainerAffiliationDecision(${gymId}, ${t.trainer_user_id}, 'reject')">Reject</button>
+            ` : `<span style="font-size:11px;color:#D97706;font-weight:600;">Invitation Sent</span>`}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function handleTrainerAffiliationDecision(gymId, trainerUserId, decision) {
+      await handleTrainerAssociation(gymId, trainerUserId, decision);
+    }
+
+    function renderOwnerRequests(requests) {
+      const tbody = document.getElementById('ownerRequestsTbody');
+      const badge = document.getElementById('ownerPendingRequestsBadge');
+      const list = Array.isArray(requests) ? requests : [];
+      const pending = list.filter(r => r.status === 'pending');
+      if (badge) badge.innerText = `${pending.length} Pending`;
+      if (!tbody) return;
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:16px;">No membership requests found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(r => {
+        const isPending = r.status === 'pending';
+        const mId = r.membership_id || r.id;
+        const mName = r.member_name || r.full_name || 'Member';
+        const mEmail = r.member_email || r.email || '';
+        const mPhone = r.member_phone || 'Not provided';
+        const mPrice = r.plan_price !== undefined ? r.plan_price : (r.price || 0);
+        const badgeCls = r.status === 'active' ? 'fs-badge-green' : (r.status === 'pending' ? 'fs-badge-orange' : (r.status === 'rejected' ? 'fs-badge-red' : 'fs-badge-blue'));
+        const initials = mName.trim().split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase() || 'MB';
+        const coachLabel = r.assigned_coach_name ? `Coach: ${r.assigned_coach_name}` : 'Coach: Unassigned';
+        const reasonLine = r.rejection_reason ? `<div style="font-size:10px;color:#B91C1C;margin-top:2px;">Reason: ${escapeHtml(r.rejection_reason)}</div>` : '';
+
+        return `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:9px;">
+                <div class="user-avatar-circle" style="width:32px;height:32px;font-size:11px;background:var(--light-blue-bg);color:var(--primary-blue);">${escapeHtml(initials)}</div>
+                <div>
+                  <strong>${escapeHtml(mName)}</strong>
+                  <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(mEmail)} • ${escapeHtml(mPhone)}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <strong>${escapeHtml(r.gym_name || 'Facility')}</strong> — ${escapeHtml(r.plan_name || 'Standard')}
+              <div style="font-size:11px;color:var(--text-secondary);">₹${Number(mPrice).toLocaleString()} (${r.duration_months || 1} mo)</div>
+            </td>
+            <td style="font-size:12px;">${escapeHtml(String(r.created_at || r.start_date || '--').slice(0, 16))}</td>
+            <td>
+              <span class="fs-badge ${badgeCls}">${escapeHtml(String(r.status).toUpperCase())}</span>
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${escapeHtml(coachLabel)}</div>
+              ${reasonLine}
+            </td>
+            <td style="text-align:right;white-space:nowrap;">
+              <button type="button" class="btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:4px;" onclick="openOwnerMemberPreview(${r.user_id})">Profile</button>
+              ${isPending ? `
+                <button type="button" class="btn-primary-block" style="width:auto;padding:5px 10px;font-size:11px;background:#10B981;border:none;margin-right:4px;" onclick="handleMembershipDecision(${mId}, 'approve')">Approve</button>
+                <button type="button" class="btn-delete-item" style="padding:5px 10px;font-size:11px;" onclick="openRejectMembershipModal(${mId}, '${escapeHtml(mName)}')">Reject</button>
+              ` : '<span style="font-size:11px;color:var(--text-muted);">Processed</span>'}
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function renderOwnerCheckinLogs(logs) {
+      const box = document.getElementById('ownerCheckinLogs');
+      if (!box) return;
+      if (!logs || logs.length === 0) {
+        box.innerHTML = `
+          <div style="padding: 24px; text-align: center; color: var(--text-secondary); background: #F8FAFC; border: 1px dashed var(--border-color); border-radius: var(--radius-sm);">
+            <div style="font-weight: 600; font-size: 13px; color: var(--text-main); margin-bottom: 2px;">No Turnstile Check-Ins Recorded</div>
+            <span style="font-size: 11px;">Live member turnstile check-ins will appear here automatically.</span>
+          </div>`;
+        return;
+      }
+      box.innerHTML = logs.map(l => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#F8FAFC;border:1px solid var(--border-color);border-radius:8px;">
+          <div>
+            <strong style="font-size:13px;color:var(--text-main);">${escapeHtml(l.athlete_name)}</strong>
+            <div style="font-size:11px;color:var(--text-secondary);">${escapeHtml(l.athlete_email)} • ${escapeHtml(l.tier_name || 'Active Member')}</div>
+          </div>
+          <div style="text-align:right;">
+            <span class="fs-badge fs-badge-green">${escapeHtml(l.check_in_method || 'turnstile')}</span>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${escapeHtml(l.check_in_time)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function handleMembershipDecision(membershipId, decision, rejectionReason = null) {
+      try {
+        const bodyObj = { membership_id: membershipId, decision: decision };
+        if (rejectionReason) bodyObj.rejection_reason = rejectionReason;
+        const res = await fetch('api/gym_owner/membership_action.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyObj)
+        });
+        const json = await res.json();
+        if (json.success) {
+          alert(json.message || 'Membership decision recorded.');
+          await loadOwnerData();
+        } else {
+          alert(json.message || json.error || 'Could not process request.');
+        }
+      } catch (err) {
+        console.error('Membership action error:', err);
+      }
+    }
+
+    function openRejectMembershipModal(membershipId, memberName) {
+      document.getElementById('rejectMembershipIdInput').value = String(membershipId || 0);
+      document.getElementById('rejectReasonInput').value = '';
+      document.getElementById('rejectMemLabel').innerText = `Optionally provide feedback explaining why ${memberName || 'this member'}'s request was declined.`;
+      document.getElementById('modalRejectMembership').style.display = 'flex';
+    }
+
+    function closeRejectMembershipModal() {
+      document.getElementById('modalRejectMembership').style.display = 'none';
+    }
+
+    async function submitMembershipRejection() {
+      const mId = parseInt(document.getElementById('rejectMembershipIdInput')?.value || '0', 10);
+      const reason = document.getElementById('rejectReasonInput')?.value.trim() || null;
+      if (!mId) return;
+      closeRejectMembershipModal();
+      await handleMembershipDecision(mId, 'reject', reason);
     }
 
     // Render Coaches Grid
@@ -642,10 +1555,26 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
+    function setRosterFilterSegment(seg) {
+      ownerDirState.rosterSegment = seg || 'active_all';
+      document.querySelectorAll('#ownerRosterFilterBar button[data-rseg]').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-rseg') === ownerDirState.rosterSegment);
+      });
+      const d = window.__OWNER_DASH__ || {};
+      renderOwnerMembers(d.members || [], d.coaches || []);
+    }
+
     // Render Members Table
     function renderOwnerMembers(membersList, coachesList) {
-      const members = Array.isArray(membersList) ? membersList : (window.fitSyncStore ? window.fitSyncStore.getMembers() : []);
+      const allMembers = Array.isArray(membersList) ? membersList : (window.fitSyncStore ? window.fitSyncStore.getMembers() : []);
       const coaches = Array.isArray(coachesList) ? coachesList : (window.fitSyncStore ? window.fitSyncStore.getTrainers() : []);
+      const rseg = ownerDirState.rosterSegment || 'active_all';
+      const members = allMembers.filter(m => {
+        const hasCoach = !!(m.coach_id && parseInt(m.coach_id, 10) > 0);
+        if (rseg === 'assigned') return hasCoach;
+        if (rseg === 'unassigned') return !hasCoach;
+        return true;
+      });
 
       const tbody = document.getElementById('ownerMembersTableBody');
       if (!tbody) return;
@@ -657,8 +1586,8 @@
               <div style="width: 40px; height: 40px; border-radius: 50%; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg>
               </div>
-              <div style="font-weight: 600; color: var(--text-main); font-size: 15px; margin-bottom: 4px;">No Athletes Enrolled Yet</div>
-              <p style="font-size: 13px; color: var(--text-secondary); max-width: 400px; margin: 0 auto 14px;">Enroll gym members into your roster and assign personal trainers.</p>
+              <div style="font-weight: 600; color: var(--text-main); font-size: 15px; margin-bottom: 4px;">${rseg === 'active_all' ? 'No Athletes Enrolled Yet' : 'No Matching Active Members'}</div>
+              <p style="font-size: 13px; color: var(--text-secondary); max-width: 400px; margin: 0 auto 14px;">Enroll gym members into your roster or approve pending enrollment requests above.</p>
               <button type="button" class="btn-primary-gym" onclick="openAddMemberModal()">+ Add First Athlete</button>
             </td>
           </tr>
@@ -673,42 +1602,48 @@
         `).join('');
 
         const initials = (m.name || 'Athlete').split(' ').map(n=>n[0]).join('').slice(0,2);
+        const lastAtt = m.last_attendance ? String(m.last_attendance).slice(0, 10) : 'No check-ins yet';
+        const wkCount = parseInt(m.workouts_count || 0, 10);
 
         return `
           <tr>
             <td>
               <div style="display: flex; align-items: center; gap: 10px;">
                 <div class="user-avatar-circle" style="width: 34px; height: 34px; font-size: 12px; background: var(--light-blue-bg); color: var(--primary-blue);">
-                  ${initials}
+                  ${escapeHtml(initials)}
                 </div>
                 <div>
-                  <strong style="color: var(--text-main);">${m.name}</strong>
-                  <span style="display: block; font-size: 11px; color: var(--text-secondary);">${m.gender || 'Athlete'}</span>
+                  <strong style="color: var(--text-main);">${escapeHtml(m.name)}</strong>
+                  <span style="display: block; font-size: 11px; color: var(--text-secondary);">${escapeHtml(m.gender || 'Athlete')}</span>
                 </div>
               </div>
             </td>
             <td>
-              <span style="font-size: 12px; color: var(--text-main); display: block;">${m.email}</span>
-              <span style="font-size: 11px; color: var(--text-muted);">${m.phone || '+91 98765 00000'}</span>
+              <span style="font-size: 12px; color: var(--text-main); display: block;">${escapeHtml(m.email)}</span>
+              <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(m.phone || 'Not provided')}</span>
             </td>
             <td>
-              <span class="fs-badge fs-badge-blue" style="margin-bottom: 2px;">${m.goal || 'Hypertrophy'}</span>
-              <span style="display: block; font-size: 11px; color: var(--text-secondary);">${m.membershipTier || 'Gold Pass'}</span>
+              <span class="fs-badge fs-badge-blue" style="margin-bottom: 2px;">${escapeHtml(m.goal || 'General Fitness')}</span>
+              <span style="display: block; font-size: 11px; color: var(--text-secondary);">${escapeHtml(m.membershipTier || 'Standard')} • Joined ${escapeHtml(m.startDate || '--')}</span>
             </td>
             <td>
-              <strong>${m.weight || '70 kg'}</strong>
+              <strong>${escapeHtml(m.weight || 'Not recorded')}</strong>
+              <span style="display: block; font-size: 11px; color: var(--text-secondary);">Last visit: ${escapeHtml(lastAtt)} • ${wkCount} workout${wkCount === 1 ? '' : 's'}</span>
             </td>
             <td>
-              <select class="coach-assign-select" onchange="handleReassignCoach('${m.email}', this.value)">
-                <option value="">Unassigned</option>
-                ${coachOptions}
-              </select>
+              <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+                <select class="coach-assign-select" onchange="handleReassignCoach('${escapeHtml(m.email)}', this.value)">
+                  <option value="">Unassigned</option>
+                  ${coachOptions}
+                </select>
+                <button type="button" class="btn-secondary" style="padding:3px 7px;font-size:10px;" onclick="openAssignCoachModal(${m.user_id}, '${escapeHtml(m.email)}')" title="Select coach with specializations or view assignment history">Assign / History</button>
+              </div>
             </td>
             <td>
-              <span class="badge-active">Active</span>
+              <span class="badge-active">${escapeHtml(String(m.membership_status || 'active').toUpperCase())}</span>
             </td>
             <td style="text-align: right;">
-              <button type="button" class="btn-delete-item" onclick="handleDeleteMember('${m.email}')" title="Remove Member">
+              <button type="button" class="btn-delete-item" onclick="handleDeleteMember('${escapeHtml(m.email)}')" title="Cancel Membership">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
             </td>
@@ -719,18 +1654,316 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
+    function openAssignCoachModal(memberUserId, memberEmail) {
+      const d = window.__OWNER_DASH__ || {};
+      const m = (d.members || []).find(x => parseInt(x.user_id, 10) === parseInt(memberUserId, 10))
+        || (d.registered_members || []).find(x => parseInt(x.user_id, 10) === parseInt(memberUserId, 10));
+      const coaches = Array.isArray(d.coaches) ? d.coaches : [];
+      const email = memberEmail || (m ? m.email : '');
+
+      document.getElementById('assignModalMemberEmail').value = email;
+      document.getElementById('assignModalMemberTitle').innerText = `Assign Coach — ${m ? m.name : email}`;
+      document.getElementById('assignModalMemberMeta').innerText = m
+        ? `Plan: ${m.membershipTier || m.selected_plan || 'Active'} • Current Coach: ${m.assignedCoach || m.assigned_trainer_name || 'Unassigned'}`
+        : email;
+
+      const listEl = document.getElementById('assignModalCoachesList');
+      if (coaches.length === 0) {
+        listEl.innerHTML = `<div style="grid-column:1/-1;padding:16px;background:#F8FAFC;border:1px dashed var(--border-color);border-radius:8px;color:var(--text-secondary);font-size:12px;">No active coaches at this gym yet. Add or approve a coach first.</div>`;
+      } else {
+        listEl.innerHTML = coaches.map(c => {
+          const isCurrent = m && (parseInt(m.coach_id || m.assigned_trainer_id || 0, 10) === parseInt(c.user_id, 10));
+          return `
+            <div style="border:1px solid ${isCurrent ? 'var(--primary-blue)' : 'var(--border-color)'};border-radius:10px;padding:12px;background:${isCurrent ? '#EFF6FF' : '#fff'};display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;gap:10px;align-items:center;">
+                <img src="${escapeHtml(c.avatar || 'assets/images/trainer_raj.jpg')}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" alt="${escapeHtml(c.name)}">
+                <div>
+                  <strong style="font-size:13px;color:var(--text-main);">${escapeHtml(c.name)}</strong>
+                  <div style="font-size:11px;color:var(--text-secondary);">${escapeHtml(c.experience)} • ${escapeHtml(c.qualifications || 'Certified')}</div>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--text-main);"><strong>Specialization:</strong> ${escapeHtml((c.specialties || []).join(', ') || 'General Coaching')}</div>
+              <div style="font-size:11px;color:var(--text-secondary);"><strong>Availability:</strong> ${escapeHtml(c.availability || 'Mon–Sat Scheduled Slots')}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+                <span style="font-size:11px;color:var(--primary-blue);font-weight:700;">${c.assignedAthletes || 0} Assigned Members</span>
+                <button type="button" class="btn-primary-block" style="width:auto;padding:5px 12px;font-size:11px;${isCurrent ? 'background:#10B981;' : ''}" onclick="assignCoachFromModal('${escapeHtml(email)}', '${c.id}')">${isCurrent ? 'Currently Assigned' : 'Assign Coach'}</button>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      const histBox = document.getElementById('assignModalHistoryBox');
+      const hist = m && Array.isArray(m.assignment_history) ? m.assignment_history : [];
+      if (hist.length === 0) {
+        histBox.innerHTML = 'No prior coach assignments recorded at this gym.';
+      } else {
+        histBox.innerHTML = hist.map(h => `
+          <div style="display:flex;justify-content:space-between;padding:6px 8px;border-bottom:1px solid #F1F5F9;">
+            <span><strong>${escapeHtml(h.trainer_name)}</strong> (${escapeHtml(String(h.status).toUpperCase())}) • Assigned by ${escapeHtml(h.assigned_by_name || 'Owner')}</span>
+            <span style="color:#64748B;">${escapeHtml(h.start_date || '')}${h.end_date ? ' → ' + escapeHtml(h.end_date) : ''}</span>
+          </div>
+        `).join('');
+      }
+      document.getElementById('modalAssignCoachDetails').style.display = 'flex';
+    }
+
+    function closeAssignCoachModal() {
+      document.getElementById('modalAssignCoachDetails').style.display = 'none';
+    }
+
+    async function assignCoachFromModal(memberEmail, coachId) {
+      await handleReassignCoach(memberEmail, coachId);
+      closeAssignCoachModal();
+    }
+
     // Populate Coach dropdown in Add Member modal
     function populateCoachSelector(coachesList) {
       const coaches = Array.isArray(coachesList) ? coachesList : (window.fitSyncStore ? window.fitSyncStore.getTrainers() : []);
       const select = document.getElementById('newMemberCoachSelect');
       if (select) {
         if (!coaches || coaches.length === 0) {
-          select.innerHTML = '<option value="">No coaches available (Assign later)</option>';
+          select.innerHTML = '<option value="">Unassigned (Assign later)</option>';
         } else {
-          select.innerHTML = coaches.map(c => `
-            <option value="${c.id}">${c.name} (${c.title || 'Coach'} • ${c.experience || 'Verified'})</option>
+          select.innerHTML = '<option value="">Unassigned (Assign later)</option>' + coaches.map(c => `
+            <option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.title || 'Coach')} • ${escapeHtml(c.experience || 'Verified')})</option>
           `).join('');
         }
+      }
+    }
+
+    function populatePlanSelector(plans) {
+      const sel = document.getElementById('newMemberTier');
+      if (!sel) return;
+      if (!plans || plans.length === 0) {
+        sel.innerHTML = '<option value="Standard Membership" data-plan-id="0">Standard Membership (Auto-configure)</option>';
+      } else {
+        sel.innerHTML = plans.map(p =>
+          `<option value="${escapeHtml(p.name)}" data-plan-id="${p.id}">${escapeHtml(p.name)} (${p.duration_months} mo • ₹${Number(p.price || 0).toLocaleString()})</option>`
+        ).join('');
+      }
+    }
+
+    function switchActiveOwnerGym(gymId) {
+      ownerDirState.activeGymId = parseInt(gymId || 0, 10);
+      loadOwnerData();
+    }
+
+    function renderOwnerGyms(gyms, activeGymId) {
+      const grid = document.getElementById('ownerGymsGrid');
+      if (!grid) return;
+      if (!gyms || gyms.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1;padding:36px 20px;text-align:center;background:#fff;border:1px dashed var(--border-color);border-radius:12px;">
+            <h4 style="font-size:16px;font-weight:700;color:var(--text-main);margin-bottom:6px;">No Gyms Registered Yet</h4>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Register your first fitness facility to publish it to FitSync's User Portal and enroll athletes.</p>
+            <button type="button" class="btn-primary-block" style="width:auto;padding:8px 18px;" onclick="openRegisterGymModal()">+ Register Your Gym</button>
+          </div>`;
+        return;
+      }
+      grid.innerHTML = gyms.map(g => {
+        const isCurrent = parseInt(g.id, 10) === parseInt(activeGymId, 10);
+        const stCls = g.status === 'active' ? 'fs-badge-green' : (g.status === 'pending_approval' ? 'fs-badge-orange' : 'fs-badge-red');
+        const nextSt = g.status === 'active' ? 'inactive' : 'active';
+        const toggleBtn = g.status === 'suspended'
+          ? ''
+          : `<button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="toggleOwnerGymStatus(${g.id}, '${nextSt}')">${g.status === 'active' ? 'Deactivate' : 'Activate'}</button>`;
+        const plansText = (g.plans && g.plans.length)
+          ? g.plans.map(p => `${escapeHtml(p.name)} (₹${Number(p.price || 0).toLocaleString()})`).join(', ')
+          : 'No plans added yet';
+
+        return `
+          <div class="trainer-card" style="text-align:left;${isCurrent ? 'border-color:var(--primary-blue);' : ''}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
+              <div>
+                <h4 style="font-size:16px;font-weight:700;color:var(--text-main);margin-bottom:2px;">${escapeHtml(g.name)}</h4>
+                <div style="font-size:12px;color:var(--text-secondary);">${escapeHtml(g.city)}, ${escapeHtml(g.state)}</div>
+              </div>
+              <span class="fs-badge ${stCls}">${escapeHtml(String(g.status).replace('_', ' ').toUpperCase())}</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">📍 ${escapeHtml(g.address_line1)} • ${escapeHtml(g.postal_code)}</p>
+            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">📞 ${escapeHtml(g.phone)} • ${escapeHtml(g.email)}</p>
+            <p style="font-size:12px;color:var(--text-main);margin-bottom:6px;">⏰ ${escapeHtml(g.hours_summary || 'Hours configured')}</p>
+            <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">Plans: ${plansText}</p>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border-color);">
+              ${!isCurrent ? `<button type="button" class="btn-primary-block" style="width:auto;padding:5px 10px;font-size:11px;" onclick="switchActiveOwnerGym(${g.id})">Manage Branch</button>` : `<span class="fs-badge fs-badge-blue">Active Dashboard</span>`}
+              <button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="openRegisterGymModal(${g.id})">Edit Details / Hours</button>
+              <button type="button" class="btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="openAddPlanModal(${g.id})">+ Add Plan</button>
+              ${toggleBtn}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function openRegisterGymModal(editGymId = 0) {
+      const alertBox = document.getElementById('saveGymAlert');
+      if (alertBox) { alertBox.style.display = 'none'; alertBox.innerText = ''; }
+      const idInput = document.getElementById('editGymIdInput');
+      const titleEl = document.getElementById('regGymModalTitle');
+      const gyms = (window.__OWNER_DASH__ && Array.isArray(window.__OWNER_DASH__.owned_gyms)) ? window.__OWNER_DASH__.owned_gyms : [];
+      const g = editGymId > 0 ? gyms.find(x => parseInt(x.id, 10) === parseInt(editGymId, 10)) : null;
+
+      if (g) {
+        if (idInput) idInput.value = String(g.id);
+        if (titleEl) titleEl.innerText = `Edit Gym: ${g.name}`;
+        document.getElementById('fgGymName').value = g.name || '';
+        document.getElementById('fgGymStatus').value = (g.status === 'inactive') ? 'inactive' : 'active';
+        document.getElementById('fgGymEmail').value = g.email || '';
+        document.getElementById('fgGymPhone').value = g.phone || '';
+        document.getElementById('fgGymAddr').value = g.address_line1 || '';
+        document.getElementById('fgGymCity').value = g.city || '';
+        document.getElementById('fgGymState').value = g.state || '';
+        document.getElementById('fgGymPin').value = g.postal_code || '';
+        document.getElementById('fgGymCap').value = g.capacity || 50;
+        document.getElementById('fgGymDesc').value = g.description || '';
+        const monHr = (g.operating_hours || []).find(h => h.day_of_week === 1);
+        const sunHr = (g.operating_hours || []).find(h => h.day_of_week === 0);
+        if (monHr) {
+          document.getElementById('fgGymOpen').value = monHr.open_time || '06:00';
+          document.getElementById('fgGymClose').value = monHr.close_time || '22:00';
+        }
+        if (sunHr) document.getElementById('fgGymSunOpen').checked = !sunHr.is_closed;
+        document.getElementById('fgGymFac').value = (g.facilities || []).join(', ');
+        document.getElementById('fgGymEq').value = (g.equipment || []).join(', ');
+        if (g.plans && g.plans[0]) {
+          document.getElementById('fgPlanName').value = g.plans[0].name || '';
+          document.getElementById('fgPlanPrice').value = g.plans[0].price || 0;
+          document.getElementById('fgPlanMonths').value = g.plans[0].duration_months || 1;
+        }
+      } else {
+        if (idInput) idInput.value = '0';
+        if (titleEl) titleEl.innerText = 'Register New Gym / Branch';
+        document.getElementById('fgGymName').value = '';
+        document.getElementById('fgGymStatus').value = 'active';
+        document.getElementById('fgGymEmail').value = '';
+        document.getElementById('fgGymPhone').value = '';
+        document.getElementById('fgGymAddr').value = '';
+        document.getElementById('fgGymCity').value = '';
+        document.getElementById('fgGymState').value = '';
+        document.getElementById('fgGymPin').value = '';
+        document.getElementById('fgGymCap').value = '80';
+        document.getElementById('fgGymDesc').value = '';
+        document.getElementById('fgGymOpen').value = '06:00';
+        document.getElementById('fgGymClose').value = '22:00';
+        document.getElementById('fgGymSunOpen').checked = true;
+      }
+      document.getElementById('modalRegisterGym').style.display = 'flex';
+    }
+
+    function closeRegisterGymModal() {
+      document.getElementById('modalRegisterGym').style.display = 'none';
+    }
+
+    async function handleSaveGymSubmit(e) {
+      e.preventDefault();
+      if (savingGymInFlight) return;
+      savingGymInFlight = true;
+      const alertBox = document.getElementById('saveGymAlert');
+      if (alertBox) { alertBox.style.display = 'none'; alertBox.innerText = ''; }
+      const btn = document.getElementById('btnSaveGymSubmit');
+      if (btn) { btn.disabled = true; btn.innerText = 'Saving Gym...'; }
+
+      const gymId = parseInt(document.getElementById('editGymIdInput')?.value || '0', 10);
+      const fd = new FormData();
+      fd.append('action', 'save');
+      fd.append('gym_id', String(gymId));
+      fd.append('name', document.getElementById('fgGymName').value.trim());
+      fd.append('status', document.getElementById('fgGymStatus').value);
+      fd.append('email', document.getElementById('fgGymEmail').value.trim());
+      fd.append('phone', document.getElementById('fgGymPhone').value.trim());
+      fd.append('address_line1', document.getElementById('fgGymAddr').value.trim());
+      fd.append('city', document.getElementById('fgGymCity').value.trim());
+      fd.append('state', document.getElementById('fgGymState').value.trim());
+      fd.append('postal_code', document.getElementById('fgGymPin').value.trim());
+      fd.append('capacity', String(parseInt(document.getElementById('fgGymCap').value || '50', 10)));
+      fd.append('description', document.getElementById('fgGymDesc').value.trim());
+      fd.append('open_time', document.getElementById('fgGymOpen').value);
+      fd.append('close_time', document.getElementById('fgGymClose').value);
+      fd.append('open_sunday', document.getElementById('fgGymSunOpen').checked ? '1' : '0');
+      fd.append('facilities_csv', document.getElementById('fgGymFac').value.trim());
+      fd.append('equipment_csv', document.getElementById('fgGymEq').value.trim());
+      fd.append('plan_name', document.getElementById('fgPlanName').value.trim());
+      fd.append('plan_price', String(parseFloat(document.getElementById('fgPlanPrice').value || '0')));
+      fd.append('plan_duration_months', String(parseInt(document.getElementById('fgPlanMonths').value || '1', 10)));
+      const logoFile = document.getElementById('fgGymLogo')?.files?.[0];
+      if (logoFile) fd.append('gym_logo', logoFile);
+
+      try {
+        const res = await fetch('api/gym_owner/gyms.php', {
+          method: 'POST',
+          body: fd
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          ownerDirState.activeGymId = parseInt(json.data.id || gymId || 0, 10);
+          closeRegisterGymModal();
+          alert(json.message || 'Gym saved successfully!');
+          await loadOwnerData();
+        } else {
+          const msg = json.message || json.error || 'Could not save gym details.';
+          if (alertBox) { alertBox.style.display = 'block'; alertBox.innerText = msg; }
+          else alert(msg);
+        }
+      } catch (err) {
+        const msg = 'Network error while saving gym details.';
+        if (alertBox) { alertBox.style.display = 'block'; alertBox.innerText = msg; }
+      } finally {
+        savingGymInFlight = false;
+        if (btn) { btn.disabled = false; btn.innerText = 'Save Gym to Database'; }
+      }
+    }
+
+    function openAddPlanModal(gymId) {
+      document.getElementById('addPlanGymIdInput').value = String(gymId || 0);
+      document.getElementById('addPlanNameInput').value = '';
+      document.getElementById('modalAddGymPlan').style.display = 'flex';
+    }
+
+    function closeAddPlanModal() {
+      document.getElementById('modalAddGymPlan').style.display = 'none';
+    }
+
+    async function handleAddGymPlanSubmit(e) {
+      e.preventDefault();
+      const gymId = parseInt(document.getElementById('addPlanGymIdInput')?.value || '0', 10);
+      const name = document.getElementById('addPlanNameInput')?.value.trim();
+      const price = parseFloat(document.getElementById('addPlanPriceInput')?.value || '0');
+      const months = parseInt(document.getElementById('addPlanMonthsInput')?.value || '1', 10);
+      const desc = document.getElementById('addPlanDescInput')?.value.trim() || '';
+      if (!gymId || !name) return;
+      try {
+        const res = await fetch('api/gym_owner/gyms.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'save_plan', gym_id: gymId, name: name, price: price, duration_months: months, description: desc })
+        });
+        const json = await res.json();
+        if (json.success) {
+          closeAddPlanModal();
+          alert(json.message || 'Membership plan added.');
+          await loadOwnerData();
+        } else {
+          alert(json.message || 'Could not save membership plan.');
+        }
+      } catch (err) {
+        console.warn('Add plan error:', err);
+      }
+    }
+
+    async function toggleOwnerGymStatus(gymId, nextStatus) {
+      try {
+        const res = await fetch('api/gym_owner/gyms.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'set_status', gym_id: gymId, status: nextStatus })
+        });
+        const json = await res.json();
+        if (json.success) {
+          await loadOwnerData();
+        } else {
+          alert(json.message || 'Unable to change gym status.');
+        }
+      } catch (err) {
+        console.warn('Toggle gym status error:', err);
       }
     }
 
@@ -775,12 +2008,12 @@
 
         const json = await res.json();
         if (json.success) {
-          alert(`Coach ${name} successfully registered into FitZone staff!`);
+          alert(`Coach ${name} successfully registered into staff roster!`);
           closeAddCoachModal();
           e.target.reset();
           await loadOwnerData();
         } else {
-          alert(json.error || 'Failed to register coach.');
+          alert(json.message || json.error || 'Failed to register coach.');
         }
       } catch (err) {
         console.error('Error adding coach:', err);
@@ -795,6 +2028,8 @@
 
     // Handlers: Add Member
     function openAddMemberModal() {
+      const alertBox = document.getElementById('addMemberAlert');
+      if (alertBox) { alertBox.style.display = 'none'; alertBox.innerText = ''; }
       document.getElementById('modalAddMember').style.display = 'flex';
     }
     function closeAddMemberModal() {
@@ -803,10 +2038,15 @@
 
     async function handleCreateMemberSubmit(e) {
       e.preventDefault();
-      const submitBtn = e.target.querySelector('button[type="submit"]');
+      if (addingMemberInFlight) return;
+      addingMemberInFlight = true;
+
+      const alertBox = document.getElementById('addMemberAlert');
+      if (alertBox) { alertBox.style.display = 'none'; alertBox.innerText = ''; }
+      const submitBtn = document.getElementById('btnSubmitAddMember') || e.target.querySelector('button[type="submit"]');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerText = 'Registering Athlete...';
+        submitBtn.innerText = 'Enrolling Athlete...';
       }
 
       const name = document.getElementById('newMemberName').value.trim();
@@ -815,10 +2055,16 @@
       const gender = document.getElementById('newMemberGender').value;
       const weight = parseFloat(document.getElementById('newMemberWeight').value) || 70.0;
       const goal = document.getElementById('newMemberGoal').value;
-      const membershipTier = document.getElementById('newMemberTier').value;
+      const tierSelect = document.getElementById('newMemberTier');
+      const membershipTier = tierSelect ? tierSelect.value : '';
+      const planId = (tierSelect && tierSelect.selectedIndex >= 0)
+        ? parseInt(tierSelect.options[tierSelect.selectedIndex].getAttribute('data-plan-id') || '0', 10)
+        : 0;
+      const password = document.getElementById('newMemberPassword')?.value || '';
       const coachSelect = document.getElementById('newMemberCoachSelect');
       const assignedCoachId = coachSelect ? coachSelect.value : '';
       const assignedCoachName = (coachSelect && coachSelect.selectedIndex >= 0) ? coachSelect.options[coachSelect.selectedIndex].text.split('(')[0].trim() : '';
+      const gymId = ownerDirState.activeGymId || (window.__OWNER_DASH__?.gym?.id || 0);
 
       try {
         const res = await fetch('api/gym_owner/add_member.php', {
@@ -832,6 +2078,9 @@
             weight,
             goal,
             membershipTier,
+            plan_id: planId,
+            password,
+            gym_id: gymId,
             assignedCoachId,
             assignedCoachName
           })
@@ -839,20 +2088,25 @@
 
         const json = await res.json();
         if (json.success) {
-          alert(`Athlete ${name} successfully registered into gym roster!`);
+          alert(json.message || `Athlete ${name} successfully registered into gym roster!`);
           closeAddMemberModal();
           e.target.reset();
           await loadOwnerData();
         } else {
-          alert(json.error || 'Failed to register athlete.');
+          const msg = json.message || json.error || 'Failed to register athlete.';
+          if (alertBox) { alertBox.style.display = 'block'; alertBox.innerText = msg; }
+          else alert(msg);
         }
       } catch (err) {
         console.error('Error adding athlete:', err);
-        alert('Server communication error while adding athlete.');
+        const msg = 'Server communication error while enrolling athlete.';
+        if (alertBox) { alertBox.style.display = 'block'; alertBox.innerText = msg; }
+        else alert(msg);
       } finally {
+        addingMemberInFlight = false;
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerText = 'Enroll & Save Athlete';
+          submitBtn.innerText = 'Enroll Athlete';
         }
       }
     }
@@ -872,7 +2126,7 @@
     }
 
     async function handleDeleteCoach(coachId) {
-      if (!confirm('Are you sure you want to deactivate and remove this coach from the facility roster?')) return;
+      if (!confirm('Deactivate this coach\'s association with your gym? Their FitSync platform account will remain active.')) return;
       try {
         const res = await fetch('api/gym_owner/delete_user.php', {
           method: 'POST',
@@ -881,10 +2135,9 @@
         });
         const json = await res.json();
         if (json.success) {
-          if (window.fitSyncStore) window.fitSyncStore.deleteTrainer(coachId);
           await loadOwnerData();
         } else {
-          alert(json.error || 'Failed to delete coach.');
+          alert(json.message || json.error || 'Failed to deactivate association.');
         }
       } catch (err) {
         console.error('Error deleting coach:', err);
@@ -892,7 +2145,7 @@
     }
 
     async function handleDeleteMember(email) {
-      if (!confirm(`Are you sure you want to remove athlete (${email}) from the active roster?`)) return;
+      if (!confirm(`Cancel gym membership for (${email})? Their FitSync platform account remains active.`)) return;
       try {
         const res = await fetch('api/gym_owner/delete_user.php', {
           method: 'POST',
@@ -901,10 +2154,9 @@
         });
         const json = await res.json();
         if (json.success) {
-          if (window.fitSyncStore) window.fitSyncStore.deleteMember(email);
           await loadOwnerData();
         } else {
-          alert(json.error || 'Failed to remove athlete.');
+          alert(json.message || json.error || 'Failed to remove athlete.');
         }
       } catch (err) {
         console.error('Error deleting member:', err);
@@ -918,9 +2170,17 @@
       }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      loadOwnerData();
-      setInterval(loadOwnerData, 10000);
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (typeof window.fitSyncRefreshSession === 'function') {
+        const sess = await window.fitSyncRefreshSession('gym_owner', 'login.php');
+        if (!sess || !sess.isLoggedIn || !sess.authorized) return;
+      }
+      await loadOwnerData();
+      setInterval(loadOwnerData, 5000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') loadOwnerData();
+      });
+      window.addEventListener('focus', loadOwnerData);
       initOwnerIcons();
     });
 

@@ -198,24 +198,24 @@
         <span style="font-weight:800; font-size:15px; color:#fff; letter-spacing:-0.3px;">FitSync AI</span>
       </a>
       <div class="portal-pills">
-        <a href="gym_owner/index.html" class="portal-pill portal-pill-inactive">
+        <a href="switch_portal.php?to=gym_owner" class="portal-pill portal-pill-inactive">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M10 12h4"></path><path d="M10 8h4"></path><path d="M14 21v-3a2 2 0 0 0-4 0v3"></path><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"></path><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path></svg> Gym Owner Portal
         </a>
-        <a href="trainer/index.html" class="portal-pill portal-pill-active">
+        <a href="switch_portal.php?to=trainer" class="portal-pill portal-pill-active">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"></path><path d="m2.5 21.5 1.4-1.4"></path><path d="m20.1 3.9 1.4-1.4"></path><path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"></path><path d="m9.6 14.4 4.8-4.8"></path></svg> Trainer Portal
         </a>
-        <a href="index.html?guest=true" class="portal-pill portal-pill-inactive">
+        <a href="switch_portal.php?to=user" class="portal-pill portal-pill-inactive">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Member Portal
         </a>
       </div>
     </div>
 
-    <!-- Active Coach Selector -->
+    <!-- Authenticated Coach Identity -->
     <div class="coach-switcher-box">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; color:#60a5fa;"><path d="m16 11 2 2 4-4"></path><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-      <span style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Coach:</span>
-      <select id="activeCoachSwitcher" onchange="handleCoachSwitch(this.value)">
-        <!-- Populated Dynamically -->
+      <span style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Session:</span>
+      <select id="activeCoachSwitcher" disabled style="opacity:0.9;cursor:default;">
+        <option value="">Authenticating...</option>
       </select>
     </div>
   </div>
@@ -260,7 +260,9 @@
             <div id="sidebarCoachTitle" style="font-size:11px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Certified Trainer</div>
           </div>
         </div>
-        <span class="user-status-dot" title="Active"></span>
+        <a href="logout.php?portal_ctx=trainer" class="btn-sidebar-user-logout" title="Sign Out" onclick="event.stopPropagation();" style="color:#EF4444; display:inline-flex; align-items:center; justify-content:center; padding:6px; border-radius:6px; text-decoration:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path></svg>
+        </a>
       </div>
 
       <!-- Sidebar Navigation Links -->
@@ -293,11 +295,12 @@
         <a class="sidebar-nav-item" data-view="messages" href="javascript:void(0)" onclick="switchTrainerView('messages')">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"></path></svg>
           <span class="nav-label">Messages</span>
-          <span class="nav-pill" style="background:var(--primary-blue); color:#fff;">Live</span>
+          <span class="nav-pill" id="sidebarBadgeMessages" style="background:var(--primary-blue); color:#fff;">Live</span>
         </a>
         <a class="sidebar-nav-item" data-view="notifications" href="javascript:void(0)" onclick="switchTrainerView('notifications')">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg>
           <span class="nav-label">Notifications</span>
+          <span class="nav-badge" id="sidebarBadgeTrainerNotifs" style="background:#EF4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;display:none;">0</span>
         </a>
         <a class="sidebar-nav-item" data-view="settings" href="javascript:void(0)" onclick="switchTrainerView('settings')">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -308,11 +311,14 @@
       <!-- Portal Switcher Links -->
       <div style="margin-top: auto; padding: 16px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
         <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700;">Cross-Portal Switcher</span>
-        <a href="gym_owner/index.html" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); text-decoration: none; padding: 6px 10px; background: #F8FAFC; border-radius: 6px;">
+        <a href="switch_portal.php?to=gym_owner" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); text-decoration: none; padding: 6px 10px; background: #F8FAFC; border-radius: 6px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; color: #10B981;"><path d="M10 12h4"></path><path d="M10 8h4"></path><path d="M14 21v-3a2 2 0 0 0-4 0v3"></path><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"></path><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path></svg> View as Gym Owner
         </a>
-        <a href="index.html?guest=true" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); text-decoration: none; padding: 6px 10px; background: #F8FAFC; border-radius: 6px;">
+        <a href="switch_portal.php?to=user" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); text-decoration: none; padding: 6px 10px; background: #F8FAFC; border-radius: 6px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; color: var(--primary-blue);"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> View as Athlete
+        </a>
+        <a href="logout.php?portal_ctx=trainer" style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #DC2626; text-decoration: none; padding: 7px 10px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; color: #DC2626;"><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path></svg> Sign Out
         </a>
       </div>
 
@@ -342,6 +348,18 @@
               <path d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z"/>
             </svg>
           </section>
+
+          <!-- Verification / Affiliation Pending Notice -->
+          <div id="trainerVerificationBanner" style="display:none; margin-bottom: 18px; padding: 14px 18px; border-radius: 12px; background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; font-size: 13px;">
+            <strong style="display:block; margin-bottom:2px;" id="trainerVerifTitle">Account Verification Pending</strong>
+            <span id="trainerVerifDesc">Your trainer credentials are pending review. Member dossiers, athlete rosters, and workout assignments remain restricted until verified.</span>
+          </div>
+
+          <!-- Gym Affiliation Invitations (from Gym Owners) -->
+          <div id="trainerGymInvitationsCard" style="display:none; margin-bottom: 18px; padding: 14px 18px; border-radius: 12px; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A8A; font-size: 13px;">
+            <strong style="display:block; margin-bottom:6px;">Gym Coaching Invitations</strong>
+            <div id="trainerGymInvitationsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+          </div>
 
           <!-- 4 Telemetry Statistics Cards -->
           <section class="stats-grid">
@@ -379,8 +397,8 @@
                 <span class="stat-label">Adherence Rate</span>
               </div>
               <div>
-                <div class="stat-value" id="trainerStatAdherence">92%</div>
-                <div class="stat-trend-green">↑ Target achieved</div>
+                <div class="stat-value" id="trainerStatAdherence">0%</div>
+                <div class="stat-trend-green" id="trainerStatWorkoutsSub">0 Completed • 0 Pending</div>
               </div>
             </div>
 
@@ -392,7 +410,7 @@
                 <span class="stat-label">Volume Lifted</span>
               </div>
               <div>
-                <div class="stat-value" id="trainerStatVolume">38,500 kg</div>
+                <div class="stat-value" id="trainerStatVolume">0 kg</div>
                 <div class="stat-trend-green">Collective volume</div>
               </div>
             </div>
@@ -483,16 +501,21 @@
             </div>
           </div>
 
-          <!-- Search & Filter Controls -->
-          <div class="filter-search-bar" style="margin-bottom: 20px; display:flex; gap:12px; flex-wrap:wrap;">
-            <div class="search-input-box" style="flex: 1; min-width: 240px;">
+          <!-- Search, Filter & Sort Controls -->
+          <div class="filter-search-bar" style="margin-bottom: 20px; display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="search-input-box" style="flex: 2; min-width: 220px;">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
-              <input type="text" id="memberFilterInput" onkeyup="filterMemberCards()" placeholder="Search athletes by name, email, or fitness goal...">
+              <input type="text" id="memberFilterInput" oninput="renderMembersDirectoryView()" placeholder="Search assigned athletes by name, goal, gym, or plan...">
             </div>
-            <div style="display:flex; gap:8px;">
-              <button type="button" class="btn-outline-gym active" id="btnFilterMyAthletes" onclick="setRosterFilter('my')" style="font-size:12px; padding:8px 14px; border-radius:8px;">My Athletes</button>
-              <button type="button" class="btn-outline-gym" id="btnFilterAllAthletes" onclick="setRosterFilter('all')" style="font-size:12px; padding:8px 14px; border-radius:8px;">All Facility Athletes</button>
-            </div>
+            <select id="memberGoalFilter" onchange="renderMembersDirectoryView()" style="padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 12px; background: #fff;">
+              <option value="all">All Fitness Goals</option>
+            </select>
+            <select id="memberSortSelect" onchange="renderMembersDirectoryView()" style="padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 12px; background: #fff;">
+              <option value="name">Sort: Name (A–Z)</option>
+              <option value="adherence_desc">Sort: Completion % (High–Low)</option>
+              <option value="weight_desc">Sort: Current Weight</option>
+              <option value="attendance_desc">Sort: Recent Attendance</option>
+            </select>
           </div>
 
           <!-- Dynamic Member Cards Grid -->
@@ -510,64 +533,68 @@
               <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Workout Plan Prescriptions</h2>
               <p style="font-size: 13px; color: var(--text-secondary);">Design, review, and assign progressive resistance training splits to your athletes.</p>
             </div>
-            <button class="btn-primary-block" style="width: auto; padding: 8px 16px;" onclick="alert('Workout split assignment modal initialized. Select an athlete below.')">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 4px;"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg> Assign Workout
+            <button type="button" class="btn-primary-block" style="width: auto; padding: 8px 16px;" onclick="toggleCreateWorkoutPanel()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 4px;"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg> Create &amp; Assign Workout
             </button>
           </div>
 
+          <!-- Create / Assign Workout Form Panel -->
+          <div id="createWorkoutPanel" class="trainer-card" style="display:none; margin-bottom: 20px; border-color: var(--primary-blue);">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">Create &amp; Assign MySQL Workout Plan</h3>
+            <form id="trainerCreateWorkoutForm" onsubmit="handleCreateAndAssignWorkout(event)" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px;">
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Plan Title</label>
+                <input type="text" id="wkPlanTitle" required placeholder="e.g. Hypertrophy Push Pull" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Focus / Split Goal</label>
+                <select id="wkPlanGoal" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+                  <option value="hypertrophy">Hypertrophy</option>
+                  <option value="strength">Strength Peak</option>
+                  <option value="fat_loss">Fat Loss &amp; Conditioning</option>
+                  <option value="general_fitness">General Fitness</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Assign to Athlete (Optional)</label>
+                <select id="wkAssignMemberSelect" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+                  <option value="">Save Template Only</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Primary Exercise</label>
+                <select id="wkPrimaryExerciseSelect" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+                  <option value="">Loading exercises...</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Target Sets &times; Reps</label>
+                <div style="display:flex;gap:8px;">
+                  <input type="number" id="wkTargetSets" value="4" min="1" max="10" style="width:70px;padding:8px;border:1px solid var(--border-color);border-radius:8px;">
+                  <input type="text" id="wkTargetReps" value="8-12" style="flex:1;padding:8px;border:1px solid var(--border-color);border-radius:8px;">
+                </div>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Plan Notes / Coaching Instructions</label>
+                <input type="text" id="wkPlanDesc" placeholder="Controlled eccentric tempo, 90s rest between working sets" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+              </div>
+              <div style="grid-column: 1 / -1; display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" class="btn-outline-gym" style="width:auto;" onclick="toggleCreateWorkoutPanel()">Cancel</button>
+                <button type="submit" class="btn-primary-block" style="width:auto;padding:8px 18px;">Save &amp; Sync Plan</button>
+              </div>
+            </form>
+          </div>
+
           <div class="trainers-grid" id="trainerWorkoutsGrid">
-            <!-- Template 1: Hypertrophy Surplus -->
-            <div class="trainer-card">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                <div>
-                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Upper Body Hypertrophy</h3>
-                  <span class="fs-badge fs-badge-blue">4-Day Split</span>
-                </div>
-                <span class="fs-badge fs-badge-green">Active</span>
-              </div>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
-                Incline Barbell Bench Press (4x8-10), DB Lateral Raises (4x15), Tricep Rope Pushdowns (3x12).
-              </p>
-              <div style="font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 12px;">
-                <span>Prescribed to: <strong>Assigned Athletes</strong></span>
-              </div>
-              <button class="btn-outline-gym" style="width: 100%;" onclick="alert('Preset synced to assigned athlete devices.')">Edit Prescription</button>
+            <div class="trainer-card" style="grid-column: 1 / -1; text-align:center; color:var(--text-secondary);">
+              Loading trainer workout plans from database...
             </div>
+          </div>
 
-            <!-- Template 2: Powerlifting Peak -->
-            <div class="trainer-card">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                <div>
-                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Powerlifting Strength Peak</h3>
-                  <span class="fs-badge fs-badge-orange">Strength Block</span>
-                </div>
-                <span class="fs-badge fs-badge-green">Active</span>
-              </div>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
-                Conventional Deadlift (5x3 @ 85% 1RM), Barbell Low-Bar Squat (4x5), Heavy Paused Bench.
-              </p>
-              <div style="font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 12px;">
-                <span>Prescribed to: <strong>Powerlifters</strong></span>
-              </div>
-              <button class="btn-outline-gym" style="width: 100%;" onclick="alert('Preset synced.')">Edit Prescription</button>
-            </div>
-
-            <!-- Template 3: Functional Conditioning -->
-            <div class="trainer-card">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                <div>
-                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Metabolic Athletic Conditioning</h3>
-                  <span class="fs-badge" style="background:#F3E8FF; color:#8B5CF6;">Full Body</span>
-                </div>
-                <span class="fs-badge fs-badge-green">Active</span>
-              </div>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
-                Kettlebell Clean & Press, Sled Pushes, Bulgarian Split Squats, Core Kinetic Bracing.
-              </p>
-              <div style="font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 12px;">
-                <span>Prescribed to: <strong>General Fitness</strong></span>
-              </div>
-              <button class="btn-outline-gym" style="width: 100%;" onclick="alert('Preset synced.')">Edit Prescription</button>
+          <div class="trainer-card" style="margin-top: 20px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">Completed Athlete Workout Sessions</h3>
+            <div id="trainerCompletedSessionsList" style="font-size: 13px; color: var(--text-secondary);">
+              No completed athlete workout sessions recorded yet.
             </div>
           </div>
         </section>
@@ -734,8 +761,9 @@
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
             <div>
               <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Notifications & Activity Center</h2>
-              <p style="font-size: 13px; color: var(--text-secondary);">Real-time alerts regarding PR milestones and session bookings.</p>
+              <p style="font-size: 13px; color: var(--text-secondary);">Real-time alerts regarding gym affiliations, assignments, workouts, and messages.</p>
             </div>
+            <button type="button" class="btn-outline-gym" style="margin-top:0;padding:6px 12px;font-size:12px;" onclick="markTrainerNotifsRead()">Mark All Read</button>
           </div>
 
           <div class="fs-card" id="trainerNotificationsList">
@@ -798,90 +826,219 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- MODAL 1: ATHLETE DOSSIER MODAL -->
+  <!-- MODAL 1: ATHLETE DOSSIER MODAL (5-TAB COMPREHENSIVE FITNESS PROFILE)  -->
   <!-- ===================================================================== -->
   <div id="dossierModal" class="fs-modal-backdrop" onclick="if(event.target===this) closeDossierModal()">
-    <div class="fs-modal-content" style="max-width: 620px;">
-      <div style="padding: 20px 24px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between;">
+    <div class="fs-modal-content" style="max-width: 840px; max-height: 92vh; overflow-y: auto;">
+      <div style="padding: 18px 24px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div id="dossierAvatar" style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-blue); color: #fff; font-weight: 800; font-size: 18px; display: flex; align-items: center; justify-content: center;">AT</div>
+          <img id="dossierAvatarImg" src="assets/images/member_aarav.jpg" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #DBEAFE;" onerror="this.style.display='none'">
+          <div id="dossierAvatar" style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-blue); color: #fff; font-weight: 800; font-size: 18px; display: none; align-items: center; justify-content: center;">AT</div>
           <div>
             <h3 id="dossierName" style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">Athlete Name</h3>
-            <span id="dossierTierBadge" class="badge-tier badge-tier-elite">Elite Member</span>
-            <span id="dossierEmail" style="font-size: 12px; color: var(--text-secondary); margin-left: 8px;">athlete@fitsync.health</span>
+            <span id="dossierTierBadge" class="badge-tier badge-tier-elite">Member</span>
+            <span id="dossierEmail" style="font-size: 12px; color: var(--text-secondary); margin-left: 8px;">--</span>
           </div>
         </div>
-        <button type="button" onclick="closeDossierModal()" style="background: transparent; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer;">&times;</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="btn-outline-gym" style="margin-top:0;padding:6px 12px;font-size:11px;" onclick="sendReminderToMember()">Send Workout Reminder</button>
+          <button type="button" onclick="closeDossierModal()" style="background: transparent; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer;">&times;</button>
+        </div>
+      </div>
+
+      <!-- Dossier Sub-Navigation Tabs -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;padding:12px 24px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;" id="dossierTabsBar">
+        <button type="button" class="btn-outline-gym active" data-dtab="overview" onclick="switchDossierTab('overview')" style="margin-top:0;padding:6px 12px;font-size:12px;">Overview &amp; Biometrics</button>
+        <button type="button" class="btn-outline-gym" data-dtab="progress" onclick="switchDossierTab('progress')" style="margin-top:0;padding:6px 12px;font-size:12px;">Body Progress &amp; Photos</button>
+        <button type="button" class="btn-outline-gym" data-dtab="workouts" onclick="switchDossierTab('workouts')" style="margin-top:0;padding:6px 12px;font-size:12px;">Workouts &amp; Performance</button>
+        <button type="button" class="btn-outline-gym" data-dtab="nutrition" onclick="switchDossierTab('nutrition')" style="margin-top:0;padding:6px 12px;font-size:12px;">Nutrition &amp; Attendance</button>
+        <button type="button" class="btn-outline-gym" data-dtab="notes" onclick="switchDossierTab('notes')" style="margin-top:0;padding:6px 12px;font-size:12px;">Notes &amp; Feedback</button>
       </div>
 
       <div style="padding: 20px 24px;">
-        <!-- Athletic Telemetry -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
-          <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: center;">
-            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Body Weight</div>
-            <div id="dossierWeight" style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-top: 4px;">74.0 kg</div>
-          </div>
-          <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: center;">
-            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Body Fat Est.</div>
-            <div id="dossierFat" style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-top: 4px;">14.5%</div>
-          </div>
-          <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: center;">
-            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Plan Adherence</div>
-            <div id="dossierAdherence" style="font-size: 18px; font-weight: 800; color: #10B981; margin-top: 4px;">96%</div>
-          </div>
-        </div>
-
-        <!-- Goal & Assignment -->
-        <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px; margin-bottom: 18px;">
-          <div style="font-size: 12px; font-weight: 700; color: #1E40AF; text-transform: uppercase; margin-bottom: 4px;">Primary Goal</div>
-          <div id="dossierGoal" style="font-size: 14px; font-weight: 700; color: #1E3A8A;">Powerlifting & Deadlift Peak</div>
-          <div style="font-size: 12px; color: #3B82F6; margin-top: 4px;">Assigned Coach: <strong id="dossierCoach">Assigned Coach</strong></div>
-        </div>
-
-        <!-- Coaching Notes -->
-        <div style="margin-bottom: 18px;">
-          <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Coaching Observations & Biomechanics</h4>
-          <p id="dossierNotes" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-            Metabolic conditioning and 4-day strength split. Torso bracing strictly controlled.
-          </p>
-        </div>
-
-        <!-- Recent Lifts -->
-        <div style="margin-bottom: 20px;">
-          <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">Key Lifts & Benchmarks</h4>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-            <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
-              <span style="font-size: 11px; color: var(--text-muted); display: block;">Bench Press</span>
-              <strong id="dossierBench" style="font-size: 14px; color: var(--text-main);">115 kg</strong>
+        <!-- TAB 1: OVERVIEW & BIOMETRICS -->
+        <div class="dossier-tab-pane" id="dossier-pane-overview">
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;">
+            <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center;">
+              <div style="font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Weight / Target</div>
+              <div id="dossierWeight" style="font-size: 16px; font-weight: 800; color: var(--text-main); margin-top: 3px;">--</div>
             </div>
-            <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
-              <span style="font-size: 11px; color: var(--text-muted); display: block;">Back Squat</span>
-              <strong id="dossierSquat" style="font-size: 14px; color: var(--text-main);">155 kg</strong>
+            <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center;">
+              <div style="font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Age / Height</div>
+              <div id="dossierAgeHeight" style="font-size: 16px; font-weight: 800; color: var(--text-main); margin-top: 3px;">--</div>
             </div>
-            <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
-              <span style="font-size: 11px; color: var(--text-muted); display: block;">Deadlift</span>
-              <strong id="dossierDeadlift" style="font-size: 14px; color: var(--text-main);">205 kg</strong>
+            <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center;">
+              <div style="font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Body Fat Est.</div>
+              <div id="dossierFat" style="font-size: 16px; font-weight: 800; color: var(--text-main); margin-top: 3px;">--</div>
+            </div>
+            <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center;">
+              <div style="font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">BMI / TDEE</div>
+              <div id="dossierAdherence" style="font-size: 16px; font-weight: 800; color: #10B981; margin-top: 3px;">--</div>
+            </div>
+          </div>
+
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 11px; font-weight: 700; color: #1E40AF; text-transform: uppercase; margin-bottom: 4px;">Personal Profile, Goal &amp; Gym Membership</div>
+            <div id="dossierGoal" style="font-size: 14px; font-weight: 700; color: #1E3A8A;">--</div>
+            <div id="dossierPersonalMeta" style="font-size: 12px; color: #1D4ED8; margin-top: 4px;">--</div>
+            <div style="font-size: 12px; color: #3B82F6; margin-top: 4px;">Phone: <strong id="dossierPhone">--</strong> • Assigned Coach: <strong id="dossierCoach">--</strong></div>
+          </div>
+
+          <div>
+            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Biometric Targets &amp; Assessment History</h4>
+            <div id="dossierAssessmentBox" style="font-size: 12px; color: var(--text-secondary); background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+              Loading assessments...
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: BODY PROGRESS & PHOTOS -->
+        <div class="dossier-tab-pane" id="dossier-pane-progress" style="display:none;">
+          <div style="margin-bottom: 16px;">
+            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Weight Progress Trend</h4>
+            <div id="dossierWeightChartBox" style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; font-size: 12px; color: var(--text-secondary);"></div>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Body Measurements History (Weight, Waist, Chest, Arms, Hips)</h4>
+            <div id="dossierMeasurementsBox" style="font-size: 12px; color: var(--text-secondary); background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+              Loading measurement history...
+            </div>
+          </div>
+          <div>
+            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Member Progress Photos (Consent-Gated)</h4>
+            <div id="dossierPhotosBox" style="font-size: 12px; color: var(--text-secondary); background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color);"></div>
+          </div>
+        </div>
+
+        <!-- TAB 3: WORKOUTS & PERFORMANCE -->
+        <div class="dossier-tab-pane" id="dossier-pane-workouts" style="display:none;">
+          <div style="margin-bottom: 14px; padding: 12px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+              <strong style="font-size: 13px; color: var(--text-main);">Assign or Update Workout Plan</strong>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <select id="dossierAssignPlanSelect" style="padding:5px 8px;border:1px solid var(--border-color);border-radius:6px;font-size:12px;"></select>
+                <button type="button" class="btn-primary-block" style="width:auto;padding:6px 12px;font-size:11px;" onclick="assignPlanFromDossier()">Assign / Update Plan</button>
+              </div>
+            </div>
+            <div id="dossierCurrentPlanBox" style="font-size: 12px; color: var(--text-secondary);"></div>
+          </div>
+          <div style="margin-bottom: 14px;">
+            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Completed Workouts &amp; Exercise-Level Performance</h4>
+            <div id="dossierWorkoutsBox" style="font-size: 12px; color: var(--text-secondary); background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+              Loading workouts...
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Previous Plans History</h4>
+              <div id="dossierPrevPlansBox" style="font-size: 12px; color: var(--text-secondary); background: #F8FAFC; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);"></div>
+            </div>
+            <div>
+              <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Missed / Skipped Workouts</h4>
+              <div id="dossierMissedWorkoutsBox" style="font-size: 12px; color: var(--text-secondary); background: #F8FAFC; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: NUTRITION & ATTENDANCE -->
+        <div class="dossier-tab-pane" id="dossier-pane-nutrition" style="display:none;">
+          <div style="margin-bottom: 16px;">
+            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Nutrition, Macros, Food Logs &amp; Restrictions (Consent-Gated)</h4>
+            <div id="dossierNutritionBox" style="font-size: 12px; color: var(--text-secondary); background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+              Loading nutrition overview...
+            </div>
+          </div>
+          <div>
+            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Gym Attendance Calendar &amp; Consistency</h4>
+            <div id="dossierAttendanceBox" style="font-size: 12px; color: var(--text-secondary); background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color);"></div>
+          </div>
+        </div>
+
+        <!-- TAB 5: SHARED FEEDBACK & PRIVATE COACHING NOTES -->
+        <div class="dossier-tab-pane" id="dossier-pane-notes" style="display:none;">
+          <form onsubmit="handleAddDossierNote(event)" style="background:#F8FAFC;border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-bottom:14px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+              <select id="dossierNoteTypeSelect" style="padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font-size:12px;">
+                <option value="workout_feedback">Shared Workout Feedback</option>
+                <option value="form_correction">Form Correction / Routine Change</option>
+                <option value="milestone_praise">Milestone Praise</option>
+                <option value="general_observation">Private Coaching Observation</option>
+              </select>
+              <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-main);">
+                <input type="checkbox" id="dossierNoteVisibleCb" checked> Share feedback with Member (uncheck for Private Coach Note)
+              </label>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="dossierNewNoteInput" placeholder="Write shared feedback, routine change suggestion, or private observation..." style="flex:1;padding:7px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;">
+              <button type="submit" class="btn-primary-block" style="width:auto;padding:7px 14px;font-size:12px;">Save Note</button>
+            </div>
+          </form>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <h4 style="font-size:12px;font-weight:700;color:#1D4ED8;text-transform:uppercase;margin-bottom:6px;">Shared Feedback (Visible to Member)</h4>
+              <div id="dossierNotes" style="font-size: 12px; color: var(--text-secondary); background: #EFF6FF; padding: 10px; border-radius: 8px; border: 1px solid #BFDBFE;">No shared feedback yet.</div>
+            </div>
+            <div>
+              <h4 style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:6px;">Private Coach Notes (Trainer Only)</h4>
+              <div id="dossierPrivateNotesBox" style="font-size: 12px; color: var(--text-secondary); background: #F8FAFC; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">No private notes recorded yet.</div>
             </div>
           </div>
         </div>
 
         <!-- Action Buttons -->
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 14px;">
           <button type="button" class="btn-secondary" onclick="closeDossierModal()">Close</button>
-          <button type="button" class="btn-primary-block" style="width: auto; padding: 8px 18px;" onclick="closeDossierModal(); openChatWithMember(currentDossierEmail)">Open Chat Channel</button>
+          <button type="button" class="btn-primary-block" style="width: auto; padding: 8px 18px;" onclick="closeDossierModal(); openChatWithMember(currentDossierEmail, currentDossierMemberId)">Open Chat Channel</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Scripts -->
+  <script src="js/api_client.js"></script>
   <script src="js/data.js"></script>
   <script>
-    // --- Application State ---
+    // --- Application State (Authoritative DB-Backed) ---
     let activeTrainerId = null;
     let rosterFilter = 'my'; // 'my' or 'all'
+    let currentChatMemberId = null;
     let currentChatEmail = null;
+    let currentDossierMemberId = null;
     let currentDossierEmail = null;
+    let trainerChatPollTimer = null;
+    let lastTrainerChatSignature = '';
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatChatTime(sentAt) {
+      if (!sentAt) return 'Just now';
+      const d = new Date(String(sentAt).replace(' ', 'T'));
+      return isNaN(d.getTime()) ? String(sentAt) : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getTrainerDashData() {
+      const raw = window.__TRAINER_DASH__ || {};
+      return {
+        trainer: raw.trainer || {},
+        gym_affiliations: Array.isArray(raw.gym_affiliations) ? raw.gym_affiliations : [],
+        stats: raw.stats || { total_assigned: 0, active_members: 0, pending_workouts: 0, completed_workouts: 0, today_sessions: 0, adherence_pct: 0, collective_volume: 0 },
+        athletes: Array.isArray(raw.athletes) ? raw.athletes : (Array.isArray(raw.assigned_members) ? raw.assigned_members : []),
+        today_agenda: Array.isArray(raw.today_agenda) ? raw.today_agenda : [],
+        attendance_logs: Array.isArray(raw.attendance_logs) ? raw.attendance_logs : [],
+        recent_workouts: Array.isArray(raw.recent_workouts) ? raw.recent_workouts : [],
+        notifications: Array.isArray(raw.notifications) ? raw.notifications : [],
+        unread_notifications: raw.unread_notifications || 0,
+        unread_messages: raw.unread_messages || 0
+      };
+    }
 
     // View Switching
     function switchTrainerView(viewId) {
@@ -889,16 +1046,11 @@
       document.querySelectorAll('.sidebar-nav-item').forEach(el => el.classList.remove('active'));
 
       const target = document.getElementById('view-' + viewId);
-      if (target) {
-        target.classList.add('active');
-      }
+      if (target) target.classList.add('active');
 
       const activeLink = document.querySelector(`.sidebar-nav-item[data-view="${viewId}"]`);
-      if (activeLink) {
-        activeLink.classList.add('active');
-      }
+      if (activeLink) activeLink.classList.add('active');
 
-      // Close mobile menu if open
       const nav = document.getElementById('sidebarNav');
       if (nav) nav.classList.remove('open');
 
@@ -907,179 +1059,241 @@
         trainerChatPollTimer = null;
       }
       if (viewId === 'messages') {
-        loadTrainerChatMessages();
-        trainerChatPollTimer = setInterval(loadTrainerChatMessages, 4000);
+        lastTrainerChatSignature = '';
+        renderChatChannels();
+        loadTrainerChatMessages(true);
+        trainerChatPollTimer = setInterval(() => loadTrainerChatMessages(false), 2000);
+      } else if (viewId === 'workouts') {
+        loadTrainerWorkoutsView();
+      } else if (viewId === 'notifications') {
+        renderNotificationsView();
+      } else if (viewId === 'attendance') {
+        renderAttendanceView();
+      } else if (viewId === 'schedule') {
+        renderScheduleView();
+      } else if (viewId === 'members') {
+        renderMembersDirectoryView();
+      } else if (viewId === 'settings') {
+        populateSettingsForm();
       }
 
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-      }
+      if (typeof initIcons === 'function') initIcons();
     }
 
-    // Initialize Active Coach
+    // Initialize Active Coach from Authenticated Session
     function initActiveCoach() {
-      const store = window.fitSyncStore;
-      if (!store) return;
-      const trainers = store.getTrainers();
+      const auth = window.__AUTHENTICATED_USER__ || {};
+      const d = getTrainerDashData();
+      const trainer = d.trainer || {};
+      activeTrainerId = parseInt(trainer.id || trainer.user_id || auth.id || 0, 10) || null;
 
-      if (trainers && trainers.length > 0) {
-        if (!activeTrainerId || !trainers.find(t => t.id === activeTrainerId)) {
-          activeTrainerId = trainers[0].id;
-        }
-      } else {
-        activeTrainerId = null;
-      }
-
-      // Populate coach switcher dropdown
       const switcher = document.getElementById('activeCoachSwitcher');
       if (switcher) {
-        if (trainers && trainers.length > 0) {
-          switcher.innerHTML = trainers.map(t => `
-            <option value="${t.id}" ${t.id === activeTrainerId ? 'selected' : ''}>${t.name} (${t.title})</option>
-          `).join('');
-        } else {
-          switcher.innerHTML = `<option value="">No Coaches Added Yet (Add via Gym Owner)</option>`;
-        }
+        const displayName = trainer.full_name || auth.full_name || 'Authenticated Coach';
+        const title = trainer.certification_name || trainer.title || 'Certified Trainer';
+        switcher.innerHTML = `<option value="${activeTrainerId || ''}" selected>${escapeHtml(displayName)} (${escapeHtml(title)})</option>`;
       }
 
       renderTrainerDashboard();
     }
 
-    function handleCoachSwitch(coachId) {
-      activeTrainerId = coachId;
+    function handleCoachSwitch() {
       renderTrainerDashboard();
     }
 
     function getActiveCoach() {
-      const store = window.fitSyncStore;
-      if (!store) return null;
-      const trainers = store.getTrainers();
-      if (trainers && trainers.length > 0) {
-        return trainers.find(t => t.id === activeTrainerId) || trainers[0];
-      }
+      const auth = window.__AUTHENTICATED_USER__ || {};
+      const d = getTrainerDashData();
+      const trainer = d.trainer || {};
       return {
-        id: 'tr-pending',
-        name: 'Staff Trainer',
-        title: 'Certified Fitness Coach',
-        avatar: 'assets/images/trainer_raj.jpg',
-        gym: 'FitZone Fitness Center',
-        experience: 'Certified'
+        id: parseInt(trainer.id || trainer.user_id || auth.id || 0, 10),
+        user_id: parseInt(trainer.id || trainer.user_id || auth.id || 0, 10),
+        name: trainer.full_name || auth.full_name || 'Coach',
+        title: trainer.certification_name || trainer.title || 'Certified Trainer',
+        avatar: trainer.avatar_url || 'assets/images/trainer_raj.jpg',
+        gym: trainer.gym_name || 'FitZone Gym',
+        experience: trainer.experience_years ? `${trainer.experience_years}+ Years` : 'Certified'
       };
     }
 
-    // --- Dynamic Rendering of All Sections ---
+    // --- Dynamic Rendering of All Sections (Authoritative DB) ---
     function renderTrainerDashboard() {
-      const store = window.fitSyncStore;
-      if (!store) return;
-
+      const d = getTrainerDashData();
       const coach = getActiveCoach();
-      if (!coach) return;
+      const myMembers = d.athletes;
+      const stats = d.stats || {};
+      const agenda = d.today_agenda;
+      const checkins = d.attendance_logs;
 
-      const allMembers = store.getMembers();
-      // Filter members assigned to this coach
-      const myMembers = allMembers.filter(m => m.assignedCoachId === coach.id || (m.assignedCoachName && m.assignedCoachName.toLowerCase() === coach.name.toLowerCase()));
-
-      // Update Sidebar Coach Info
       const sideName = document.getElementById('sidebarCoachName');
       const sideTitle = document.getElementById('sidebarCoachTitle');
       const sideAvatar = document.getElementById('sidebarCoachAvatar');
       const sideBranch = document.getElementById('sidebarGymBranch');
       const sideBadge = document.getElementById('sidebarBadgeAthletes');
+      const msgBadge = document.getElementById('sidebarBadgeMessages');
 
       if (sideName) sideName.innerText = coach.name;
       if (sideTitle) sideTitle.innerText = coach.title;
       if (sideAvatar) sideAvatar.src = coach.avatar || 'assets/images/trainer_raj.jpg';
-      if (sideBranch) sideBranch.innerText = coach.gym || 'FitZone Gym, Kothrud';
-      if (sideBadge) sideBadge.innerText = myMembers.length;
+      if (sideBranch) sideBranch.innerText = coach.gym || 'FitSync Branch';
+      if (sideBadge) sideBadge.innerText = stats.total_assigned !== undefined ? stats.total_assigned : myMembers.length;
+      if (msgBadge) {
+        const unread = parseInt(d.unread_messages || 0, 10);
+        if (unread > 0) {
+          msgBadge.textContent = `${unread} New`;
+          msgBadge.style.background = '#EF4444';
+        } else {
+          msgBadge.textContent = 'Live';
+          msgBadge.style.background = 'var(--primary-blue)';
+        }
+      }
 
-      // Update Welcome Banner
       const bannerName = document.getElementById('dashCoachWelcomeName');
       const bannerSubtitle = document.getElementById('dashCoachSubtitle');
       if (bannerName) bannerName.innerText = coach.name;
-      if (bannerSubtitle) bannerSubtitle.innerText = `Overseeing ${myMembers.length} assigned athletes at ${coach.gym || 'FitZone Gym'}.`;
+      if (bannerSubtitle) bannerSubtitle.innerText = `Overseeing ${myMembers.length} assigned athletes at ${coach.gym || 'your facility'}.`;
 
-      // Update Telemetry Cards
+      const verifBanner = document.getElementById('trainerVerificationBanner');
+      const trainerObj = d.trainer || {};
+      const verifStatus = trainerObj.verification_status || 'verified';
+      const affStatus = trainerObj.gym_affiliation_status || '';
+      if (verifBanner) {
+        if (verifStatus !== 'verified' || affStatus === 'pending') {
+          verifBanner.style.display = 'block';
+          const titleEl = document.getElementById('trainerVerifTitle');
+          const descEl = document.getElementById('trainerVerifDesc');
+          if (verifStatus !== 'verified') {
+            if (titleEl) titleEl.innerText = 'Credential Verification Pending';
+            if (descEl) descEl.innerText = 'Your trainer credentials are currently pending approval. Access to athlete dossiers and workout plan assignments is restricted until verified.';
+          } else if (affStatus === 'pending') {
+            if (titleEl) titleEl.innerText = 'Gym Affiliation Pending Owner Approval';
+            if (descEl) descEl.innerText = `Your affiliation request with ${trainerObj.gym_name || 'the selected gym'} is awaiting Gym Owner approval.`;
+          }
+        } else {
+          verifBanner.style.display = 'none';
+        }
+      }
+
       const statAthletes = document.getElementById('trainerStatAthletes');
       const statSessions = document.getElementById('trainerStatSessions');
       const statAdherence = document.getElementById('trainerStatAdherence');
       const statVolume = document.getElementById('trainerStatVolume');
+      const statWorkoutsSub = document.getElementById('trainerStatWorkoutsSub');
 
-      if (statAthletes) statAthletes.innerText = `${myMembers.length} Athletes`;
-      if (statSessions) statSessions.innerText = `${Math.min(myMembers.length, 3)} Scheduled`;
-      
-      // Calculate average adherence
-      let avgAdherence = 92;
-      if (myMembers.length > 0) {
-        const totalAdh = myMembers.reduce((acc, m) => acc + parseInt(m.adherence || '90', 10), 0);
-        avgAdherence = Math.round(totalAdh / myMembers.length);
+      if (statAthletes) statAthletes.innerText = `${myMembers.length} ${myMembers.length === 1 ? 'Athlete' : 'Athletes'}`;
+      if (statSessions) statSessions.innerText = `${stats.today_sessions || 0} Scheduled`;
+      if (statAdherence) statAdherence.innerText = myMembers.length > 0 ? `${stats.adherence_pct || 0}%` : '0%';
+      if (statWorkoutsSub) statWorkoutsSub.innerText = `${stats.completed_workouts || 0} Completed • ${stats.pending_workouts || 0} Pending`;
+      if (statVolume) statVolume.innerText = `${Number(stats.collective_volume || 0).toLocaleString()} kg`;
+
+      // Unread Notifications & Messages Badges
+      const tNotifBadge = document.getElementById('sidebarBadgeTrainerNotifs');
+      if (tNotifBadge) {
+        const un = parseInt(d.unread_notifications || 0, 10);
+        tNotifBadge.innerText = un;
+        tNotifBadge.style.display = un > 0 ? 'inline-block' : 'none';
       }
-      if (statAdherence) statAdherence.innerText = `${avgAdherence}%`;
-      if (statVolume) statVolume.innerText = `${(myMembers.length * 12800 + 4500).toLocaleString()} kg`;
+      const tMsgBadge = document.getElementById('sidebarBadgeMessages');
+      if (tMsgBadge) {
+        const um = parseInt(d.unread_messages || 0, 10);
+        tMsgBadge.innerText = um > 0 ? `${um} New` : 'Live';
+        tMsgBadge.style.background = um > 0 ? '#EF4444' : 'var(--primary-blue)';
+      }
 
-      // Render Dashboard Today's Coaching Agenda
-      const agendaEl = document.getElementById('trainerDashAgendaList');
-      if (agendaEl) {
-        if (myMembers.length === 0) {
-          agendaEl.innerHTML = `
-            <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">
-              No sessions scheduled today for ${coach.name}.<br>
-              <span style="font-size:11px;">Athletes assigned by Gym Owner will appear here automatically.</span>
-            </div>
-          `;
+      // Gym Affiliation Invitations Banner
+      const invCard = document.getElementById('trainerGymInvitationsCard');
+      const invListEl = document.getElementById('trainerGymInvitationsList');
+      const invitedGyms = (d.gym_affiliations || []).filter(g => g.affiliation_status === 'invited');
+      if (invCard && invListEl) {
+        if (invitedGyms.length === 0) {
+          invCard.style.display = 'none';
         } else {
-          const times = ['07:00 AM', '09:30 AM', '04:00 PM', '06:00 PM'];
-          agendaEl.innerHTML = myMembers.slice(0, 4).map((m, idx) => `
-            <div class="schedule-item">
-              <div class="schedule-time-box">
-                <div class="time-main">
-                  <svg style="width: 14px; height: 14px; color: #2563EB;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                  <span>${times[idx % times.length]}</span>
-                </div>
-                <span class="time-duration">45 min</span>
+          invCard.style.display = 'block';
+          invListEl.innerHTML = invitedGyms.map(g => `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;padding:10px 12px;border-radius:8px;border:1px solid #DBEAFE;flex-wrap:wrap;">
+              <div>
+                <strong>${escapeHtml(g.gym_name)}</strong> (${escapeHtml(g.gym_city || '')}) invited you as <em>${escapeHtml(String(g.employment_type || 'full_time').replace('_', ' '))}</em> coach.
               </div>
-              <div style="flex: 1;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
-                  <strong style="color: var(--text-main); font-size: 14px;">${m.name}</strong>
-                  <span class="badge-active">1-on-1 PT</span>
-                </div>
-                <div style="font-size: 12px; color: var(--text-secondary);">${m.goal} • Target Form Check</div>
+              <div style="display:flex;gap:6px;">
+                <button type="button" class="btn-primary-block" style="width:auto;padding:5px 12px;font-size:12px;background:#10B981;border:none;" onclick="respondGymInvitation(${g.gym_id}, 'accept')">Accept Invitation</button>
+                <button type="button" class="btn-outline-gym" style="margin-top:0;padding:5px 12px;font-size:12px;color:#DC2626;" onclick="respondGymInvitation(${g.gym_id}, 'decline')">Decline</button>
               </div>
-              <button class="btn-outline-gym" style="margin-top: 0; padding: 4px 10px; font-size: 11px;" onclick="openDossierModal('${m.email}')">Dossier</button>
             </div>
           `).join('');
         }
       }
 
-      // Render Dashboard Checkins Table
-      const checkinBody = document.getElementById('trainerDashCheckinsBody');
-      if (checkinBody) {
-        const displayMembers = myMembers.length > 0 ? myMembers : allMembers;
-        checkinBody.innerHTML = displayMembers.slice(0, 4).map(m => `
-          <tr>
-            <td>
-              <div style="font-weight: 600; color: var(--text-main);">${m.name}</div>
-              <span style="font-size: 11px; color: var(--text-secondary);">${m.membershipTier || 'Gold'} Member</span>
-            </td>
-            <td style="font-size: 12px; color: var(--text-muted);">${m.checkInTime || 'Today, 07:15 AM'}</td>
-            <td><span class="fs-badge fs-badge-green">Pass Verified</span></td>
-          </tr>
-        `).join('');
+      // Today's Coaching Agenda
+      const agendaEl = document.getElementById('trainerDashAgendaList');
+      if (agendaEl) {
+        if (agenda.length === 0) {
+          agendaEl.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">
+              No coaching sessions scheduled today.<br>
+              <span style="font-size:11px;">Sessions scheduled for your assigned athletes will appear here.</span>
+            </div>`;
+        } else {
+          agendaEl.innerHTML = agenda.slice(0, 5).map(item => `
+            <div class="schedule-item">
+              <div class="schedule-time-box">
+                <div class="time-main">
+                  <svg style="width: 14px; height: 14px; color: #2563EB;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  <span>${escapeHtml(item.start_time || item.session_date || '--')}</span>
+                </div>
+                <span class="time-duration">${escapeHtml(item.session_type || '1-on-1 PT')}</span>
+              </div>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                  <strong style="color: var(--text-main); font-size: 14px;">${escapeHtml(item.member_name || 'Athlete')}</strong>
+                  <span class="badge-active">${escapeHtml(item.status || 'Scheduled')}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(item.session_notes || 'Coaching session')}</div>
+              </div>
+              <button type="button" class="btn-outline-gym" style="margin-top: 0; padding: 4px 10px; font-size: 11px;" onclick="openDossierModalById(${item.user_id}, '${escapeHtml(item.member_email || '')}')">Dossier</button>
+            </div>
+          `).join('');
+        }
       }
 
-      // Render Dashboard Roster Overview Table
+      // Recent Check-ins Table
+      const checkinBody = document.getElementById('trainerDashCheckinsBody');
+      if (checkinBody) {
+        if (checkins.length === 0) {
+          checkinBody.innerHTML = `
+            <tr>
+              <td colspan="3" style="text-align:center; padding:18px; color:var(--text-muted); font-size:12px;">
+                No Attendance Recorded
+              </td>
+            </tr>`;
+        } else {
+          checkinBody.innerHTML = checkins.slice(0, 5).map(c => `
+            <tr>
+              <td>
+                <div style="font-weight: 600; color: var(--text-main);">${escapeHtml(c.athlete_name || 'Athlete')}</div>
+                <span style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(c.gym_name || 'FitZone')}</span>
+              </td>
+              <td style="font-size: 12px; color: var(--text-muted);">${escapeHtml(c.check_in_time || '--')}</td>
+              <td><span class="fs-badge fs-badge-green">${escapeHtml(c.check_in_method || 'Turnstile')} Verified</span></td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      // Assigned Athletes Overview Table
       const rosterBody = document.getElementById('trainerDashRosterBody');
       if (rosterBody) {
         if (myMembers.length === 0) {
           rosterBody.innerHTML = `
             <tr>
               <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">
-                No athletes currently assigned to ${coach.name}.<br>
-                Open the <a href="gym_owner/index.html" style="color:var(--primary-blue); font-weight:600;">Gym Owner Portal</a> to assign athletes to this coach.
+                No athletes currently assigned to ${escapeHtml(coach.name)}.<br>
+                Wait for your Gym Owner to assign athletes to your coaching roster.
               </td>
-            </tr>
-          `;
+            </tr>`;
         } else {
-          rosterBody.innerHTML = myMembers.map(m => `
+          rosterBody.innerHTML = myMembers.map(m => {
+            const adh = m.adherence_pct !== undefined && m.adherence_pct !== null ? `${m.adherence_pct}%` : '0%';
+            return `
             <tr>
               <td>
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -1087,83 +1301,94 @@
                     ${getInitials(m.name)}
                   </div>
                   <div>
-                    <strong style="color: var(--text-main); font-size: 13px;">${m.name}</strong>
-                    <div style="font-size: 11px; color: var(--text-muted);">${m.email}</div>
+                    <strong style="color: var(--text-main); font-size: 13px;">${escapeHtml(m.name)}</strong>
+                    <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(m.email)}</div>
                   </div>
                 </div>
               </td>
-              <td><span class="badge-tier badge-tier-${(m.membershipTier || 'gold').toLowerCase()}">${m.membershipTier || 'Gold'}</span></td>
-              <td style="font-size: 12px; color: var(--text-secondary);">${m.goal}</td>
-              <td style="font-weight: 600; font-size: 12px;">${m.weight || 65} kg</td>
+              <td>
+                <span class="badge-tier badge-tier-gold">${escapeHtml(m.membershipTier || 'Member')}</span>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${escapeHtml(m.gym_name || 'FitSync Gym')} • ${escapeHtml(m.active_plan_name || 'No Plan')}</div>
+              </td>
+              <td style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(m.goal || 'General Fitness')}</td>
+              <td style="font-weight: 600; font-size: 12px;">${m.weight ? m.weight + ' kg' : '--'}</td>
               <td>
                 <div style="display: flex; align-items: center; gap: 6px;">
-                  <span style="font-weight: 700; font-size: 12px; color: #10B981;">${m.adherence || '92%'}</span>
+                  <span style="font-weight: 700; font-size: 12px; color: #10B981;">${adh}</span>
                   <div style="flex:1; max-width: 60px; height: 5px; background: #E2E8F0; border-radius: 9999px; overflow: hidden;">
-                    <div style="width: ${m.adherence || '92%'}; height: 100%; background: #10B981;"></div>
+                    <div style="width: ${adh}; height: 100%; background: #10B981;"></div>
                   </div>
                 </div>
               </td>
               <td>
                 <div style="display: flex; gap: 6px;">
-                  <button type="button" class="btn-outline-gym" style="padding: 4px 8px; font-size: 11px;" onclick="openDossierModal('${m.email}')">Dossier</button>
-                  <button type="button" class="btn-outline-gym" style="padding: 4px 8px; font-size: 11px;" onclick="openChatWithMember('${m.email}')">Message</button>
+                  <button type="button" class="btn-outline-gym" style="padding: 4px 8px; font-size: 11px;" onclick="openDossierModalById(${m.user_id}, '${escapeHtml(m.email)}')">Dossier</button>
+                  <button type="button" class="btn-outline-gym" style="padding: 4px 8px; font-size: 11px;" onclick="openChatWithMember('${escapeHtml(m.email)}', ${m.user_id})">Message</button>
                 </div>
               </td>
-            </tr>
-          `).join('');
+            </tr>`;
+          }).join('');
         }
       }
 
-      // Render Full Athletes Directory (View 2)
       renderMembersDirectoryView();
-
-      // Render Schedule View
       renderScheduleView();
-
-      // Render Attendance View
       renderAttendanceView();
-
-      // Render Chat Channels
       renderChatChannels();
-
-      // Render Notifications
       renderNotificationsView();
-
-      // Populate Settings View with current coach
-      populateSettingsForm(coach);
-
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+      populateSettingsForm();
+      if (typeof initIcons === 'function') initIcons();
     }
 
-    // Helper: Initials
     function getInitials(name) {
       if (!name) return 'AT';
-      const parts = name.trim().split(' ');
+      const parts = name.trim().split(/\s+/);
       if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
 
-    // --- View 2: Athletes Roster Directory ---
     function setRosterFilter(filter) {
       rosterFilter = filter;
-      document.getElementById('btnFilterMyAthletes').classList.toggle('active', filter === 'my');
-      document.getElementById('btnFilterAllAthletes').classList.toggle('active', filter === 'all');
+      document.getElementById('btnFilterMyAthletes')?.classList.toggle('active', filter === 'my');
+      document.getElementById('btnFilterAllAthletes')?.classList.toggle('active', filter === 'all');
       renderMembersDirectoryView();
     }
 
     function renderMembersDirectoryView() {
-      const store = window.fitSyncStore;
-      if (!store) return;
+      const d = getTrainerDashData();
+      const allAssigned = Array.isArray(d.athletes) ? d.athletes.slice() : [];
 
-      const coach = getActiveCoach();
-      const allMembers = store.getMembers();
-      const myMembers = allMembers.filter(m => m.assignedCoachId === coach.id || (m.assignedCoachName && m.assignedCoachName.toLowerCase() === coach.name.toLowerCase()));
+      const goalSel = document.getElementById('memberGoalFilter');
+      if (goalSel) {
+        const curG = goalSel.value || 'all';
+        const goals = Array.from(new Set(allAssigned.map(a => a.goal).filter(Boolean))).sort();
+        goalSel.innerHTML = '<option value="all">All Fitness Goals</option>' +
+          goals.map(g => `<option value="${escapeHtml(g)}" ${curG === g ? 'selected' : ''}>${escapeHtml(g)}</option>`).join('');
+      }
 
-      const targetList = rosterFilter === 'my' ? myMembers : allMembers;
+      const q = (document.getElementById('memberFilterInput')?.value || '').trim().toLowerCase();
+      const gFilter = document.getElementById('memberGoalFilter')?.value || 'all';
+      const sortBy = document.getElementById('memberSortSelect')?.value || 'name';
+
+      let targetList = allAssigned.filter(m => {
+        if (q) {
+          const hay = [m.name, m.email, m.goal, m.gym_name, m.active_plan_name].join(' ').toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        if (gFilter !== 'all' && m.goal !== gFilter) return false;
+        return true;
+      });
+
+      targetList.sort((a, b) => {
+        if (sortBy === 'adherence_desc') return (b.adherence_pct || 0) - (a.adherence_pct || 0);
+        if (sortBy === 'weight_desc') return (b.weight || 0) - (a.weight || 0);
+        if (sortBy === 'attendance_desc') return String(b.last_attendance || '').localeCompare(String(a.last_attendance || ''));
+        return String(a.name || '').localeCompare(String(b.name || ''));
+      });
 
       const countBadge = document.getElementById('membersCountBadge');
       if (countBadge) {
-        countBadge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg> ${targetList.length} ${rosterFilter === 'my' ? 'Assigned' : 'Facility'} Athletes`;
+        countBadge.innerHTML = `${targetList.length} of ${allAssigned.length} Assigned Athletes`;
       }
 
       const grid = document.getElementById('memberCardsGrid');
@@ -1172,82 +1397,68 @@
       if (targetList.length === 0) {
         grid.innerHTML = `
           <div style="grid-column: 1 / -1; padding: 40px; text-align: center; background: #fff; border-radius: 12px; border: 1px solid var(--border-color);">
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: #EFF6FF; color: var(--primary-blue); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg>
-            </div>
-            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">No Athletes Found</h3>
-            <p style="font-size: 13px; color: var(--text-secondary); max-width: 420px; margin: 0 auto 16px;">
-              ${rosterFilter === 'my' ? `No athletes are currently assigned to ${coach.name}. Use the Gym Owner portal to register athletes or switch the filter to 'All Facility Athletes'.` : 'No athletes have been registered yet.'}
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">No Matching Assigned Athletes</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); max-width: 420px; margin: 0 auto;">
+              ${allAssigned.length === 0
+                ? 'Your assigned athletes from MySQL will appear here once assigned by your Gym Owner.'
+                : 'No assigned athletes matched your search or filter criteria.'}
             </p>
-            <a href="gym_owner/index.html" class="btn-primary-block" style="display:inline-block; width:auto; padding:8px 18px; text-decoration:none;">Open Gym Owner Portal</a>
-          </div>
-        `;
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+          </div>`;
         return;
       }
 
       grid.innerHTML = targetList.map(m => {
-        const isAssignedToMe = m.assignedCoachId === coach.id || (m.assignedCoachName && m.assignedCoachName.toLowerCase() === coach.name.toLowerCase());
+        const lastAtt = m.last_attendance ? String(m.last_attendance).slice(0, 10) : 'No check-ins';
+        const lastWk = m.last_workout_date ? String(m.last_workout_date).slice(0, 10) : 'None yet';
+        const ageTxt = m.age ? `${m.age} yrs` : '--';
+        const htTxt = m.height_cm ? `${m.height_cm} cm` : '--';
         return `
-          <div class="trainer-card member-item-card" data-name="${m.name}" data-goal="${m.goal}" style="display:flex; flex-direction:column; justify-content:space-between;">
-            <div>
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-blue); color: #fff; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center;">
-                  ${getInitials(m.name)}
+        <div class="trainer-card member-item-card" data-name="${escapeHtml(m.name)}" data-goal="${escapeHtml(m.goal || '')}" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <img src="${escapeHtml(m.avatar || 'assets/images/member_aarav.jpg')}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-color);" onerror="this.src='assets/images/member_aarav.jpg'" alt="${escapeHtml(m.name)}">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px; flex-wrap: wrap;">
+                  <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin: 0;">${escapeHtml(m.name)}</h3>
+                  <span class="badge-tier badge-tier-gold">${escapeHtml(String(m.membership_status || 'active').toUpperCase())}</span>
                 </div>
-                <div style="flex: 1; min-width: 0;">
-                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-                    <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.name}</h3>
-                    <span class="badge-tier badge-tier-${(m.membershipTier || 'gold').toLowerCase()}">${m.membershipTier || 'Gold'}</span>
-                  </div>
-                  <div style="font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.email}</div>
-                </div>
-              </div>
-
-              <!-- Coach Assignment Chip -->
-              <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; font-size: 11px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:var(--text-muted);">Assigned Coach:</span>
-                <strong style="color:${isAssignedToMe ? 'var(--primary-blue)' : 'var(--text-main)'}; font-weight:700;">
-                  ${isAssignedToMe ? '✓ Assigned to You' : (m.assignedCoachName || 'Unassigned')}
-                </strong>
-              </div>
-
-              <div style="margin-bottom: 12px;">
-                <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Goal</div>
-                <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">${m.goal}</div>
-              </div>
-
-              <!-- Metrics -->
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: #F8FAFC; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 14px; text-align: center;">
-                <div>
-                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Weight</div>
-                  <strong style="font-size: 13px; color: var(--text-main);">${m.weight || 65} kg</strong>
-                </div>
-                <div>
-                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Body Fat</div>
-                  <strong style="font-size: 13px; color: var(--text-main);">${m.bodyFat || '20%'}</strong>
-                </div>
-                <div>
-                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Adherence</div>
-                  <strong style="font-size: 13px; color: #10B981;">${m.adherence || '92%'}</strong>
-                </div>
+                <div style="font-size: 11px; color: var(--text-secondary);">Age: ${escapeHtml(ageTxt)} • Ht: ${escapeHtml(htTxt)}</div>
               </div>
             </div>
 
-            <!-- Actions -->
-            <div style="display: flex; gap: 8px;">
-              <button type="button" class="btn-outline-gym" style="flex: 1; padding: 8px 10px; font-size: 12px;" onclick="openDossierModal('${m.email}')">View Dossier</button>
-              <button type="button" class="btn-primary-block" style="width: auto; padding: 8px 14px; font-size: 12px;" onclick="openChatWithMember('${m.email}')">Message</button>
+            <div style="margin-bottom: 10px; font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 3px;">
+              <div><strong style="color:var(--text-main);">Goal:</strong> ${escapeHtml(m.goal || 'General Fitness')}</div>
+              <div><strong style="color:var(--text-main);">Gym:</strong> ${escapeHtml(m.gym_name || 'FitSync Gym')} (${escapeHtml(m.membershipTier || 'Member')})</div>
+              <div><strong style="color:var(--text-main);">Plan:</strong> ${escapeHtml(m.active_plan_name || 'No Workout Plan Assigned')}</div>
+              <div><strong style="color:var(--text-main);">Latest Workout:</strong> ${escapeHtml(lastWk)} • <strong style="color:var(--text-main);">Last Visit:</strong> ${escapeHtml(lastAtt)}</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: #F8FAFC; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 14px; text-align: center;">
+              <div>
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Weight</div>
+                <strong style="font-size: 13px; color: var(--text-main);">${m.weight ? m.weight + ' kg' : '--'}</strong>
+              </div>
+              <div>
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Workouts</div>
+                <strong style="font-size: 13px; color: var(--text-main);">${m.completed_workouts || 0}</strong>
+              </div>
+              <div>
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Completion</div>
+                <strong style="font-size: 13px; color: #10B981;">${m.adherence_pct || 0}%</strong>
+              </div>
             </div>
           </div>
-        `;
-      }).join('');
 
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-outline-gym" style="flex: 1; padding: 8px 10px; font-size: 12px;" onclick="openDossierModalById(${m.user_id}, '${escapeHtml(m.email)}')">Fitness Profile</button>
+            <button type="button" class="btn-primary-block" style="width: auto; padding: 8px 14px; font-size: 12px;" onclick="openChatWithMember('${escapeHtml(m.email)}', ${m.user_id})">Message</button>
+          </div>
+        </div>`;
+      }).join('');
     }
 
     function filterMemberCards() {
-      const q = (document.getElementById('memberFilterInput').value || '').toLowerCase();
+      const q = (document.getElementById('memberFilterInput')?.value || '').toLowerCase();
       document.querySelectorAll('.member-item-card').forEach(card => {
         const name = (card.getAttribute('data-name') || '').toLowerCase();
         const goal = (card.getAttribute('data-goal') || '').toLowerCase();
@@ -1255,193 +1466,346 @@
       });
     }
 
+    // --- View 3: Workout Plans & Assignments ---
+    function toggleCreateWorkoutPanel() {
+      const panel = document.getElementById('createWorkoutPanel');
+      if (!panel) return;
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function loadTrainerWorkoutsView() {
+      const d = getTrainerDashData();
+      const myMembers = d.athletes;
+      const memberSel = document.getElementById('wkAssignMemberSelect');
+      if (memberSel) {
+        memberSel.innerHTML = `<option value="">Save Template Only</option>` +
+          myMembers.map(m => `<option value="${m.user_id}">${escapeHtml(m.name)} (${escapeHtml(m.email)})</option>`).join('');
+      }
+
+      try {
+        const res = await fetch('api/trainer/workouts.php');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!json.success || !json.data) return;
+
+        const wData = json.data;
+        window.__TRAINER_WORKOUTS__ = wData;
+
+        const exSel = document.getElementById('wkPrimaryExerciseSelect');
+        if (exSel && Array.isArray(wData.exercises)) {
+          exSel.innerHTML = wData.exercises.map(ex => `<option value="${ex.id}">${escapeHtml(ex.name)} (${escapeHtml(ex.muscle_group || 'General')})</option>`).join('');
+        }
+
+        const grid = document.getElementById('trainerWorkoutsGrid');
+        const plans = Array.isArray(wData.plans) ? wData.plans : [];
+        if (grid) {
+          if (plans.length === 0) {
+            grid.innerHTML = `<div class="trainer-card" style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">No workout plans created yet. Click <strong>Create &amp; Assign Workout</strong> above.</div>`;
+          } else {
+            grid.innerHTML = plans.map(p => {
+              const dayExs = (p.days && p.days[0] && Array.isArray(p.days[0].exercises)) ? p.days[0].exercises : [];
+              const exSummary = dayExs.map(e => `${e.exercise_name} (${e.target_sets}×${e.target_reps})`).join(', ') || p.description || 'Structured training split';
+              return `
+                <div class="trainer-card">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                    <div>
+                      <h3 style="font-size:16px;font-weight:700;color:var(--text-main);margin-bottom:2px;">${escapeHtml(p.name || p.title || 'Workout Plan')}</h3>
+                      <span class="fs-badge fs-badge-blue">${escapeHtml(p.goal || p.goal_focus || 'Training')}</span>
+                    </div>
+                    <span class="fs-badge fs-badge-green">${p.assigned_count || 0} Assigned</span>
+                  </div>
+                  <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">${escapeHtml(exSummary)}</p>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <select id="assignPlanSelect-${p.id}" style="flex:1;padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font-size:12px;">
+                      <option value="">Select assigned athlete...</option>
+                      ${myMembers.map(m => `<option value="${m.user_id}">${escapeHtml(m.name)}</option>`).join('')}
+                    </select>
+                    <button type="button" class="btn-primary-block" style="width:auto;padding:6px 12px;font-size:12px;" onclick="assignPlanToSelectedMember(${p.id})">Assign</button>
+                  </div>
+                </div>`;
+            }).join('');
+          }
+        }
+
+        const sessBox = document.getElementById('trainerCompletedSessionsList');
+        const sessions = Array.isArray(wData.completed_sessions) ? wData.completed_sessions : [];
+        if (sessBox) {
+          if (sessions.length === 0) {
+            sessBox.innerHTML = 'No completed athlete workout sessions recorded yet.';
+          } else {
+            sessBox.innerHTML = `
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                ${sessions.map(s => `
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#F8FAFC;border:1px solid var(--border-color);border-radius:8px;">
+                    <div>
+                      <strong style="color:var(--text-main);">${escapeHtml(s.athlete_name)}</strong> — ${escapeHtml(s.day_name || s.focus_area || 'Training Session')}
+                      <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(s.session_date)} • ${s.duration_minutes || 45} mins</div>
+                    </div>
+                    <span class="fs-badge fs-badge-green">${Number(s.total_volume_kg || 0).toLocaleString()} kg volume</span>
+                  </div>
+                `).join('')}
+              </div>`;
+          }
+        }
+      } catch (err) {
+        console.warn('Trainer workouts fetch error:', err);
+      }
+    }
+
+    async function handleCreateAndAssignWorkout(e) {
+      e.preventDefault();
+      const title = document.getElementById('wkPlanTitle')?.value.trim();
+      const goal = document.getElementById('wkPlanGoal')?.value || 'hypertrophy';
+      const memberId = document.getElementById('wkAssignMemberSelect')?.value;
+      const exId = document.getElementById('wkPrimaryExerciseSelect')?.value;
+      const sets = parseInt(document.getElementById('wkTargetSets')?.value || '4', 10);
+      const reps = document.getElementById('wkTargetReps')?.value.trim() || '8-12';
+      const desc = document.getElementById('wkPlanDesc')?.value.trim() || '';
+
+      if (!title) return;
+
+      try {
+        const res = await fetch('api/trainer/workouts.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: title,
+            goal: goal,
+            description: desc,
+            exercise_ids: exId ? [parseInt(exId, 10)] : [],
+            target_sets: sets,
+            target_reps: reps,
+            assign_to_member_id: memberId ? parseInt(memberId, 10) : null
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          alert(json.message || 'Workout plan saved & synced!');
+          document.getElementById('trainerCreateWorkoutForm')?.reset();
+          toggleCreateWorkoutPanel();
+          await loadTrainerWorkoutsView();
+          await syncTrainerDataFromDb();
+        } else {
+          alert(json.message || json.error || 'Failed to save workout plan.');
+        }
+      } catch (err) {
+        console.error('Save workout error:', err);
+      }
+    }
+
+    async function assignPlanToSelectedMember(planId) {
+      const sel = document.getElementById(`assignPlanSelect-${planId}`);
+      const memberId = sel ? parseInt(sel.value || '0', 10) : 0;
+      if (!memberId) {
+        alert('Select an assigned athlete first.');
+        return;
+      }
+      try {
+        const res = await fetch('api/trainer/assign_workout.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ member_id: memberId, plan_id: planId })
+        });
+        const json = await res.json();
+        if (json.success) {
+          alert(json.message || 'Workout plan assigned to athlete!');
+          await loadTrainerWorkoutsView();
+          await syncTrainerDataFromDb();
+        } else {
+          alert(json.message || json.error || 'Could not assign workout plan.');
+        }
+      } catch (err) {
+        console.error('Assign workout error:', err);
+      }
+    }
+
     // --- View 4: Schedule View ---
     function renderScheduleView() {
-      const store = window.fitSyncStore;
-      if (!store) return;
-      const coach = getActiveCoach();
-      const allMembers = store.getMembers();
-      const myMembers = allMembers.filter(m => m.assignedCoachId === coach.id || (m.assignedCoachName && m.assignedCoachName.toLowerCase() === coach.name.toLowerCase()));
-
+      const d = getTrainerDashData();
+      const agenda = d.today_agenda;
       const listEl = document.getElementById('trainerScheduleList');
       if (!listEl) return;
 
-      const membersToSchedule = myMembers.length > 0 ? myMembers : allMembers;
-
-      if (membersToSchedule.length === 0) {
+      if (agenda.length === 0) {
         listEl.innerHTML = `
           <div style="padding: 36px 20px; text-align: center; color: var(--text-muted); background: #F8FAFC; border: 1px dashed #E2E8F0; border-radius: 8px;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 28px; height: 28px; color: #94A3B8; margin-bottom: 8px; display: inline-block;"><path d="M8 2v3"></path><path d="M16 2v3"></path><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path></svg>
             <div style="font-weight: 600; color: #334155; margin-bottom: 4px;">No Scheduled Sessions</div>
-            <span style="font-size: 12px; color: #64748B;">When athletes are enrolled by the Gym Owner and book sessions, their appointments will appear here.</span>
-          </div>
-        `;
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+            <span style="font-size: 12px; color: #64748B;">Confirmed training appointments from MySQL will appear here.</span>
+          </div>`;
         return;
       }
 
-      const slots = [
-        { time: '07:00 AM - 07:45 AM', type: 'Form Check & Deadlift Peak' },
-        { time: '09:30 AM - 10:15 AM', type: 'Hypertrophy Biomechanics Check' },
-        { time: '04:00 PM - 04:45 PM', type: 'Nutritional Surplus & Caloric Review' },
-        { time: '06:00 PM - 06:45 PM', type: 'Mobility & Hip Hinge Mechanics' }
-      ];
-
-      listEl.innerHTML = membersToSchedule.map((m, idx) => {
-        const slot = slots[idx % slots.length];
-        return `
-          <div class="schedule-item">
-            <div class="schedule-time-box">
-              <div class="time-main">
-                <svg style="width: 14px; height: 14px; color: #2563EB;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                <span>${slot.time.split(' - ')[0]}</span>
-              </div>
-              <span class="time-duration">45 min</span>
+      listEl.innerHTML = agenda.map(s => `
+        <div class="schedule-item">
+          <div class="schedule-time-box">
+            <div class="time-main">
+              <span>${escapeHtml(s.start_time || s.session_date || '--')}</span>
             </div>
-            <div style="flex: 1;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
-                <strong style="color: var(--text-main); font-size: 14px;">${m.name}</strong>
-                <span class="badge-active">Confirmed</span>
-              </div>
-              <div style="font-size: 12px; color: var(--text-secondary);">${slot.type} • ${m.goal}</div>
-            </div>
-            <button class="btn-outline-gym" style="margin-top: 0; padding: 6px 12px; font-size: 11px;" onclick="openDossierModal('${m.email}')">Athlete Dossier</button>
+            <span class="time-duration">${escapeHtml(s.session_type || 'PT')}</span>
           </div>
-        `;
-      }).join('');
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+              <strong style="color: var(--text-main); font-size: 14px;">${escapeHtml(s.member_name || 'Athlete')}</strong>
+              <span class="badge-active">${escapeHtml(s.status || 'Confirmed')}</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(s.session_notes || 'Coaching Session')}</div>
+          </div>
+          <button type="button" class="btn-outline-gym" style="margin-top: 0; padding: 6px 12px; font-size: 11px;" onclick="openDossierModalById(${s.user_id}, '${escapeHtml(s.member_email || '')}')">Athlete Dossier</button>
+        </div>
+      `).join('');
     }
 
     function openAddSessionModal() {
-      alert('PT booking slot generator activated. Select athlete from dossier to confirm slot.');
+      alert('Use the Schedule API or Athlete Dossier to confirm a 1-on-1 PT slot.');
     }
 
     // --- View 5: Attendance View ---
     function renderAttendanceView() {
-      const store = window.fitSyncStore;
-      if (!store) return;
-      const allMembers = store.getMembers();
+      const d = getTrainerDashData();
+      const logs = d.attendance_logs;
       const body = document.getElementById('trainerAttendanceTableBody');
       if (!body) return;
 
-      body.innerHTML = allMembers.map((m, idx) => `
+      if (logs.length === 0) {
+        body.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-muted);">No Attendance Recorded</td></tr>`;
+        return;
+      }
+
+      body.innerHTML = logs.map(r => `
         <tr>
           <td>
-            <strong>${m.name}</strong>
-            <div style="font-size:11px; color:var(--text-muted);">${m.email}</div>
+            <strong>${escapeHtml(r.athlete_name || 'Athlete')}</strong>
+            <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(r.athlete_email || '')}</div>
           </td>
-          <td>${m.checkInTime || 'Today, 07:15 AM'}</td>
-          <td>${m.gym || 'FitZone Gym, Kothrud'}</td>
-          <td><span class="fs-badge fs-badge-green"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px;"><path d="M20 6 9 17l-5-5"></path></svg> Turnstile QR Pass Verified</span></td>
+          <td>${escapeHtml(r.check_in_time || '--')}</td>
+          <td>${escapeHtml(r.gym_name || 'Home Branch')}</td>
+          <td><span class="fs-badge fs-badge-green">${escapeHtml(r.check_in_method || 'Turnstile')} Verified</span></td>
         </tr>
       `).join('');
     }
 
-    // --- View 7: Messages & Chat ---
+    // --- View 7: Messages & Chat (2s Real-Time Polling) ---
     function renderChatChannels() {
-      const store = window.fitSyncStore;
-      if (!store) return;
-      const coach = getActiveCoach();
-      const allMembers = store.getMembers();
-      const myMembers = allMembers.filter(m => m.assignedCoachId === coach.id || (m.assignedCoachName && m.assignedCoachName.toLowerCase() === coach.name.toLowerCase()));
-      const displayMembers = myMembers.length > 0 ? myMembers : allMembers;
-
+      const d = getTrainerDashData();
+      const myMembers = d.athletes;
       const channelList = document.getElementById('trainerChatChannelList');
       if (!channelList) return;
 
-      if (!currentChatEmail && displayMembers.length > 0) {
-        currentChatEmail = displayMembers[0].email;
+      if (myMembers.length === 0) {
+        currentChatMemberId = null;
+        currentChatEmail = null;
+        channelList.innerHTML = `<div style="font-size:12px;color:var(--text-muted);padding:12px;">No assigned athletes available for chat yet.</div>`;
+        updateActiveChatHeader();
+        return;
       }
 
-      channelList.innerHTML = displayMembers.map(m => {
-        const isSelected = m.email === currentChatEmail;
+      if (!currentChatMemberId || !myMembers.some(m => parseInt(m.user_id, 10) === parseInt(currentChatMemberId, 10))) {
+        currentChatMemberId = parseInt(myMembers[0].user_id, 10);
+        currentChatEmail = myMembers[0].email;
+      }
+
+      channelList.innerHTML = myMembers.map(m => {
+        const isSelected = parseInt(m.user_id, 10) === parseInt(currentChatMemberId, 10);
+        const unread = parseInt(m.unread_messages || 0, 10);
         return `
-          <button type="button" class="channel-btn" onclick="selectChatChannel('${m.email}')" style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:8px 10px; border-radius:8px; border:1px solid ${isSelected ? 'var(--primary-blue)' : 'var(--border-color)'}; background:${isSelected ? 'var(--light-blue-bg)' : '#F8FAFC'}; cursor:pointer;">
+          <button type="button" class="channel-btn" onclick="selectChatChannel('${escapeHtml(m.email)}', ${m.user_id})" style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:8px 10px; border-radius:8px; border:1px solid ${isSelected ? 'var(--primary-blue)' : 'var(--border-color)'}; background:${isSelected ? 'var(--light-blue-bg)' : '#F8FAFC'}; cursor:pointer;">
             <div style="width:32px; height:32px; border-radius:50%; background:var(--primary-blue); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;">
               ${getInitials(m.name)}
             </div>
             <div style="flex:1; min-width:0;">
-              <div style="font-size:13px; font-weight:700; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.name}</div>
-              <div style="font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.goal}</div>
+              <div style="font-size:13px; font-weight:700; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.name)}</div>
+              <div style="font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.goal || 'Athlete')}</div>
             </div>
-          </button>
-        `;
+            ${unread > 0 ? `<span style="background:#EF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;">${unread}</span>` : ''}
+          </button>`;
       }).join('');
 
       updateActiveChatHeader();
     }
 
-    let trainerChatPollTimer = null;
-
-    function selectChatChannel(email) {
+    function selectChatChannel(email, memberId) {
       currentChatEmail = email;
+      currentChatMemberId = parseInt(memberId || 0, 10);
+      lastTrainerChatSignature = '';
       updateActiveChatHeader();
       renderChatChannels();
-      loadTrainerChatMessages();
+      loadTrainerChatMessages(true);
     }
 
-    function openChatWithMember(email) {
+    function openChatWithMember(email, memberId) {
       currentChatEmail = email;
+      if (memberId) {
+        currentChatMemberId = parseInt(memberId, 10);
+      } else {
+        const found = getTrainerDashData().athletes.find(m => m.email === email);
+        currentChatMemberId = found ? parseInt(found.user_id, 10) : null;
+      }
+      lastTrainerChatSignature = '';
       switchTrainerView('messages');
-      updateActiveChatHeader();
-      renderChatChannels();
-      loadTrainerChatMessages();
     }
 
     function updateActiveChatHeader() {
-      const store = window.fitSyncStore;
-      if (!store || !currentChatEmail) return;
-      const member = store.getMemberByEmail(currentChatEmail);
-      if (!member) return;
-
+      const member = getTrainerDashData().athletes.find(m => parseInt(m.user_id, 10) === parseInt(currentChatMemberId, 10));
       const nameEl = document.getElementById('currentChatRecipient');
       const avatarEl = document.getElementById('chatRecipientAvatar');
-      if (nameEl) nameEl.innerText = member.name;
-      if (avatarEl) avatarEl.innerText = getInitials(member.name);
+      if (nameEl) nameEl.innerText = member ? member.name : 'Select an Athlete';
+      if (avatarEl) avatarEl.innerText = member ? getInitials(member.name) : 'AT';
     }
 
-    async function loadTrainerChatMessages() {
+    async function loadTrainerChatMessages(forceRedraw = false) {
       const box = document.getElementById('chatMessagesBox');
-      if (!box || !currentChatEmail) return;
+      if (!box || !currentChatMemberId) return;
+      const viewEl = document.getElementById('view-messages');
+      if (!forceRedraw && viewEl && !viewEl.classList.contains('active')) return;
 
       const coach = getActiveCoach();
-      const coachUserId = (coach && coach.user_id) ? coach.user_id : 1;
-      const store = window.fitSyncStore;
-      const member = store ? store.getMemberByEmail(currentChatEmail) : null;
-      const memberUserId = (member && member.user_id) ? member.user_id : 2;
+      const coachUserId = coach.user_id || 0;
+      if (!coachUserId) return;
 
       try {
-        const res = await fetch(`../api/messages.php?viewer_id=${coachUserId}&with_user=${memberUserId}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.messages)) {
-            if (json.messages.length === 0) {
-              box.innerHTML = `
-                <div style="text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 13px;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; margin: 0 auto 6px; opacity: 0.4; display: block;"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"></path></svg>
-                  No messages yet in this channel.<br>Send workout instructions or feedback to start.
+        const res = await fetch(`api/messages.php?with_user=${encodeURIComponent(currentChatMemberId)}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const msgs = json.messages || (json.data && json.data.messages) || [];
+        window.__TRAINER_CONVERSATION_ID__ = json.conversation_id || (json.data && json.data.conversation_id) || null;
+
+        if (json.success && Array.isArray(msgs)) {
+          const sig = `${currentChatMemberId}:${msgs.map(m => `${m.id}_${m.is_read ? 1 : 0}`).join(',')}`;
+          if (!forceRedraw && sig === lastTrainerChatSignature) return;
+
+          const wasAtBottom = (box.scrollHeight - box.scrollTop - box.clientHeight) < 80;
+          lastTrainerChatSignature = sig;
+          const pendingNodes = Array.from(box.querySelectorAll('[data-temp-msg="1"]'));
+
+          if (msgs.length === 0 && pendingNodes.length === 0) {
+            box.innerHTML = `
+              <div style="text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 13px;">
+                No messages yet in this channel.<br>Send workout instructions or feedback to start.
+              </div>`;
+          } else {
+            box.innerHTML = msgs.map(m => {
+              const isSentByCoach = parseInt(m.sender_id, 10) === parseInt(coachUserId, 10);
+              const timeStr = formatChatTime(m.sent_at);
+              const readLabel = parseInt(m.is_read || 0, 10) === 1 ? 'Read ✓✓' : 'Delivered ✓';
+              if (isSentByCoach) {
+                return `
+                  <div class="chat-bubble-sent" data-msg-id="${m.id}" style="align-self: flex-end; background: var(--primary-blue); color: #fff; padding: 10px 14px; border-radius: 12px 12px 2px 12px; max-width: 80%; font-size: 13px; line-height: 1.4;">
+                    <div>${escapeHtml(m.message_text)}</div>
+                    <div style="font-size: 10px; opacity: 0.85; text-align: right; margin-top: 4px;">${timeStr} • ${readLabel}</div>
+                  </div>`;
+              }
+              return `
+                <div class="chat-bubble-received" data-msg-id="${m.id}" style="align-self: flex-start; background: #fff; border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 14px; border-radius: 12px 12px 12px 2px; max-width: 80%; font-size: 13px; line-height: 1.4;">
+                  <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 2px;">${escapeHtml(m.sender_name || 'Athlete')}</div>
+                  <div>${escapeHtml(m.message_text)}</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">${timeStr} • Received</div>
                 </div>`;
-            } else {
-              box.innerHTML = json.messages.map(m => {
-                const isSentByCoach = (parseInt(m.sender_id) === parseInt(coachUserId));
-                const timeStr = m.sent_at ? new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today';
-                if (isSentByCoach) {
-                  return `
-                    <div class="chat-bubble-sent" style="align-self: flex-end; background: var(--primary-blue); color: #fff; padding: 10px 14px; border-radius: 12px 12px 2px 12px; max-width: 80%; font-size: 13px; line-height: 1.4;">
-                      <div>${escapeHtml(m.message_text)}</div>
-                      <div style="font-size: 10px; opacity: 0.75; text-align: right; margin-top: 4px;">${timeStr} • Delivered</div>
-                    </div>`;
-                } else {
-                  return `
-                    <div class="chat-bubble-received" style="align-self: flex-start; background: #fff; border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 14px; border-radius: 12px 12px 12px 2px; max-width: 80%; font-size: 13px; line-height: 1.4;">
-                      <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 2px;">${escapeHtml(m.sender_name || 'Athlete')}</div>
-                      <div>${escapeHtml(m.message_text)}</div>
-                      <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">${timeStr}</div>
-                    </div>`;
-                }
-              }).join('');
-            }
+            }).join('');
+            pendingNodes.forEach(n => box.appendChild(n));
+          }
+
+          if (forceRedraw || wasAtBottom || msgs.length <= 5) {
             box.scrollTop = box.scrollHeight;
-            if (typeof lucide !== 'undefined') lucide.createIcons();
           }
         }
       } catch (err) {
@@ -1449,62 +1813,86 @@
       }
     }
 
-    async function handleSendTrainerMessage(e) {
-      if (e) e.preventDefault();
-      const input = document.getElementById('trainerChatInput');
-      const text = input.value.trim();
-      if (!text || !currentChatEmail) return;
-
-      const coach = getActiveCoach();
-      const coachUserId = (coach && coach.user_id) ? coach.user_id : 1;
-      const store = window.fitSyncStore;
-      const member = store ? store.getMemberByEmail(currentChatEmail) : null;
-      const memberUserId = (member && member.user_id) ? member.user_id : 2;
-
-      input.value = '';
-
-      // Post to central database messages endpoint (Workflow B)
+    async function dispatchTrainerChatText(text, tempNode) {
+      if (!currentChatMemberId) {
+        if (tempNode) tempNode.remove();
+        return;
+      }
       try {
-        const res = await fetch('../api/messages.php', {
+        const res = await fetch('api/messages.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sender_id: coachUserId,
-            recipient_id: memberUserId,
+            conversation_id: window.__TRAINER_CONVERSATION_ID__ || null,
+            with_user: currentChatMemberId,
             message_text: text
           })
         });
-        if (res.ok) {
-          loadTrainerChatMessages();
+        const json = await res.json();
+        if (json.success) {
+          if (tempNode && tempNode.parentNode) tempNode.remove();
+          lastTrainerChatSignature = '';
+          await loadTrainerChatMessages(true);
+        } else {
+          const meta = tempNode?.querySelector('.temp-meta');
+          if (meta) {
+            meta.innerHTML = `Failed • <button type="button" onclick="retryTrainerChatMessage(this)" data-retry-text="${escapeHtml(text)}" style="background:none;border:none;color:#FEF08A;text-decoration:underline;cursor:pointer;font-size:10px;">Retry</button>`;
+          }
         }
       } catch (err) {
-        console.warn('Message send err:', err);
+        const meta = tempNode?.querySelector('.temp-meta');
+        if (meta) {
+          meta.innerHTML = `Network Error • <button type="button" onclick="retryTrainerChatMessage(this)" data-retry-text="${escapeHtml(text)}" style="background:none;border:none;color:#FEF08A;text-decoration:underline;cursor:pointer;font-size:10px;">Retry</button>`;
+        }
       }
+    }
+
+    async function handleSendTrainerMessage(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('trainerChatInput');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text || !currentChatMemberId) return;
+      input.value = '';
+
+      const box = document.getElementById('chatMessagesBox');
+      let tempNode = null;
+      if (box) {
+        tempNode = document.createElement('div');
+        tempNode.className = 'chat-bubble-sent';
+        tempNode.setAttribute('data-temp-msg', '1');
+        tempNode.style.cssText = 'align-self: flex-end; background: var(--primary-blue); color: #fff; padding: 10px 14px; border-radius: 12px 12px 2px 12px; max-width: 80%; font-size: 13px; line-height: 1.4; opacity: 0.85;';
+        tempNode.innerHTML = `<div>${escapeHtml(text)}</div><div class="temp-meta" style="font-size: 10px; opacity: 0.85; text-align: right; margin-top: 4px;">Sending...</div>`;
+        box.appendChild(tempNode);
+        box.scrollTop = box.scrollHeight;
+      }
+
+      await dispatchTrainerChatText(text, tempNode);
+    }
+
+    async function retryTrainerChatMessage(btn) {
+      const text = btn?.getAttribute('data-retry-text');
+      const tempNode = btn?.closest('[data-temp-msg="1"]');
+      if (!text) return;
+      const meta = tempNode?.querySelector('.temp-meta');
+      if (meta) meta.textContent = 'Sending...';
+      await dispatchTrainerChatText(text, tempNode);
     }
 
     async function syncTrainerDataFromDb() {
       try {
-        const res = await fetch('../api/gym_owner/dashboard.php');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.data) {
-            const d = json.data;
-            if (window.fitSyncStore) {
-              if (Array.isArray(d.coaches)) window.fitSyncStore.state.trainers = d.coaches;
-              if (Array.isArray(d.members)) {
-                window.fitSyncStore.state.registeredUsers = d.members.map(m => ({
-                  ...m,
-                  role: 'Gym Member',
-                  tag: 'Athlete',
-                  assignedCoachId: m.coach_id ? ('tr-' + m.coach_id) : null,
-                  assignedCoachName: m.assignedCoach || 'Unassigned'
-                }));
-              }
-            }
-            renderTrainerDashboard();
-            renderMemberRosterGrid();
-            renderTrainerAttendance();
-            renderChatChannels();
+        const res = await fetch('api/trainer/dashboard.php');
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = 'login.php';
+          return;
+        }
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.success && json.data) {
+          window.__TRAINER_DASH__ = json.data;
+          initActiveCoach();
+          if (document.getElementById('dossierModal')?.style.display === 'flex' && currentDossierMemberId > 0) {
+            openDossierModalById(currentDossierMemberId, currentDossierEmail, true);
           }
         }
       } catch (err) {
@@ -1512,71 +1900,78 @@
       }
     }
 
-    // --- View 8: Notifications ---
+    // --- View 8: Notifications (Authoritative DB) ---
     function renderNotificationsView() {
-      const store = window.fitSyncStore;
-      if (!store) return;
-      const allMembers = store.getMembers();
+      const d = getTrainerDashData();
+      const notifs = d.notifications;
       const list = document.getElementById('trainerNotificationsList');
       if (!list) return;
 
-      list.innerHTML = allMembers.map((m, idx) => `
-        <div style="display:flex; align-items:flex-start; gap:12px; padding:12px; border-bottom:1px solid var(--border-color);">
+      if (notifs.length === 0) {
+        list.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">No notifications yet.</div>`;
+        return;
+      }
+
+      list.innerHTML = notifs.map(n => `
+        <div onclick="handleTrainerNotificationClick(${Number(n.id || 0)}, '${escapeHtml(n.entity_type || '')}')" style="display:flex; align-items:flex-start; gap:12px; padding:12px; border-bottom:1px solid var(--border-color); background:${n.is_read ? '#fff' : '#F8FAFC'}; cursor:pointer;">
           <div style="width:36px; height:36px; border-radius:50%; background:#EFF6FF; color:var(--primary-blue); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            ${(typeof window.getIconSvg === 'function' ? window.getIconSvg(idx % 2 === 0 ? 'award' : 'calendar', { width: 18, height: 18 }) : '')}
+            ${typeof window.getIconSvg === 'function' ? window.getIconSvg('bell', { width: 18, height: 18 }) : '🔔'}
           </div>
           <div style="flex:1;">
-            <div style="font-size:13px; font-weight:700; color:var(--text-main);">
-              ${idx % 2 === 0 ? `${m.name} logged a new PR in Deadlift!` : `${m.name} completed today's assigned training session.`}
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <div style="font-size:13px; font-weight:700; color:var(--text-main);">${escapeHtml(n.title || 'Update')}</div>
+              ${!n.is_read ? '<span class="fs-badge fs-badge-blue">New</span>' : ''}
             </div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Plan adherence at ${m.adherence || '92%'} • ${m.checkInTime || 'Today, 07:15 AM'}</div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${escapeHtml(n.body || '')}</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">${escapeHtml(n.created_at || '')}</div>
           </div>
         </div>
       `).join('');
     }
 
-    // --- View 9: Settings ---
-    async function populateSettingsForm(coach) {
+    async function handleTrainerNotificationClick(notifId, entityType) {
       try {
-        const res = await fetch('../api/trainer/profile.php');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.data) {
-            const d = json.data;
-            const name = document.getElementById('settingsCoachName');
-            const title = document.getElementById('settingsCoachTitle');
-            const exp = document.getElementById('settingsCoachExp');
-            const rate = document.getElementById('settingsCoachRate');
-            const phone = document.getElementById('settingsCoachPhone');
-            const specs = document.getElementById('settingsCoachSpecialties');
+        if (notifId > 0) {
+          await fetch('api/notifications.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: notifId })
+          });
+        }
+      } catch (err) {
+        console.warn('Mark trainer notification read err:', err);
+      }
+      const viewMap = {
+        message: 'messages',
+        trainer_assignment: 'members',
+        member_trainer_request: 'members',
+        workout_session: 'workouts',
+        workout_plan: 'workouts',
+        trainer_affiliation: 'dashboard'
+      };
+      switchTrainerView(viewMap[entityType] || 'dashboard');
+      syncTrainerDataFromDb();
+    }
 
-            if (name) name.value = d.name || '';
-            if (title) title.value = d.title || '';
-            if (exp) exp.value = d.experience || '3+ Years';
-            if (rate) rate.value = d.hourly_rate || '₹1,500 / hr';
-            if (phone) phone.value = d.phone || '';
-            if (specs) specs.value = Array.isArray(d.specialties) ? d.specialties.join(', ') : (d.specializations || '');
-            return;
-          }
+    // --- View 9: Settings ---
+    async function populateSettingsForm() {
+      try {
+        const res = await fetch('api/trainer/profile.php');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.success && json.data) {
+          const d = json.data;
+          const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+          setVal('settingsCoachName', d.name);
+          setVal('settingsCoachTitle', d.title);
+          setVal('settingsCoachExp', d.experience);
+          setVal('settingsCoachRate', d.hourly_rate);
+          setVal('settingsCoachPhone', d.phone);
+          setVal('settingsCoachSpecialties', Array.isArray(d.specialties) ? d.specialties.join(', ') : d.specializations);
         }
       } catch (err) {
         console.warn('Trainer profile fetch error:', err);
       }
-
-      if (!coach) return;
-      const name = document.getElementById('settingsCoachName');
-      const title = document.getElementById('settingsCoachTitle');
-      const exp = document.getElementById('settingsCoachExp');
-      const rate = document.getElementById('settingsCoachRate');
-      const phone = document.getElementById('settingsCoachPhone');
-      const specs = document.getElementById('settingsCoachSpecialties');
-
-      if (name) name.value = coach.name || '';
-      if (title) title.value = coach.title || '';
-      if (exp) exp.value = coach.experience || '3+ Years';
-      if (rate) rate.value = coach.hourlyRate || '₹1,500 / hr';
-      if (phone) phone.value = coach.phone || '+91 98000 00000';
-      if (specs) specs.value = (coach.specialties || []).join(', ');
     }
 
     async function handleSaveCoachSettings(e) {
@@ -1594,7 +1989,7 @@
       }
 
       try {
-        const res = await fetch('../api/trainer/profile.php', {
+        const res = await fetch('api/trainer/profile.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1609,19 +2004,9 @@
         const json = await res.json();
         if (json.success) {
           alert('Coach profile updated successfully in database!');
-          const coach = getActiveCoach();
-          if (coach) {
-            coach.name = name;
-            coach.title = title;
-            coach.phone = phone;
-            coach.hourlyRate = rate;
-            coach.specialties = specsRaw.split(',').map(s => s.trim()).filter(Boolean);
-          }
-          const coachNameEl = document.getElementById('sidebarCoachName');
-          if (coachNameEl) coachNameEl.textContent = name;
-          initActiveCoach();
+          await syncTrainerDataFromDb();
         } else {
-          alert(json.error || 'Failed to update coach profile.');
+          alert(json.message || json.error || 'Failed to update coach profile.');
         }
       } catch (err) {
         console.error('Error saving coach profile:', err);
@@ -1629,60 +2014,313 @@
       }
     }
 
-    // --- Dossier Modal ---
-    async function openDossierModal(email) {
-      const store = window.fitSyncStore;
-      const member = (store ? store.getMemberByEmail(email) : null) || (store ? store.getMembers()[0] : null);
+    // --- Dossier Modal (Authoritative DB + Consent Permissions) ---
+    function switchDossierTab(tabName) {
+      document.querySelectorAll('.dossier-tab-pane').forEach(p => { p.style.display = 'none'; });
+      document.querySelectorAll('#dossierTabsBar button[data-dtab]').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-dtab') === tabName);
+      });
+      const target = document.getElementById('dossier-pane-' + tabName);
+      if (target) target.style.display = 'block';
+    }
 
-      currentDossierEmail = email;
+    function openDossierModal(email) {
+      const m = getTrainerDashData().athletes.find(x => x.email === email);
+      openDossierModalById(m ? m.user_id : 0, email);
+    }
 
-      if (member) {
-        document.getElementById('dossierName').innerText = member.name;
-        document.getElementById('dossierAvatar').innerText = getInitials(member.name);
-        document.getElementById('dossierEmail').innerText = member.email;
-        document.getElementById('dossierTierBadge').innerText = `${member.membershipTier || 'Gold'} Member`;
-        document.getElementById('dossierTierBadge').className = `badge-tier badge-tier-${(member.membershipTier || 'gold').toLowerCase()}`;
-        document.getElementById('dossierWeight').innerText = `${member.weight || 65} kg`;
-        document.getElementById('dossierGoal').innerText = member.goal;
-        document.getElementById('dossierCoach').innerText = member.assignedCoachName || 'Unassigned';
-        document.getElementById('dossierNotes').innerText = member.notes || 'Consistent gym attendance with focused execution.';
+    function buildWeightSvgChart(historyRows) {
+      const pts = (Array.isArray(historyRows) ? historyRows : []).filter(r => r.weight_kg && parseFloat(r.weight_kg) > 0);
+      if (pts.length === 0) return 'No weight progression entries logged yet.';
+      if (pts.length === 1) return `Single baseline weight logged: <strong>${pts[0].weight_kg} kg</strong> on ${escapeHtml(pts[0].recorded_at || '')}.`;
+      const weights = pts.map(p => parseFloat(p.weight_kg));
+      const minW = Math.min(...weights) - 1;
+      const maxW = Math.max(...weights) + 1;
+      const span = Math.max(1, maxW - minW);
+      const w = 480, h = 90, pad = 12;
+      const coords = pts.map((p, i) => {
+        const x = pad + (i / Math.max(1, pts.length - 1)) * (w - pad * 2);
+        const y = h - pad - ((parseFloat(p.weight_kg) - minW) / span) * (h - pad * 2);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      });
+      return `
+        <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:90px;display:block;">
+          <polyline fill="none" stroke="#2563EB" stroke-width="2.5" points="${coords.join(' ')}"></polyline>
+          ${pts.map((p, i) => {
+            const [cx, cy] = coords[i].split(',');
+            return `<circle cx="${cx}" cy="${cy}" r="3.5" fill="#1D4ED8"><title>${escapeHtml(p.recorded_at)}: ${p.weight_kg} kg</title></circle>`;
+          }).join('')}
+        </svg>
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:4px;">
+          <span>Start: <strong>${weights[0]} kg</strong> (${escapeHtml(pts[0].recorded_at || '')})</span>
+          <span>Latest: <strong>${weights[weights.length - 1]} kg</strong> (${escapeHtml(pts[pts.length - 1].recorded_at || '')})</span>
+        </div>`;
+    }
+
+    async function openDossierModalById(memberId, email, keepCurrentTab = false) {
+      currentDossierMemberId = parseInt(memberId || 0, 10);
+      currentDossierEmail = email || '';
+
+      if (!keepCurrentTab) {
+        switchDossierTab('overview');
+        document.getElementById('dossierName').innerText = 'Loading...';
+        document.getElementById('dossierEmail').innerText = email || '--';
+        document.getElementById('dossierModal').style.display = 'flex';
       }
 
-      document.getElementById('dossierModal').style.display = 'flex';
-
-      // Asynchronously fetch live dossier from database
       try {
-        const res = await fetch(`../api/trainer/member_dossier.php?email=${encodeURIComponent(email)}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.data) {
-            const d = json.data;
-            if (d.athlete) {
-              document.getElementById('dossierName').innerText = d.athlete.full_name;
-              document.getElementById('dossierEmail').innerText = d.athlete.email;
-              if (d.athlete.weight_kg) {
-                document.getElementById('dossierWeight').innerText = `${d.athlete.weight_kg} kg`;
-              }
-            }
-            if (d.notes && d.notes.length > 0) {
-              document.getElementById('dossierNotes').innerText = d.notes[0].note_text;
-            }
+        const qs = currentDossierMemberId > 0
+          ? `member_id=${encodeURIComponent(currentDossierMemberId)}`
+          : `email=${encodeURIComponent(currentDossierEmail)}`;
+        const res = await fetch(`api/trainer/member_dossier.php?${qs}`);
+        const json = await res.json();
+        if (!res.ok || !json.success || !json.data) {
+          document.getElementById('dossierNotes').innerText = json.message || 'Access denied or athlete unavailable.';
+          return;
+        }
+
+        const d = json.data;
+        const a = d.athlete || {};
+        const goal = d.goal || {};
+        const mem = d.membership || {};
+        const ass = d.assessment || null;
+        const assHist = Array.isArray(d.assessment_history) ? d.assessment_history : [];
+        const perms = d.permissions || {};
+
+        currentDossierMemberId = parseInt(a.id || currentDossierMemberId, 10);
+        currentDossierEmail = a.email || currentDossierEmail;
+
+        const avImg = document.getElementById('dossierAvatarImg');
+        if (avImg) {
+          avImg.src = a.avatar || 'assets/images/member_aarav.jpg';
+          avImg.style.display = 'block';
+        }
+        document.getElementById('dossierAvatar').innerText = getInitials(a.full_name || 'AT');
+        document.getElementById('dossierName').innerText = a.full_name || 'Athlete';
+        document.getElementById('dossierEmail').innerText = a.email || '--';
+        document.getElementById('dossierTierBadge').innerText = `${mem.gym_name || 'Gym'} • ${mem.plan_name || 'Member'}`;
+
+        const tgtWt = goal.target_weight_kg ? ` / Target ${goal.target_weight_kg} kg` : '';
+        document.getElementById('dossierWeight').innerText = a.weight_kg ? `${a.weight_kg} kg${tgtWt}` : '--';
+        document.getElementById('dossierAgeHeight').innerText = `${a.age ? a.age + ' yrs' : '--'} / ${a.height_cm ? a.height_cm + ' cm' : '--'}`;
+        document.getElementById('dossierFat').innerText = (d.measurement && d.measurement.latest && d.measurement.latest.body_fat_pct) ? `${d.measurement.latest.body_fat_pct}%` : (ass && ass.body_fat_us_navy ? `${ass.body_fat_us_navy}%` : '--');
+        document.getElementById('dossierAdherence').innerText = `${a.bmi || (ass && ass.bmi) || '--'} / ${(ass && ass.tdee_kcal) || '--'}`;
+        document.getElementById('dossierGoal').innerText = `${goal.title || 'General Fitness'} (${a.fitness_experience || 'intermediate'})`;
+        document.getElementById('dossierPersonalMeta').innerText = `Activity Factor: ${a.activity_level || (ass && ass.activity_level) || 'moderate'} • Membership: ${String(mem.status || 'active').toUpperCase()}`;
+        document.getElementById('dossierPhone').innerText = a.mobile || '--';
+        document.getElementById('dossierCoach').innerText = getActiveCoach().name;
+
+        // Assessments box
+        const assBox = document.getElementById('dossierAssessmentBox');
+        if (!perms.can_view_assessments) {
+          assBox.innerHTML = '<em>Restricted: Member has disabled biometric assessment sharing.</em>';
+        } else if (ass) {
+          assBox.innerHTML = `
+            <div style="margin-bottom:8px;">
+              <strong>Latest Targets (${escapeHtml(ass.assessment_date || '')}):</strong>
+              BMI <strong>${ass.bmi || '--'}</strong> • BMR <strong>${ass.bmr_kcal || '--'} kcal</strong> • TDEE <strong>${ass.tdee_kcal || '--'} kcal</strong> •
+              Target Calories: <strong>${ass.target_calories_kcal || '--'} kcal</strong> (P: ${ass.target_protein_g || '--'}g / C: ${ass.target_carbs_g || '--'}g / F: ${ass.target_fat_g || '--'}g)
+            </div>
+            ${assHist.slice(0, 4).map(ah => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid #E2E8F0;"><span>${escapeHtml(ah.assessment_date)} • Wt ${ah.weight_kg} kg</span><span>BMI ${ah.bmi} • ${ah.tdee_kcal} kcal TDEE</span></div>`).join('')}
+          `;
+        } else {
+          assBox.innerText = 'No biometric assessment recorded yet.';
+        }
+
+        // Body Measurements + Chart
+        const measBox = document.getElementById('dossierMeasurementsBox');
+        const chartBox = document.getElementById('dossierWeightChartBox');
+        const measHist = (d.measurement && Array.isArray(d.measurement.history)) ? d.measurement.history : [];
+        if (!perms.can_view_measurements || (d.measurement && d.measurement.restricted)) {
+          measBox.innerHTML = '<em>Restricted: Hidden by member consent settings.</em>';
+          if (chartBox) chartBox.innerHTML = '<em>Weight progression chart hidden by member consent settings.</em>';
+        } else {
+          if (chartBox) chartBox.innerHTML = buildWeightSvgChart(measHist);
+          if (measHist.length > 0) {
+            measBox.innerHTML = measHist.slice().reverse().slice(0, 6).map(ms =>
+              `<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #E2E8F0;flex-wrap:wrap;"><span>${escapeHtml(ms.recorded_at || ms.date)}</span><span><strong>${ms.weight_kg ? ms.weight_kg + ' kg' : '--'}</strong> • Waist: ${ms.waist_cm || '--'} • Chest: ${ms.chest_cm || '--'} • Arms: ${ms.arms_cm || '--'} • Hips: ${ms.hips_cm || '--'}</span></div>`
+            ).join('');
+          } else {
+            measBox.innerText = 'No measurement history recorded yet.';
           }
+        }
+
+        // Progress Photos (Strictly consent-gated)
+        const photosBox = document.getElementById('dossierPhotosBox');
+        if (photosBox) {
+          if (!perms.can_view_progress_photos || (d.progress_photos && d.progress_photos.restricted)) {
+            photosBox.innerHTML = '<em>Restricted: Member has not enabled progress photo sharing.</em>';
+          } else {
+            const pItems = (d.progress_photos && Array.isArray(d.progress_photos.items)) ? d.progress_photos.items : [];
+            photosBox.innerHTML = pItems.length > 0
+              ? `<div style="display:flex;gap:10px;flex-wrap:wrap;">${pItems.map(p => `<div style="text-align:center;"><img src="${escapeHtml(p.image_url)}" style="width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid #CBD5E1;"><div style="font-size:10px;margin-top:3px;">${escapeHtml(p.photo_type)} (${escapeHtml(p.recorded_at)})</div></div>`).join('')}</div>`
+              : 'No progress photos uploaded by member yet.';
+          }
+        }
+
+        // Nutrition + Food Logs + Restrictions + Allergies (Strictly consent-gated)
+        const nutBox = document.getElementById('dossierNutritionBox');
+        if (!perms.can_view_nutrition || (d.nutrition && d.nutrition.restricted)) {
+          nutBox.innerHTML = '<em>Restricted: Nutrition &amp; food logs hidden by member privacy consent.</em>';
+        } else if (d.nutrition) {
+          const wL = d.water ? d.water.liters : 0;
+          const mHist = Array.isArray(d.nutrition.meal_history) ? d.nutrition.meal_history : [];
+          const dTags = (d.nutrition.dietary_restrictions || []).join(', ') || 'None specified';
+          const aTags = (d.nutrition.allergies || []).map(x => `${x.name} (${x.severity})`).join(', ') || 'None specified';
+          nutBox.innerHTML = `
+            <div style="margin-bottom:8px;">Today: <strong>${d.nutrition.calories || 0} kcal</strong> • P: ${Math.round(d.nutrition.protein || 0)}g / C: ${Math.round(d.nutrition.carbs || 0)}g / F: ${Math.round(d.nutrition.fat || 0)}g • Water: <strong>${wL} L</strong></div>
+            <div style="font-size:11px;margin-bottom:8px;"><strong>Dietary Restrictions:</strong> ${escapeHtml(dTags)} • <strong>Allergies:</strong> ${escapeHtml(aTags)}</div>
+            ${mHist.length > 0 ? mHist.slice(0, 6).map(mh => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid #E2E8F0;"><span>${escapeHtml(mh.meal_date)} (${escapeHtml(mh.meal_type)}) — ${escapeHtml(mh.items_summary || 'Logged meal')}</span><strong>${mh.total_calories} kcal</strong></div>`).join('') : '<em>No meal history logged yet.</em>'}
+          `;
+        }
+
+        // Workouts, Plans & Performance
+        const wkData = d.workout || {};
+        const planSel = document.getElementById('dossierAssignPlanSelect');
+        if (planSel && Array.isArray(d.available_plans)) {
+          const activePid = wkData.plan ? parseInt(wkData.plan.plan_id, 10) : 0;
+          planSel.innerHTML = d.available_plans.map(pl => `<option value="${pl.id}" ${parseInt(pl.id, 10) === activePid ? 'selected' : ''}>${escapeHtml(pl.name)} (${escapeHtml(pl.goal)})</option>`).join('');
+        }
+        const curPlanBox = document.getElementById('dossierCurrentPlanBox');
+        if (curPlanBox) {
+          if (wkData.restricted) curPlanBox.innerHTML = '<em>Restricted by member workout sharing settings.</em>';
+          else if (wkData.plan) curPlanBox.innerHTML = `Active Plan: <strong>${escapeHtml(wkData.plan.plan_name)}</strong> (${escapeHtml(wkData.plan.goal || 'Training')}, ${wkData.plan.days_per_week || 4} days/wk) • ${escapeHtml(wkData.plan.plan_desc || '')}`;
+          else curPlanBox.innerHTML = 'No active workout plan assigned yet.';
+        }
+
+        const wkBox = document.getElementById('dossierWorkoutsBox');
+        const recentSess = Array.isArray(d.recent_sessions) ? d.recent_sessions : [];
+        if (wkData.restricted) {
+          wkBox.innerHTML = '<em>Restricted: Detailed workout logs hidden by member consent settings.</em>';
+        } else if (recentSess.length > 0) {
+          wkBox.innerHTML = recentSess.slice(0, 5).map(w => {
+            const exPerf = Array.isArray(w.exercises_performed) && w.exercises_performed.length > 0
+              ? '<div style="font-size:11px;color:#475569;margin-top:2px;">' + w.exercises_performed.slice(0, 4).map(ep => `${escapeHtml(ep.exercise_name)}: ${ep.weight_kg || 0}kg × ${ep.reps_completed || 0}`).join(' | ') + '</div>'
+              : '';
+            return `<div style="padding:4px 0;border-bottom:1px solid #E2E8F0;"><div style="display:flex;justify-content:space-between;"><span><strong>${escapeHtml(w.session_date)}</strong> (${escapeHtml(w.day_name || w.focus_area || 'Workout')}, ${w.duration_minutes || 45}m)</span><strong>${Number(w.total_volume_kg || 0).toLocaleString()} kg (${w.total_sets_completed || 0} sets)</strong></div>${exPerf}</div>`;
+          }).join('');
+        } else {
+          wkBox.innerText = 'No completed workout sessions recorded yet.';
+        }
+
+        const prevPlansBox = document.getElementById('dossierPrevPlansBox');
+        if (prevPlansBox) {
+          const ppList = Array.isArray(wkData.previous_plans) ? wkData.previous_plans : [];
+          prevPlansBox.innerHTML = ppList.length > 0
+            ? ppList.map(pp => `<div style="padding:3px 0;border-bottom:1px solid #E2E8F0;"><strong>${escapeHtml(pp.plan_name)}</strong> (${escapeHtml(pp.status)}) • ${escapeHtml(pp.start_date || '')}</div>`).join('')
+            : 'No previous workout plans recorded.';
+        }
+        const missBox = document.getElementById('dossierMissedWorkoutsBox');
+        if (missBox) {
+          const msList = Array.isArray(wkData.missed_workouts) ? wkData.missed_workouts : [];
+          missBox.innerHTML = msList.length > 0
+            ? msList.map(ms => `<div style="padding:3px 0;border-bottom:1px solid #E2E8F0;">${escapeHtml(ms.scheduled_date)} — ${escapeHtml(ms.day_name || 'Session')} (${escapeHtml(ms.status)})</div>`).join('')
+            : 'No missed workouts logged.';
+        }
+
+        // Attendance Calendar & Consistency
+        const attBox = document.getElementById('dossierAttendanceBox');
+        if (attBox) {
+          const ast = d.attendance_stats || {};
+          const attRows = Array.isArray(d.attendance) ? d.attendance : [];
+          attBox.innerHTML = `
+            <div style="margin-bottom:8px;">This Month: <strong>${ast.monthly_count || 0} visits</strong> in ${ast.days_elapsed || 1} elapsed days (<strong>${ast.attendance_pct || 0}%</strong> consistency)</div>
+            ${attRows.length > 0 ? attRows.slice(0, 6).map(at => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid #E2E8F0;"><span>${escapeHtml(at.check_in_time)}</span><span>${escapeHtml(at.gym_name || 'Gym')} (${escapeHtml(at.check_in_method)})</span></div>`).join('') : '<em>No gym check-ins recorded yet.</em>'}
+          `;
+        }
+
+        // Notes Split: Shared Feedback vs Private Notes
+        const notesEl = document.getElementById('dossierNotes');
+        const privEl = document.getElementById('dossierPrivateNotesBox');
+        const sharedNotes = Array.isArray(d.shared_feedback) ? d.shared_feedback : (Array.isArray(d.notes) ? d.notes.filter(n => parseInt(n.is_visible_to_user, 10) === 1) : []);
+        const privNotes = Array.isArray(d.private_notes) ? d.private_notes : (Array.isArray(d.notes) ? d.notes.filter(n => parseInt(n.is_visible_to_user, 10) === 0) : []);
+
+        notesEl.innerHTML = sharedNotes.length > 0
+          ? sharedNotes.slice(0, 6).map(n => `<div style="padding:4px 0;border-bottom:1px solid #DBEAFE;"><strong>${escapeHtml(String(n.note_type).replace('_', ' '))}:</strong> ${escapeHtml(n.note_text)} <span style="font-size:10px;color:#64748B;">(${escapeHtml((n.created_at || '').slice(0, 16))})</span></div>`).join('')
+          : 'No shared feedback sent yet.';
+        if (privEl) {
+          privEl.innerHTML = privNotes.length > 0
+            ? privNotes.slice(0, 6).map(n => `<div style="padding:4px 0;border-bottom:1px solid #E2E8F0;">${escapeHtml(n.note_text)} <span style="font-size:10px;color:#94A3B8;">(${escapeHtml((n.created_at || '').slice(0, 16))})</span></div>`).join('')
+            : 'No private observations recorded yet.';
         }
       } catch (err) {
         console.warn('Live dossier fetch error:', err);
       }
+    }
 
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+    async function assignPlanFromDossier() {
+      const pid = parseInt(document.getElementById('dossierAssignPlanSelect')?.value || '0', 10);
+      if (!pid || !currentDossierMemberId) return;
+      try {
+        const res = await fetch('api/trainer/assign_workout.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ member_id: currentDossierMemberId, plan_id: pid })
+        });
+        const json = await res.json();
+        if (json.success) {
+          alert(json.message || 'Workout plan updated & synced to member.');
+          openDossierModalById(currentDossierMemberId, currentDossierEmail, true);
+          await syncTrainerDataFromDb();
+        } else {
+          alert(json.message || 'Unable to assign plan.');
+        }
+      } catch (err) {
+        console.warn('Dossier plan assign err:', err);
+      }
+    }
+
+    async function sendReminderToMember() {
+      if (!currentDossierMemberId) return;
+      try {
+        const res = await fetch('api/trainer/remind_member.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ member_id: currentDossierMemberId })
+        });
+        const json = await res.json();
+        alert(json.message || 'Workout reminder sent.');
+      } catch (err) {
+        console.warn('Reminder err:', err);
+      }
+    }
+
+    async function handleAddDossierNote(e) {
+      e.preventDefault();
+      const input = document.getElementById('dossierNewNoteInput');
+      const noteText = input?.value.trim();
+      const noteType = document.getElementById('dossierNoteTypeSelect')?.value || 'workout_feedback';
+      const isVisible = !!document.getElementById('dossierNoteVisibleCb')?.checked;
+      if (!noteText || !currentDossierMemberId) return;
+      try {
+        const res = await fetch('api/trainer/notes.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            member_id: currentDossierMemberId,
+            note_text: noteText,
+            note_type: noteType,
+            is_visible: isVisible
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          input.value = '';
+          openDossierModalById(currentDossierMemberId, currentDossierEmail, true);
+        } else {
+          alert(json.message || json.error || 'Could not save note.');
+        }
+      } catch (err) {
+        console.warn('Note save error:', err);
+      }
     }
 
     function closeDossierModal() {
       document.getElementById('dossierModal').style.display = 'none';
     }
 
-    // Filter Exercise Cards
     function filterExerciseCards() {
-      const q = (document.getElementById('exerciseSearchInput').value || '').toLowerCase();
+      const q = (document.getElementById('exerciseSearchInput')?.value || '').toLowerCase();
       document.querySelectorAll('.ex-card').forEach(card => {
         const title = (card.getAttribute('data-title') || '').toLowerCase();
         const muscle = (card.getAttribute('data-muscle') || '').toLowerCase();
@@ -1690,30 +2328,53 @@
       });
     }
 
-    // Set Live Date
     try {
       const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
       document.getElementById('trainerLiveDate').innerText = new Date().toLocaleDateString('en-US', options);
-    } catch(e) {}
+    } catch (e) {}
 
-    // Listen to changes from Gym Owner portal or storage
-    window.addEventListener('fitsync_data_changed', () => {
-      initActiveCoach();
-    });
-    window.addEventListener('storage', () => {
-      if (window.fitSyncStore) {
-        window.fitSyncStore.state = window.fitSyncStore.load();
-        initActiveCoach();
+    // Initial Authenticated Boot
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (typeof window.fitSyncRefreshSession === 'function') {
+        const sess = await window.fitSyncRefreshSession('trainer', 'login.php');
+        if (!sess || !sess.isLoggedIn || !sess.authorized) return;
       }
+      await syncTrainerDataFromDb();
+      setInterval(syncTrainerDataFromDb, 5000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') syncTrainerDataFromDb();
+      });
+      window.addEventListener('focus', syncTrainerDataFromDb);
+      if (typeof initIcons === 'function') initIcons();
     });
 
-    // Initial Load
-    window.addEventListener('DOMContentLoaded', () => {
-      initActiveCoach();
-      syncTrainerDataFromDb();
-      setInterval(syncTrainerDataFromDb, 10000);
-      if (typeof lucide !== 'undefined') lucide.createIcons();
-    });
+    async function respondGymInvitation(gymId, decision) {
+      try {
+        const res = await fetch('api/trainer/affiliation_action.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gym_id: gymId, decision: decision })
+        });
+        const json = await res.json();
+        alert(json.message || 'Updated.');
+        await syncTrainerDataFromDb();
+      } catch (err) {
+        console.error('Invitation response err:', err);
+      }
+    }
+
+    async function markTrainerNotifsRead() {
+      try {
+        await fetch('api/notifications.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        await syncTrainerDataFromDb();
+      } catch (err) {
+        console.warn('Mark read error:', err);
+      }
+    }
   </script>
 </body>
 </html>

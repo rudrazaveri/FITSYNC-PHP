@@ -52,7 +52,7 @@
         <span style="font-weight:800; font-size:15px; color:#fff; letter-spacing:-0.3px;">FitSync AI</span>
       </a>
       <div style="display:flex; align-items:center; gap:8px;">
-        <a href="gym_owner/index.html"
+        <a href="switch_portal.php?to=gym_owner"
           style="font-size:12px; font-weight:600; padding:6px 14px; border-radius:9999px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.1);">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -64,7 +64,7 @@
             <path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path>
           </svg> Gym Owner Portal
         </a>
-        <a href="trainer/index.html"
+        <a href="switch_portal.php?to=trainer"
           style="font-size:12px; font-weight:600; padding:6px 14px; border-radius:9999px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.1);">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -80,7 +80,7 @@
             <path d="m9.6 14.4 4.8-4.8"></path>
           </svg> Trainer Portal
         </a>
-        <a href="index.html"
+        <a href="switch_portal.php?to=user"
           style="font-size:12px; font-weight:600; padding:6px 14px; border-radius:9999px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(37,99,235,0.2); color:#60a5fa; border:1px solid rgba(96,165,250,0.4);">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -91,7 +91,17 @@
         </a>
       </div>
     </div>
-    <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#94a3b8;">
+    <div style="display:flex; align-items:center; gap:12px; font-size:12px; color:#94a3b8; position:relative;">
+      <button type="button" id="memberNotifBellBtn" onclick="toggleMemberNotifications()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:#e2e8f0;padding:4px 10px;border-radius:9999px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;">
+        🔔 Alerts <span id="memberNotifUnreadBadge" style="background:#EF4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;display:none;">0</span>
+      </button>
+      <div id="memberNotifDropdown" style="display:none;position:absolute;top:36px;right:0;width:330px;max-height:380px;overflow-y:auto;background:#fff;color:#0F172A;border:1px solid #E2E8F0;border-radius:12px;box-shadow:0 16px 35px rgba(15,23,42,0.22);z-index:9999;padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;border-bottom:1px solid #E2E8F0;margin-bottom:8px;">
+          <strong style="font-size:13px;">Notifications</strong>
+          <button type="button" onclick="markAllMemberNotifsRead()" style="background:none;border:none;color:#2563EB;font-size:11px;font-weight:600;cursor:pointer;">Mark All Read</button>
+        </div>
+        <div id="memberNotifList" style="font-size:12px;color:#475569;">No notifications yet.</div>
+      </div>
       <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10B981;"></span>
       <span>Live Sync Active</span>
     </div>
@@ -255,22 +265,32 @@
               </svg> SELECT YOUR FITSYNC ROLE
             </div>
             <div class="auth-role-grid">
-              <div class="auth-role-card active" id="roleCardMember" onclick="selectRegisterRole('member')">
+              <div class="auth-role-card active" id="roleCardMember" onclick="selectRegisterRole('user')">
                 <div class="auth-role-icon">🏃</div>
                 <div class="auth-role-info">
                   <strong>Gym Member</strong>
-                  <span>Workout & nutrition athlete</span>
+                  <span>Workouts, macros &amp; gym</span>
                 </div>
               </div>
               <div class="auth-role-card" id="roleCardTrainer" onclick="selectRegisterRole('trainer')">
                 <div class="auth-role-icon">🏋️</div>
                 <div class="auth-role-info">
-                  <strong>Gym Trainer</strong>
-                  <span>Coach assigned athletes</span>
+                  <strong>Fitness Trainer</strong>
+                  <span>Coach athletes &amp; plans</span>
+                </div>
+              </div>
+              <div class="auth-role-card" id="roleCardOwner" onclick="selectRegisterRole('gym_owner')">
+                <div class="auth-role-icon">🏢</div>
+                <div class="auth-role-info">
+                  <strong>Gym Owner</strong>
+                  <span>Manage gym &amp; staff</span>
                 </div>
               </div>
             </div>
-            <input type="hidden" id="regRoleInput" value="member">
+            <input type="hidden" id="regRoleInput" value="user">
+            <div style="text-align:right;margin-bottom:10px;">
+              <a href="register.php" style="font-size:12px;color:#2563EB;font-weight:600;text-decoration:none;">Need document/photo uploads? Open Full Registration Page →</a>
+            </div>
 
             <!-- STEP 1: PERSONAL ACCOUNT DETAILS -->
             <div class="auth-step-title">
@@ -293,13 +313,12 @@
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
               <div>
-                <label class="auth-label">Mobile Number *</label>
-                <input type="tel" id="regPhone" class="auth-input" placeholder="+91 98765 43210" value="+91 98765 43210"
-                  required>
+                <label class="auth-label" id="modalRegMobileLabel">Mobile Number *</label>
+                <input type="tel" id="regPhone" class="auth-input" placeholder="+91 98765 43210">
               </div>
-              <div>
-                <label class="auth-label">Profile Picture URL (Optional)</label>
-                <input type="url" id="regAvatarUrl" class="auth-input" placeholder="https://... (or leave blank)">
+              <div id="modalRegDobBox">
+                <label class="auth-label">Date of Birth</label>
+                <input type="date" id="regDobInput" class="auth-input">
               </div>
             </div>
 
@@ -316,119 +335,169 @@
               </div>
             </div>
 
-            <!-- STEP 2: MEMBER BIOMETRICS & GOAL -->
-            <div class="auth-step-title">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3v18"></path>
-                <path d="m19 8 3 8a5 5 0 0 1-6 0zV7"></path>
-                <path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"></path>
-                <path d="m5 8 3 8a5 5 0 0 1-6 0zV7"></path>
-                <path d="M7 21h10"></path>
-              </svg> STEP 2: MEMBER BIOMETRICS & GOAL
-            </div>
-            <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-              <div>
-                <label class="auth-label">Gender</label>
-                <select id="regGender" class="auth-select">
-                  <option value="Male" selected>Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
+            <!-- ROLE SECTION A: MEMBER BIOMETRICS & GOAL -->
+            <div id="modalRoleMemberFields">
+              <div class="auth-step-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3v18"></path>
+                  <path d="m19 8 3 8a5 5 0 0 1-6 0zV7"></path>
+                  <path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"></path>
+                  <path d="m5 8 3 8a5 5 0 0 1-6 0zV7"></path>
+                  <path d="M7 21h10"></path>
+                </svg> STEP 2: MEMBER FITNESS PROFILE
+              </div>
+              <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                  <label class="auth-label">Gender</label>
+                  <select id="regGender" class="auth-select">
+                    <option value="male" selected>Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer_not_to_say">Prefer not to say</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="auth-label">Height (cm)</label>
+                  <input type="number" id="regHeight" class="auth-input" value="175" min="80" max="260">
+                </div>
+                <div>
+                  <label class="auth-label">Weight (kg)</label>
+                  <input type="number" id="regWeight" class="auth-input" value="70" step="0.5" min="20" max="350">
+                </div>
+                <div>
+                  <label class="auth-label">Experience</label>
+                  <select id="regExperienceLevel" class="auth-select">
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate" selected>Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="elite">Elite</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                <div>
+                  <label class="auth-label">Primary Goal</label>
+                  <select id="regGoal" class="auth-select">
+                    <option value="Muscle Gain" selected>Muscle Gain</option>
+                    <option value="Weight Loss">Weight Loss</option>
+                    <option value="Strength">Strength</option>
+                    <option value="Endurance">Endurance</option>
+                    <option value="General Fitness">General Fitness</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="auth-label">Activity Level</label>
+                  <select id="regActivity" class="auth-select">
+                    <option value="1.55" selected>Moderately Active (1.55x BMR)</option>
+                    <option value="1.2">Sedentary (1.2x BMR)</option>
+                    <option value="1.375">Lightly Active (1.375x BMR)</option>
+                    <option value="1.725">Very Active (1.725x BMR)</option>
+                    <option value="1.9">Athlete (1.9x BMR)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 14px;">
+                <label class="auth-label">Verified Gym Branch (Optional)</label>
+                <select id="modalMemberGymSelect" class="auth-select">
+                  <option value="">No gym yet (Browse after sign in)</option>
                 </select>
               </div>
-              <div>
-                <label class="auth-label">Age</label>
-                <input type="number" id="regAge" class="auth-input" value="24" min="14" max="95">
+            </div>
+
+            <!-- ROLE SECTION B: FITNESS TRAINER FIELDS -->
+            <div id="modalRoleTrainerFields" style="display: none;">
+              <div class="auth-step-title">STEP 2: TRAINER PROFESSIONAL PROFILE</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                  <label class="auth-label">Specialization *</label>
+                  <select id="modalTrSpec" class="auth-select">
+                    <option value="Strength Training">Strength Training</option>
+                    <option value="Weight Loss">Weight Loss</option>
+                    <option value="Muscle Building">Muscle Building</option>
+                    <option value="Functional Fitness">Functional Fitness</option>
+                    <option value="Cardio and Endurance">Cardio and Endurance</option>
+                    <option value="Yoga">Yoga</option>
+                    <option value="General Fitness">General Fitness</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="auth-label">Years of Experience *</label>
+                  <input type="number" id="modalTrExp" class="auth-input" value="2" min="0" max="50">
+                </div>
               </div>
-              <div>
-                <label class="auth-label">Height (cm)</label>
-                <input type="number" id="regHeight" class="auth-input" value="175" min="100" max="240">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                  <label class="auth-label">Certification *</label>
+                  <input type="text" id="modalTrCert" class="auth-input" placeholder="e.g. ACE / CSCS">
+                </div>
+                <div>
+                  <label class="auth-label">Issuing Organization *</label>
+                  <input type="text" id="modalTrIssuer" class="auth-input" placeholder="e.g. ACE / NSCA">
+                </div>
               </div>
-              <div>
-                <label class="auth-label">Weight (kg)</label>
-                <input type="number" id="regWeight" class="auth-input" value="70" step="0.5" min="30" max="250">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                  <label class="auth-label">Qualifications</label>
+                  <input type="text" id="modalTrQual" class="auth-input" placeholder="e.g. B.P.Ed.">
+                </div>
+                <div>
+                  <label class="auth-label">Gym Association</label>
+                  <select id="modalTrGymSelect" class="auth-select">
+                    <option value="none">Not associated with a gym</option>
+                  </select>
+                </div>
+              </div>
+              <div style="margin-bottom: 14px;">
+                <label class="auth-label">Professional Biography *</label>
+                <input type="text" id="modalTrBio" class="auth-input" placeholder="Coaching background & focus (min 10 chars)">
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
-              <div>
-                <label class="auth-label">Primary Goal</label>
-                <select id="regGoal" class="auth-select">
-                  <option value="Build Muscle (Hypertrophy Surplus)" selected>Build Muscle (Hypertrophy Surplus)
-                  </option>
-                  <option value="Fat Loss & Lean Definition">Fat Loss & Lean Definition</option>
-                  <option value="Athletic Strength & Conditioning">Athletic Strength & Conditioning</option>
-                  <option value="Endurance & Cardiovascular Health">Endurance & Cardiovascular Health</option>
-                  <option value="General Health & Functional Mobility">General Health & Functional Mobility</option>
-                </select>
+            <!-- ROLE SECTION C: GYM OWNER FIELDS -->
+            <div id="modalRoleOwnerFields" style="display: none;">
+              <div class="auth-step-title">STEP 2: OFFICIAL GYM DETAILS</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                  <label class="auth-label">Official Gym Name *</label>
+                  <input type="text" id="modalGoName" class="auth-input" placeholder="e.g. IronPeak Gym">
+                </div>
+                <div>
+                  <label class="auth-label">Official Gym Email *</label>
+                  <input type="email" id="modalGoEmail" class="auth-input" placeholder="desk@ironpeak.com">
+                </div>
               </div>
-              <div>
-                <label class="auth-label">Activity Level</label>
-                <select id="regActivity" class="auth-select">
-                  <option value="Moderately Active (1.55x BMR)" selected>Moderately Active (1.55x BMR)</option>
-                  <option value="Sedentary (1.2x BMR)">Sedentary (1.2x BMR)</option>
-                  <option value="Lightly Active (1.375x BMR)">Lightly Active (1.375x BMR)</option>
-                  <option value="Very Active (1.725x BMR)">Very Active (1.725x BMR)</option>
-                  <option value="Extremely Active (1.9x BMR)">Extremely Active (1.9x BMR)</option>
-                </select>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                  <label class="auth-label">Gym Phone *</label>
+                  <input type="tel" id="modalGoPhone" class="auth-input" placeholder="+91 20 2500 1122">
+                </div>
+                <div>
+                  <label class="auth-label">Street Address *</label>
+                  <input type="text" id="modalGoAddr" class="auth-input" placeholder="Building / Road">
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px;">
+                <div>
+                  <label class="auth-label">City *</label>
+                  <input type="text" id="modalGoCity" class="auth-input" placeholder="Pune">
+                </div>
+                <div>
+                  <label class="auth-label">State *</label>
+                  <input type="text" id="modalGoState" class="auth-input" placeholder="Maharashtra">
+                </div>
+                <div>
+                  <label class="auth-label">PIN Code *</label>
+                  <input type="text" id="modalGoPin" class="auth-input" placeholder="411038">
+                </div>
               </div>
             </div>
-
-            <!-- STEP 3: SELECT HOME GYM BRANCH -->
-            <div class="auth-step-title">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 12h4"></path>
-                <path d="M10 8h4"></path>
-                <path d="M14 21v-3a2 2 0 0 0-4 0v3"></path>
-                <path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"></path>
-                <path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path>
-              </svg> STEP 3: SELECT HOME GYM BRANCH
-            </div>
-            <div class="auth-gym-card active" id="gymBranch0"
-              onclick="selectHomeGym('FitZone Fitness', 'Alkapuri, Vadodara • 1.2 km', 0)">
-              <div class="auth-gym-info">
-                <strong>FitZone Fitness <span class="auth-gym-rating">4.9 ★</span></strong>
-                <span>Alkapuri, Vadodara • 1.2 km</span>
-              </div>
-              <div class="auth-gym-check"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
-                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round" style="width:13px; height:13px;">
-                  <path d="M20 6 9 17l-5-5"></path>
-                </svg></div>
-            </div>
-
-            <div class="auth-gym-card" id="gymBranch1"
-              onclick="selectHomeGym('PowerHouse Gym', 'SG Highway, Ahmedabad • 84 km', 1)">
-              <div class="auth-gym-info">
-                <strong>PowerHouse Gym <span class="auth-gym-rating">4.8 ★</span></strong>
-                <span>SG Highway, Ahmedabad • 84 km</span>
-              </div>
-              <div class="auth-gym-check"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
-                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round" style="width:13px; height:13px;">
-                  <path d="M20 6 9 17l-5-5"></path>
-                </svg></div>
-            </div>
-
-            <div class="auth-gym-card" id="gymBranch2"
-              onclick="selectHomeGym('Elite Fitness Studio', 'Vesu, Surat • 142 km', 2)">
-              <div class="auth-gym-info">
-                <strong>Elite Fitness Studio <span class="auth-gym-rating">4.7 ★</span></strong>
-                <span>Vesu, Surat • 142 km</span>
-              </div>
-              <div class="auth-gym-check"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
-                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round" style="width:13px; height:13px;">
-                  <path d="M20 6 9 17l-5-5"></path>
-                </svg></div>
-            </div>
-            <input type="hidden" id="regGymBranchInput" value="FitZone Fitness">
-            <input type="hidden" id="regGymLocationInput" value="Alkapuri, Vadodara • 1.2 km">
 
             <!-- Primary Register Button -->
-            <button type="submit" class="auth-submit-btn" id="regSubmitBtn" style="margin-top: 14px;">
-              Create Athlete Profile & Enter FitSync <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+            <button type="submit" class="auth-submit-btn" id="regSubmitBtn" style="margin-top: 8px;">
+              Create Member Account & Enter FitSync <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round" style="width: 16px; height: 16px;">
                 <path d="M5 12h14"></path>
@@ -537,7 +606,7 @@
             </path>
           </svg>
           <span class="nav-label">Coach Chat</span>
-          <span class="nav-badge"
+          <span class="nav-badge" id="sidebarChatUnreadBadge"
             style="background: #22C55E; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 999px; margin-left: auto;">Live</span>
         </button>
 
@@ -830,9 +899,9 @@
                 <div class="goal-details-box" onclick="switchView('progress')" style="cursor: pointer;">
                   <div class="goal-name-row">
                     <span>💪</span>
-                    <span>Build Muscle</span>
+                    <span id="dashGoalTitle">General Fitness</span>
                   </div>
-                  <div class="goal-target-text">Target: <strong>68 kg</strong> • By 28 Feb 2027</div>
+                  <div class="goal-target-text" id="dashGoalTarget">No active goal target set</div>
                 </div>
               </div>
             </div>
@@ -934,8 +1003,8 @@
                   onerror="this.src='assets/images/bench_press.jpg'">
                 <div class="gym-details-col">
                   <div class="gym-title-row">
-                    <h4 class="gym-name">FitZone Gym</h4>
-                    <span class="badge-active">Active</span>
+                    <h4 class="gym-name" id="dashGymName">No Gym Connected</h4>
+                    <span class="badge-active" id="dashGymStatus">None</span>
                   </div>
                   <div class="gym-meta-line" style="margin-top: 2px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -946,7 +1015,7 @@
                       </path>
                       <circle cx="12" cy="10" r="3"></circle>
                     </svg>
-                    <span>Kothrud, Pune</span>
+                    <span id="dashGymLocation">Select a gym branch</span>
                   </div>
                   <div class="gym-meta-line">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -957,10 +1026,10 @@
                       </path>
                       <circle cx="12" cy="8" r="6"></circle>
                     </svg>
-                    <span>Membership: <strong>Premium Plan</strong></span>
+                    <span>Membership: <strong id="dashGymPlan">None</strong></span>
                   </div>
                   <div class="gym-meta-line" style="font-size: 11px; color: var(--text-muted);">
-                    <span>Valid till: 15 Mar 2027</span>
+                    <span id="dashGymValidTill">Valid till: --</span>
                   </div>
                   <button class="btn-outline-gym" onclick="switchView('gyms')">View Gym &rarr;</button>
                 </div>
@@ -975,7 +1044,7 @@
               </div>
               <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;">
                 <span style="font-size: 12px; color: var(--text-secondary);">Weight Trend</span>
-                <span style="font-size: 14px; font-weight: 700; color: var(--primary-blue);">62.5 kg</span>
+                <span style="font-size: 14px; font-weight: 700; color: var(--primary-blue);" id="dashRecentProgressWeight">-- kg</span>
               </div>
               <div class="progress-chart-container">
                 <canvas id="recentProgressChart"></canvas>
@@ -1007,38 +1076,20 @@
           </div>
 
           <!-- Active Membership Status Banner -->
-          <div class="fs-card"
+          <div class="fs-card" id="memStatusBanner"
             style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border-color: var(--light-blue); margin-bottom: 20px;">
             <div
               style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
               <div>
-                <span class="badge-active" style="margin-bottom: 6px; display: inline-block;">ACTIVE PASS</span>
-                <h3 style="font-size: 18px; font-weight: 800; color: var(--text-main);">FitZone Gym — Premium All-Access
+                <span class="badge-active" id="memBannerBadge" style="margin-bottom: 6px; display: inline-block;">LOADING</span>
+                <h3 id="memBannerTitle" style="font-size: 18px; font-weight: 800; color: var(--text-main);">Loading Membership Status...
                 </h3>
-                <p style="font-size: 12px; color: var(--text-secondary);">Access all 4 Pune branches • Valid until 15
-                  Mar 2027 • Turnstile Code: <strong>FS-PUN-9821</strong></p>
+                <p id="memBannerMeta" style="font-size: 12px; color: var(--text-secondary);">Synchronizing with central database...</p>
+                <div id="memBannerExtra" style="font-size: 12px; color: #334155; margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;"></div>
               </div>
-              <div style="display: flex; gap: 8px;">
+              <div id="memBannerActions" style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button class="btn-primary-block" style="width: auto; padding: 8px 18px;"
-                  onclick="switchView('attendance')">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="width: 14px; height: 14px;">
-                    <rect width="5" height="5" x="3" y="3" rx="1"></rect>
-                    <rect width="5" height="5" x="16" y="3" rx="1"></rect>
-                    <rect width="5" height="5" x="3" y="16" rx="1"></rect>
-                    <path d="M21 16h-3a2 2 0 0 0-2 2v3"></path>
-                    <path d="M21 21v.01"></path>
-                    <path d="M12 7v3a2 2 0 0 1-2 2H7"></path>
-                    <path d="M3 12h.01"></path>
-                    <path d="M12 3h.01"></path>
-                    <path d="M12 16v.01"></path>
-                    <path d="M16 12h1"></path>
-                    <path d="M21 12v.01"></path>
-                    <path d="M12 21v-1"></path>
-                  </svg> Open Turnstile Pass
-                </button>
-                <button class="btn-secondary" onclick="openModal('gymDetailsModal')">Membership Details</button>
+                  onclick="switchView('attendance')">Open Turnstile Pass</button>
               </div>
             </div>
           </div>
@@ -1051,99 +1102,34 @@
                 <path d="m21 21-4.34-4.34"></path>
                 <circle cx="11" cy="11" r="8"></circle>
               </svg>
-              <input type="text" placeholder="Search gym branches, locations, or facilities...">
+              <input type="text" id="gymSearchInput" placeholder="Search gym branches, cities, or facilities..." oninput="renderGymsDirectoryFromCache()">
             </div>
-            <div class="filter-chip-row">
-              <button class="filter-chip active">All Branches (4)</button>
-              <button class="filter-chip">Pune West</button>
-              <button class="filter-chip">Pune East</button>
-              <button class="filter-chip">Steam & Sauna</button>
-              <button class="filter-chip">24 Hours</button>
+            <select id="gymFacilityFilter" class="auth-select" style="padding: 8px 12px; font-size: 12px; max-width: 190px;" onchange="renderGymsDirectoryFromCache()">
+              <option value="all">All Facilities</option>
+            </select>
+            <div class="filter-chip-row" id="gymFilterChipsRow">
+              <button type="button" class="filter-chip active" data-gym-filter="all" onclick="setGymFilterChip('all')">All Branches (0)</button>
             </div>
           </div>
 
-          <!-- Gyms Grid with Distinct Photos -->
-          <div class="gyms-grid">
-            <div class="gym-card">
-              <img src="assets/images/gym_fitzone.jpg" class="gym-card-img" alt="FitZone Gym"
-                onerror="this.src='assets/images/bench_press.jpg'">
-              <div class="gym-card-body">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <h4 style="font-size: 15px; font-weight: 700;">FitZone Gym</h4>
-                  <span class="badge-active">Home Branch</span>
-                </div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Kothrud, Pune • 4.9 ★ (320
-                  reviews)</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
-                  <span class="tag-badge">Olympic Platforms</span>
-                  <span class="tag-badge">Steam & Sauna</span>
-                  <span class="tag-badge">Crossfit Turf</span>
-                </div>
-                <button class="btn-primary-block" style="margin-top: auto; padding: 8px;"
-                  onclick="openModal('gymDetailsModal')">Branch Details</button>
-              </div>
+          <!-- Gyms Grid (Populated Dynamically from Central MySQL Database) -->
+          <div class="gyms-grid" id="gymsDirectoryGrid">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 36px 20px; color: var(--text-secondary);">
+              Loading verified partner gyms from FitSync directory...
             </div>
+          </div>
 
-            <div class="gym-card">
-              <img src="assets/images/gym_powerhouse.jpg" class="gym-card-img" alt="PowerHouse Arena"
-                onerror="this.src='assets/images/bench_press.jpg'">
-              <div class="gym-card-body">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <h4 style="font-size: 15px; font-weight: 700;">PowerHouse Arena</h4>
-                  <span class="stat-badge-pill badge-healthy">All-Access</span>
-                </div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Baner, Pune • 4.8 ★ (245
-                  reviews)</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
-                  <span class="tag-badge">Hammer Strength</span>
-                  <span class="tag-badge">Recovery Lounge</span>
-                  <span class="tag-badge">Boxing Ring</span>
-                </div>
-                <button class="btn-secondary" style="margin-top: auto; width: 100%;"
-                  onclick="showToast('PowerHouse Arena is covered under your Premium Plan!', 'info')">Check Access
-                  Pass</button>
+          <!-- Enrollment & Membership History -->
+          <div class="fs-card" style="margin-top: 22px;">
+            <div class="card-header-row">
+              <div>
+                <h3 class="card-title">My Enrollment &amp; Membership History</h3>
+                <p style="font-size: 12px; color: var(--text-secondary);">Live enrollment requests, owner approvals/declines, and assigned coaches</p>
               </div>
+              <span class="badge-active" id="memHistoryCountBadge">0 Records</span>
             </div>
-
-            <div class="gym-card">
-              <img src="assets/images/gym_crossfit.jpg" class="gym-card-img" alt="Metro Crossfit"
-                onerror="this.src='assets/images/bench_press.jpg'">
-              <div class="gym-card-body">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <h4 style="font-size: 15px; font-weight: 700;">Metro Crossfit Studio</h4>
-                  <span class="stat-badge-pill badge-healthy">All-Access</span>
-                </div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Viman Nagar, Pune • 4.8 ★
-                  (180 reviews)</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
-                  <span class="tag-badge">Rogue Rig</span>
-                  <span class="tag-badge">Kettlebells</span>
-                  <span class="tag-badge">Rowing Ergometers</span>
-                </div>
-                <button class="btn-secondary" style="margin-top: auto; width: 100%;"
-                  onclick="showToast('Metro Crossfit Studio turnstile pass verified.', 'info')">Check Access
-                  Pass</button>
-              </div>
-            </div>
-
-            <div class="gym-card">
-              <img src="assets/images/gym_elite.jpg" class="gym-card-img" alt="Elite Iron Republic"
-                onerror="this.src='assets/images/bench_press.jpg'">
-              <div class="gym-card-body">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <h4 style="font-size: 15px; font-weight: 700;">Elite Iron Republic</h4>
-                  <span class="stat-badge-pill badge-healthy">All-Access</span>
-                </div>
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Kalyani Nagar, Pune • 4.9
-                  ★ (410 reviews)</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
-                  <span class="tag-badge">Eleiko Plates</span>
-                  <span class="tag-badge">Ice Baths</span>
-                  <span class="tag-badge">24h Open</span>
-                </div>
-                <button class="btn-secondary" style="margin-top: auto; width: 100%;"
-                  onclick="showToast('Elite Iron Republic pass verified.', 'info')">Check Access Pass</button>
-              </div>
+            <div id="memberEnrollmentHistoryContainer" style="overflow-x: auto;">
+              <div style="padding: 16px; text-align: center; color: #64748B; font-size: 13px;">Loading enrollment history...</div>
             </div>
           </div>
         </div>
@@ -1174,8 +1160,27 @@
             <!-- Populated dynamically by renderTrainersUI() -->
           </div>
 
+          <!-- Shared Coach Feedback & Routine Instructions (Live from trainer_notes where is_visible_to_user = 1) -->
+          <div class="fs-card" id="memberSharedFeedbackCard" style="margin-bottom: 20px; display: none;">
+            <div class="card-header-row">
+              <div>
+                <h3 class="card-title">Coach Feedback &amp; Training Instructions</h3>
+                <p style="font-size: 12px; color: var(--text-secondary);">Shared notes and routine recommendations from your assigned trainer</p>
+              </div>
+            </div>
+            <div id="memberSharedFeedbackList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+          </div>
+
           <!-- Trainer Directory Grid with Photos (Dynamically Rendered) -->
-          <h3 class="card-title" style="margin-bottom: 14px;">Available Branch Coaches</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
+            <h3 class="card-title" style="margin-bottom: 0;">FitSync Registered Trainers Directory</h3>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <input type="text" id="memberTrainerSearch" class="auth-input" style="padding: 6px 10px; font-size: 12px; width: 190px;" placeholder="Search trainers..." oninput="renderTrainersUI()">
+              <select id="memberTrainerSpecFilter" class="auth-select" style="padding: 6px 10px; font-size: 12px;" onchange="renderTrainersUI()">
+                <option value="all">All Specializations</option>
+              </select>
+            </div>
+          </div>
           <div class="trainers-grid" id="availableTrainersGrid">
             <!-- Populated dynamically by renderTrainersUI() -->
           </div>
@@ -1436,6 +1441,15 @@
                   </svg> Reset Sets
                 </button>
                 <button class="btn-primary-block"
+                  style="width: auto; padding: 7px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; background: #10B981; border: none;"
+                  onclick="completeCurrentWorkoutRoutine()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="width: 14px; height: 14px;">
+                    <path d="M20 6 9 17l-5-5"></path>
+                  </svg> Complete &amp; Save Session
+                </button>
+                <button class="btn-primary-block"
                   style="width: auto; padding: 7px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;"
                   onclick="promptAddExercise()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -1507,6 +1521,17 @@
           <!-- Dynamic Exercise Cards Container -->
           <div id="wkExercisesContainer" style="margin-top: 18px;">
             <!-- Rendered dynamically by JavaScript -->
+          </div>
+
+          <!-- Completed Workout Sessions History (MySQL) -->
+          <div class="fs-card" style="margin-top: 20px;">
+            <div class="card-header-row">
+              <h3 class="card-title">Completed Workout Sessions (Database History)</h3>
+              <span class="fs-badge fs-badge-green" id="wkSessionsCountBadge">0 Sessions</span>
+            </div>
+            <div id="wkCompletedHistoryContainer" style="font-size: 13px; color: var(--text-secondary);">
+              No completed workout sessions recorded yet.
+            </div>
           </div>
         </div>
 
@@ -3522,6 +3547,55 @@
                 </div>
               </div>
 
+              <!-- SECTION H2: TRAINER DATA SHARING PERMISSIONS -->
+              <div class="fs-card" id="dataPermissionsCard">
+                <h3 class="card-title" style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="width: 18px; height: 18px; color: var(--primary-blue);">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg> Trainer Data Sharing Permissions
+                </h3>
+                <div style="display: flex; flex-direction: column;">
+                  <label class="switch-label">
+                    <span>
+                      <strong>Share Body Measurements</strong>
+                      <small style="display: block; color: var(--text-secondary); font-size: 11px; font-weight: normal;">Allow assigned coach to view weight &amp; measurement history</small>
+                    </span>
+                    <input type="checkbox" id="permViewMeasurements" class="switch-input" checked onchange="saveTrainerDataPermissions()">
+                  </label>
+                  <label class="switch-label">
+                    <span>
+                      <strong>Share Nutrition &amp; Water Logs</strong>
+                      <small style="display: block; color: var(--text-secondary); font-size: 11px; font-weight: normal;">Allow assigned coach to view daily calories, macros &amp; hydration</small>
+                    </span>
+                    <input type="checkbox" id="permViewNutrition" class="switch-input" checked onchange="saveTrainerDataPermissions()">
+                  </label>
+                  <label class="switch-label">
+                    <span>
+                      <strong>Share Biometric Assessments</strong>
+                      <small style="display: block; color: var(--text-secondary); font-size: 11px; font-weight: normal;">Allow assigned coach to inspect BMR, TDEE &amp; body fat estimates</small>
+                    </span>
+                    <input type="checkbox" id="permViewAssessments" class="switch-input" checked onchange="saveTrainerDataPermissions()">
+                  </label>
+                  <label class="switch-label">
+                    <span>
+                      <strong>Share Progress Photos</strong>
+                      <small style="display: block; color: var(--text-secondary); font-size: 11px; font-weight: normal;">Optional consent to share uploaded progress photos with your assigned coach</small>
+                    </span>
+                    <input type="checkbox" id="permViewPhotos" class="switch-input" onchange="saveTrainerDataPermissions()">
+                  </label>
+                  <label class="switch-label">
+                    <span>
+                      <strong>Share Detailed Workout Logs</strong>
+                      <small style="display: block; color: var(--text-secondary); font-size: 11px; font-weight: normal;">Allow assigned coach to inspect completed sets, reps &amp; workout history</small>
+                    </span>
+                    <input type="checkbox" id="permViewWorkouts" class="switch-input" checked onchange="saveTrainerDataPermissions()">
+                  </label>
+                </div>
+              </div>
+
               <!-- SECTION I: ACCOUNT DETAILS & GYM MEMBERSHIP CARD -->
               <div class="fs-card" style="border-color: rgba(16, 185, 129, 0.3);">
                 <h3 class="card-title" style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
@@ -3672,18 +3746,11 @@
             <img src="assets/images/ex_bench.jpg" alt="Workout" class="workout-thumb"
               onerror="this.src='assets/images/bench_press.jpg'">
             <div class="workout-meta-box">
-              <div style="font-size: 11px; color: var(--primary-blue); font-weight: 700;">💪 STRENGTH</div>
-              <h4 class="workout-name">Upper Body Strength</h4>
+              <div style="font-size: 11px; color: var(--primary-blue); font-weight: 700;" id="rightWkFocus">💪 TRAINING PLAN</div>
+              <h4 class="workout-name" id="rightWkTitle">No Active Plan Assigned</h4>
 
-              <div class="workout-meta-tags">
-                <span class="meta-pill"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round" style="width: 11px; height: 11px; display: inline;">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M12 6v6l4 2"></path>
-                  </svg> 45 min</span>
-                <span class="meta-pill">6 Exercises</span>
-                <span class="meta-pill">Intermediate</span>
+              <div class="workout-meta-tags" id="rightWkMeta">
+                <span class="meta-pill">Sync with Coach</span>
               </div>
             </div>
           </div>
@@ -3833,43 +3900,14 @@
           </div>
         </div>
 
-        <h5 style="font-size: 13px; font-weight: 700; margin-bottom: 10px;">Prescribed Exercises (6)</h5>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <label
-            style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
-            <input type="checkbox" checked style="width: 16px; height: 16px; accent-color: var(--primary-blue);">
-            <div style="flex: 1;">
-              <div style="font-size: 13px; font-weight: 600;">1. Incline Barbell Bench Press</div>
-              <div style="font-size: 11px; color: var(--text-secondary);">4 Sets • 8-10 Reps • 65 kg</div>
-            </div>
-            <span class="badge-active">Done</span>
-          </label>
-
-          <label
-            style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
-            <input type="checkbox" checked style="width: 16px; height: 16px; accent-color: var(--primary-blue);">
-            <div style="flex: 1;">
-              <div style="font-size: 13px; font-weight: 600;">2. Dumbbell Overhead Press</div>
-              <div style="font-size: 11px; color: var(--text-secondary);">3 Sets • 10-12 Reps • 18 kg</div>
-            </div>
-            <span class="badge-active">Done</span>
-          </label>
-
-          <label
-            style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
-            <input type="checkbox" style="width: 16px; height: 16px; accent-color: var(--primary-blue);">
-            <div style="flex: 1;">
-              <div style="font-size: 13px; font-weight: 600;">3. Cable Chest Flyes</div>
-              <div style="font-size: 11px; color: var(--text-secondary);">3 Sets • 12-15 Reps • 15 kg</div>
-            </div>
-            <span style="font-size: 11px; color: var(--text-muted);">Pending</span>
-          </label>
+        <h5 style="font-size: 13px; font-weight: 700; margin-bottom: 10px;" id="workoutModalHeading">Prescribed Exercises</h5>
+        <div id="workoutModalExerciseList" style="display: flex; flex-direction: column; gap: 8px;">
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" data-close-modal>Close</button>
-        <button class="btn-primary-block" style="width: auto;"
-          onclick="showToast('Workout session completed and saved to history!', 'success'); closeModal('workoutModal');">Complete
+        <button class="btn-primary-block" id="btnCompleteWorkoutSession" style="width: auto;"
+          onclick="completeWorkoutModalSession()">Complete
           Session</button>
       </div>
     </div>
@@ -4051,30 +4089,61 @@
             <path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"></path>
             <path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path>
           </svg>
-          <h4 class="modal-title">FitZone Gym – Kothrud</h4>
+          <h4 class="modal-title" id="gymModalHeaderTitle">Gym Details</h4>
         </div>
         <button class="modal-close-btn" data-close-modal>&times;</button>
       </div>
       <div class="modal-body">
-        <img src="assets/images/gym_fitzone.jpg"
-          style="width: 100%; height: 140px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 14px;"
+        <img id="gymModalCoverImg" src="assets/images/gym_fitzone.jpg"
+          style="width: 100%; height: 150px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 14px;"
           onerror="this.src='assets/images/bench_press.jpg'">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <h5 style="font-size: 16px; font-weight: 700;">FitZone Fitness & Sports Hub</h5>
-          <span class="badge-active">Active Member</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <h5 id="gymModalGymName" style="font-size: 16px; font-weight: 700;">Loading Gym...</h5>
+          <span class="badge-active" id="gymModalStatusBadge">ACTIVE</span>
         </div>
-        <div
-          style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
-          <div>📍 <strong>Address:</strong> Plot 42, Mayur Colony, Kothrud, Pune</div>
-          <div>⏰ <strong>Hours:</strong> Mon - Sat: 5:30 AM – 10:30 PM • Sun: 7:00 AM – 2:00 PM</div>
-          <div>🏋️ <strong>Facilities:</strong> Olympic Platforms, Steam Room, Crossfit Turf</div>
-          <div>💳 <strong>Plan:</strong> Premium All-Access (Valid till 15 Mar 2027)</div>
+        <p id="gymModalDescription" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;"></p>
+        <div id="gymModalDetailsBox"
+          style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
         </div>
+        <div id="gymModalPlansBox" style="display: flex; flex-direction: column; gap: 6px;"></div>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" data-close-modal>Close</button>
-        <button class="btn-primary-block" style="width: auto;"
+        <button class="btn-primary-block" id="gymModalPrimaryActionBtn" style="width: auto;"
           onclick="closeModal('gymDetailsModal'); switchView('attendance');">View Attendance Pass</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 7B: Membership Enrollment Confirmation Modal -->
+  <div class="modal-overlay" id="enrollConfirmationModal">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h4 class="modal-title">Confirm Gym Enrollment</h4>
+        </div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="enrollConfirmGymId" value="0">
+        <input type="hidden" id="enrollConfirmIsRenewal" value="0">
+        <div id="enrollConfirmGymBox" style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+          <div style="font-size: 16px; font-weight: 800; color: #0F172A;" id="enrollConfirmGymName">Selected Gym</div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 3px;" id="enrollConfirmGymLoc">Location</div>
+          <div style="font-size: 12px; color: #475569; margin-top: 3px;" id="enrollConfirmGymHours">Hours</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">Select Membership Plan</label>
+          <select id="enrollConfirmPlanSelect" class="auth-select" style="width: 100%; padding: 9px 10px;" onchange="updateEnrollPlanSummary()"></select>
+        </div>
+        <div id="enrollConfirmPlanSummary" style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #1E40AF;">
+          Select a plan to review terms and pricing.
+        </div>
+        <div id="enrollConfirmAlert" style="display: none; margin-top: 10px; padding: 9px 12px; border-radius: 8px; background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; font-size: 12px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
+        <button type="button" class="btn-primary-block" id="btnConfirmEnrollment" style="width: auto; padding: 9px 18px;" onclick="confirmSubmitEnrollment()">Submit Enrollment Request</button>
       </div>
     </div>
   </div>
@@ -4207,6 +4276,7 @@
   </div>
 
   <!-- Application Scripts -->
+  <script src="js/api_client.js"></script>
   <script src="js/data.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/app.js"></script>

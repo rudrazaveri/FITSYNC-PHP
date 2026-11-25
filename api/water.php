@@ -1,9 +1,7 @@
 <?php
 /**
  * FitSync AI — API: Water Intake Tracking
- *
- * Real MySQL-backed water logging and telemetry.
- * Strictly uses Asia/Kolkata date handling.
+ * Real MySQL-backed water logging with strict session identity and CSRF protection.
  */
 
 declare(strict_types=1);
@@ -12,24 +10,17 @@ require_once __DIR__ . '/../config/bootstrap.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
+$authUser = requireApiAuth(['user', 'admin']);
+$userId = (int)$authUser['id'];
+
 try {
     $db = getDbConnection(true);
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Database connection unavailable']);
-    exit;
-}
-
-$userId = getActiveMemberUserId();
-if ($userId <= 0) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'User not identified']);
-    exit;
+    apiResponse(false, 'Database connection unavailable', null, 500);
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Helper to get water summary for today (Asia/Kolkata authoritative)
 function getTodayWaterSummary(PDO $db, int $userId): array {
     $today = date('Y-m-d');
     $stmt = $db->prepare("
@@ -41,7 +32,6 @@ function getTodayWaterSummary(PDO $db, int $userId): array {
     $summary = $stmt->fetch(PDO::FETCH_ASSOC);
     $totalMl = (int)($summary['total_ml'] ?? 0);
 
-    // Fetch individual logs today
     $stmt = $db->prepare("
         SELECT id, amount_ml, logged_at
         FROM water_logs
@@ -72,25 +62,19 @@ function getTodayWaterSummary(PDO $db, int $userId): array {
     ];
 }
 
-// -----------------------------------------------------------------------------
-// GET: Fetch today's water intake
-// -----------------------------------------------------------------------------
 if ($method === 'GET') {
     try {
         $data = getTodayWaterSummary($db, $userId);
-        echo json_encode(['success' => true, 'data' => $data]);
-        exit;
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-        exit;
+        apiResponse(true, 'Water intake retrieved.', $data);
+    } catch (Throwable $e) {
+        error_log('[FitSync water.php GET] ' . $e->getMessage());
+        apiResponse(false, 'Unable to load water logs.', null, 500);
     }
 }
 
-// -----------------------------------------------------------------------------
-// POST: Log a water intake entry
-// -----------------------------------------------------------------------------
 if ($method === 'POST') {
+    requireCsrfToken();
+
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true) ?: $_POST;
 
@@ -101,10 +85,8 @@ if ($method === 'POST') {
         $amountMl = (int)round(((float)$input['liters']) * 1000);
     }
 
-    if ($amountMl <= 0) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Invalid water amount. Must be greater than 0 ml.']);
-        exit;
+    if ($amountMl <= 0 || $amountMl > 10000) {
+        apiResponse(false, 'Invalid water amount. Must be between 1 and 10000 ml.', null, 400);
     }
 
     $today = date('Y-m-d');
@@ -123,23 +105,16 @@ if ($method === 'POST') {
         ]);
 
         $data = getTodayWaterSummary($db, $userId);
-        echo json_encode([
-            'success' => true,
-            'message' => "Logged {$amountMl} ml of water successfully.",
-            'data'    => $data
-        ]);
-        exit;
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-        exit;
+        apiResponse(true, "Logged {$amountMl} ml of water successfully.", $data);
+    } catch (Throwable $e) {
+        error_log('[FitSync water.php POST] ' . $e->getMessage());
+        apiResponse(false, 'Unable to log water.', null, 500);
     }
 }
 
-// -----------------------------------------------------------------------------
-// DELETE: Remove water entry or reset today's water
-// -----------------------------------------------------------------------------
 if ($method === 'DELETE') {
+    requireCsrfToken();
+
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true) ?: $_GET;
 
@@ -152,24 +127,16 @@ if ($method === 'DELETE') {
             $stmt = $db->prepare("DELETE FROM water_logs WHERE id = :id AND user_id = :uid");
             $stmt->execute([':id' => $id, ':uid' => $userId]);
         } elseif ($action === 'reset' || $id === 0) {
-            // Reset today's water logs
             $stmt = $db->prepare("DELETE FROM water_logs WHERE user_id = :uid AND log_date = :today");
             $stmt->execute([':uid' => $userId, ':today' => $today]);
         }
 
         $data = getTodayWaterSummary($db, $userId);
-        echo json_encode([
-            'success' => true,
-            'message' => 'Water intake updated.',
-            'data'    => $data
-        ]);
-        exit;
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-        exit;
+        apiResponse(true, 'Water intake updated.', $data);
+    } catch (Throwable $e) {
+        error_log('[FitSync water.php DELETE] ' . $e->getMessage());
+        apiResponse(false, 'Unable to update water logs.', null, 500);
     }
 }
 
-http_response_code(405);
-echo json_encode(['success' => false, 'error' => 'Method Not Allowed']);
+apiResponse(false, 'Method Not Allowed', null, 405);
