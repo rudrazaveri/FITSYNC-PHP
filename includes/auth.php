@@ -1045,11 +1045,11 @@ function registerUser(array $data, array $uploadedFiles = []): array {
                 INSERT INTO gyms (
                     owner_user_id, name, brand_name, registration_no, email, phone,
                     address_line1, address_line2, city, state, postal_code, country, description,
-                    logo_file_id, rating, capacity, status, created_at, updated_at
+                    logo_file_id, rating, capacity, status, is_published, verification_status, created_at, updated_at
                 ) VALUES (
                     :oid, :name, :brand, :regno, :email, :phone,
                     :addr1, :addr2, :city, :state, :pin, :country, :desc,
-                    :logo, 4.80, 50, 'pending_approval', NOW(), NOW()
+                    :logo, 4.80, 50, 'active', 1, 'pending', NOW(), NOW()
                 )
             ")->execute([
                 ':oid'     => $newUserId,
@@ -1177,8 +1177,21 @@ function registerUser(array $data, array $uploadedFiles = []): array {
                 }
             }
 
+            // Default Membership Plan so members can discover & request enrollment immediately
+            $planName  = trim((string)($data['default_plan_name'] ?? 'Standard Membership'));
+            $planPrice = isset($data['default_plan_price']) && is_numeric($data['default_plan_price']) ? max(0.0, (float)$data['default_plan_price']) : 1500.00;
+            $db->prepare("
+                INSERT INTO membership_plans (gym_id, name, description, duration_months, price, access_type, is_active, created_at, updated_at)
+                VALUES (:gid, :pname, 'Full gym floor & standard equipment access', 1, :pprice, 'single_gym', 1, NOW(), NOW())
+            ")->execute([
+                ':gid'    => $newGymId,
+                ':pname'  => mb_substr($planName !== '' ? $planName : 'Standard Membership', 0, 150),
+                ':pprice' => $planPrice
+            ]);
+
             $extraResponse['gym_id'] = $newGymId;
-            $extraResponse['gym_status'] = 'pending_approval';
+            $extraResponse['gym_status'] = 'active';
+            $extraResponse['is_published'] = 1;
 
             $db->prepare("
                 INSERT INTO notifications (user_id, title, body, entity_type, entity_id, is_read, created_at)
@@ -1188,6 +1201,39 @@ function registerUser(array $data, array $uploadedFiles = []): array {
                 ':body' => "{$fullName} registered {$gymName} ({$gymCity}, {$gymState}) awaiting approval.",
                 ':eid'  => $newGymId
             ]);
+        }
+
+        // Generate email verification code in auth_tokens
+        $verifyCode = (string)random_int(100000, 999999);
+        $verifyHash = hash('sha256', $verifyCode);
+        $db->prepare("
+            INSERT INTO auth_tokens (user_id, purpose, token_hash, new_email, expires_at, created_at)
+            VALUES (:uid, 'email_verify', :th, :em, DATE_ADD(NOW(), INTERVAL 24 HOUR), NOW())
+        ")->execute([':uid' => $newUserId, ':th' => $verifyHash, ':em' => $email]);
+        @mail($email, 'Verify your FitSync email', "Your FitSync verification code is: {$verifyCode}");
+        $extraResponse['email_verification_required'] = true;
+        $extraResponse['verification_code'] = $verifyCode;
+
+        // Link pending gym invitation if registered via invite token (Phase 4)
+        $inviteToken = trim((string)($data['invite_token'] ?? ''));
+        if ($inviteToken !== '') {
+            $invHash = hash('sha256', $inviteToken);
+            $invStmt = $db->prepare("
+                SELECT id, gym_id, invited_email, status, expires_at
+                FROM gym_invitations
+                WHERE token_hash = :th AND status = 'pending' AND expires_at > NOW()
+                LIMIT 1
+            ");
+            $invStmt->execute([':th' => $invHash]);
+            $invRow = $invStmt->fetch(PDO::FETCH_ASSOC);
+            if ($invRow) {
+                if (strtolower(trim((string)$invRow['invited_email'])) !== $email) {
+                    throw new InvalidArgumentException('Registration email must match the invited email address (' . $invRow['invited_email'] . ').');
+                }
+                $db->prepare("UPDATE gym_invitations SET invited_user_id = :uid, updated_at = NOW() WHERE id = :iid")
+                    ->execute([':uid' => $newUserId, ':iid' => (int)$invRow['id']]);
+                $extraResponse['pending_invitation_id'] = (int)$invRow['id'];
+            }
         }
 
         $db->commit();

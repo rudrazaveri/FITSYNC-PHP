@@ -1107,8 +1107,29 @@
             <select id="gymFacilityFilter" class="auth-select" style="padding: 8px 12px; font-size: 12px; max-width: 190px;" onchange="renderGymsDirectoryFromCache()">
               <option value="all">All Facilities</option>
             </select>
+            <select id="gymPriceFilter" class="auth-select" style="padding: 8px 12px; font-size: 12px; max-width: 170px;" onchange="renderGymsDirectoryFromCache()">
+              <option value="all">Any Price</option>
+              <option value="1000">Up to ₹1,000/mo</option>
+              <option value="2000">Up to ₹2,000/mo</option>
+              <option value="3500">Up to ₹3,500/mo</option>
+              <option value="5000">Up to ₹5,000/mo</option>
+            </select>
             <div class="filter-chip-row" id="gymFilterChipsRow">
               <button type="button" class="filter-chip active" data-gym-filter="all" onclick="setGymFilterChip('all')">All Branches (0)</button>
+            </div>
+          </div>
+
+          <!-- Pending Gym Invitations from Gym Owners -->
+          <div id="memberGymInvitationsSection" style="display: none; margin-bottom: 18px;">
+            <div class="fs-card" style="border: 1.5px solid #FDBA74; background: #FFFBEB;">
+              <div class="card-header-row" style="margin-bottom: 10px;">
+                <div>
+                  <h3 class="card-title" style="color: #9A3412;">Pending Gym Invitations</h3>
+                  <p style="font-size: 12px; color: #B45309;">A Gym Owner invited you to join their facility. Accept or decline below.</p>
+                </div>
+                <span class="badge-active" style="background: #FEF3C7; color: #92400E;" id="memberInvitationsCountBadge">0 Pending</span>
+              </div>
+              <div id="memberGymInvitationsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
           </div>
 

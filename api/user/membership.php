@@ -53,7 +53,8 @@ if ($method === 'GET') {
         $search   = trim((string)($_GET['search'] ?? ''));
         $city     = trim((string)($_GET['city'] ?? ''));
         $facility = trim((string)($_GET['facility'] ?? ''));
-        $gyms     = $service->getGymsPublicCatalog($search, $city, $facility);
+        $maxPrice = isset($_GET['max_price']) && is_numeric($_GET['max_price']) ? (float)$_GET['max_price'] : null;
+        $gyms     = $service->getGymsPublicCatalog($search, $city, $facility, $maxPrice);
 
         apiResponse(true, 'Membership details loaded.', [
             'current_membership' => $memberships[0] ?? null,

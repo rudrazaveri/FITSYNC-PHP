@@ -18,6 +18,30 @@ if (isLoggedIn() && !$switchAccount) {
 }
 
 $csrfToken = getCsrfToken();
+
+// Phase 4: Check for Gym Invitation Token
+$inviteToken = trim((string)($_GET['invite'] ?? ''));
+$inviteContext = null;
+if ($inviteToken !== '') {
+    $db = getDbConnection();
+    if ($db) {
+        $tHash = hash('sha256', $inviteToken);
+        $iStmt = $db->prepare("
+            SELECT gi.id, gi.invited_email, gi.invited_name, gi.invited_phone, gi.status, gi.expires_at,
+                   g.name AS gym_name, g.city AS gym_city, mp.name AS plan_name
+            FROM gym_invitations gi
+            INNER JOIN gyms g ON g.id = gi.gym_id
+            LEFT JOIN membership_plans mp ON mp.id = gi.plan_id
+            WHERE gi.token_hash = :th AND gi.status = 'pending' AND gi.expires_at > NOW()
+            LIMIT 1
+        ");
+        $iStmt->execute([':th' => $tHash]);
+        $inviteContext = $iStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+}
+$prefillEmail = $inviteContext ? (string)$inviteContext['invited_email'] : trim((string)($_GET['email'] ?? ''));
+$prefillName  = $inviteContext ? (string)($inviteContext['invited_name'] ?? '') : '';
+$prefillPhone = $inviteContext ? (string)($inviteContext['invited_phone'] ?? '') : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -443,6 +467,12 @@ $csrfToken = getCsrfToken();
       <form id="roleRegisterForm" enctype="multipart/form-data" novalidate>
         <input type="hidden" name="csrf_token" id="csrfTokenInput" value="<?= htmlspecialchars($csrfToken) ?>">
         <input type="hidden" name="role" id="selectedRoleInput" value="user">
+        <input type="hidden" name="invite_token" id="inviteTokenInput" value="<?= htmlspecialchars($inviteToken) ?>">
+        <?php if ($inviteContext): ?>
+          <div style="padding: 12px 16px; border-radius: 10px; background: #FFFBEB; border: 1.5px solid #FDBA74; color: #9A3412; font-size: 13px; margin-bottom: 16px;">
+            <strong>Gym Invitation:</strong> You were invited to join <strong><?= htmlspecialchars($inviteContext['gym_name']) ?></strong><?= $inviteContext['gym_city'] ? ' (' . htmlspecialchars($inviteContext['gym_city']) . ')' : '' ?><?= $inviteContext['plan_name'] ? ' — ' . htmlspecialchars($inviteContext['plan_name']) : '' ?>. Complete registration &amp; verify your email to accept.
+          </div>
+        <?php endif; ?>
 
         <!-- SHARED PERSONAL ACCOUNT FIELDS -->
         <div class="form-section-box">
@@ -450,18 +480,18 @@ $csrfToken = getCsrfToken();
           <div class="grid-2">
             <div class="form-group">
               <label class="form-label" for="sharedFullName">Full Name *</label>
-              <input type="text" id="sharedFullName" name="full_name" class="form-input" placeholder="e.g. Aarav Sharma" required>
+              <input type="text" id="sharedFullName" name="full_name" class="form-input" placeholder="e.g. Aarav Sharma" value="<?= htmlspecialchars($prefillName) ?>" required>
             </div>
             <div class="form-group">
               <label class="form-label" for="sharedEmail">Email Address *</label>
-              <input type="email" id="sharedEmail" name="email" class="form-input" placeholder="you@example.com" required>
+              <input type="email" id="sharedEmail" name="email" class="form-input" placeholder="you@example.com" value="<?= htmlspecialchars($prefillEmail) ?>" <?= $inviteContext ? 'readonly style="background:#F8FAFC;cursor:not-allowed;"' : '' ?> required>
             </div>
           </div>
 
           <div class="grid-2">
             <div class="form-group">
               <label class="form-label" for="sharedMobile" id="mobileLabel">Mobile Number <span id="mobileReqMark" style="color:#64748B;">(Optional)</span></label>
-              <input type="tel" id="sharedMobile" name="mobile" class="form-input" placeholder="+91 98765 43210">
+              <input type="tel" id="sharedMobile" name="mobile" class="form-input" placeholder="+91 98765 43210" value="<?= htmlspecialchars($prefillPhone) ?>">
             </div>
             <div class="form-group">
               <label class="form-label" for="sharedProfilePhoto" id="photoLabel">Profile Photo (Optional)</label>
@@ -1042,6 +1072,16 @@ $csrfToken = getCsrfToken();
         });
         const json = await res.json().catch(() => null);
         if (res.ok && json && json.success) {
+          if (json.pending_invitation_id && json.verification_code) {
+            showRegAlert(`Account created! Verification code: ${json.verification_code}. Verifying email & redirecting to your portal...`, true);
+            await fetch('api/auth/verify_email.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': document.getElementById('csrfTokenInput').value },
+              body: JSON.stringify({ code: json.verification_code })
+            }).catch(() => {});
+            window.location.href = (json.redirect || 'index.php') + '?view=membership';
+            return;
+          }
           showRegAlert(json.message || 'Account created! Redirecting to your portal...', true);
           setTimeout(() => {
             window.location.href = json.redirect || 'index.html';
@@ -1060,6 +1100,9 @@ $csrfToken = getCsrfToken();
 
     window.addEventListener('DOMContentLoaded', () => {
       applyRoleToForm('user');
+      <?php if ($inviteContext): ?>
+      if (typeof selectRoleCard === 'function') selectRoleCard('user');
+      <?php endif; ?>
       loadRegistrationCatalog();
     });
   </script>

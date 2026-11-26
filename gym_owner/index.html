@@ -2088,7 +2088,12 @@
 
         const json = await res.json();
         if (json.success) {
-          alert(json.message || `Athlete ${name} successfully registered into gym roster!`);
+          let successMsg = json.message || `Invitation sent to ${email}!`;
+          if (json.data && json.data.invitation_link && !json.data.user_exists) {
+            const fullUrl = new URL(json.data.invitation_link, window.location.href).href;
+            successMsg += `\n\nRegistration Invite Link (share with athlete):\n${fullUrl}`;
+          }
+          alert(successMsg);
           closeAddMemberModal();
           e.target.reset();
           await loadOwnerData();

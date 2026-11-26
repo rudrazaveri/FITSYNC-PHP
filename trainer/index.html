@@ -292,6 +292,10 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"></path><path d="M12 6v14"></path><path d="M8 8v12"></path><path d="M4 4v16"></path></svg>
           <span class="nav-label">Exercise Library</span>
         </a>
+        <a class="sidebar-nav-item" data-view="find_gyms" href="javascript:void(0)" onclick="switchTrainerView('find_gyms')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9v.01"></path><path d="M9 12v.01"></path><path d="M9 15v.01"></path><path d="M9 18v.01"></path></svg>
+          <span class="nav-label">Find Gyms</span>
+        </a>
         <a class="sidebar-nav-item" data-view="messages" href="javascript:void(0)" onclick="switchTrainerView('messages')">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"></path></svg>
           <span class="nav-label">Messages</span>
@@ -755,6 +759,45 @@
         </section>
 
         <!-- ===================================================================== -->
+        <!-- VIEW 7B: FIND GYMS & ASSOCIATIONS -->
+        <!-- ===================================================================== -->
+        <section id="view-find_gyms" class="trainer-view-section">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Find Gyms &amp; Coaching Associations</h2>
+              <p style="font-size: 13px; color: var(--text-secondary);">Browse published FitSync partner gyms, request coaching association, and track your active gym affiliations.</p>
+            </div>
+            <button type="button" class="btn-outline-gym" style="margin-top:0;padding:6px 12px;font-size:12px;" onclick="loadTrainerGymsDirectory()">Refresh Directory</button>
+          </div>
+
+          <div class="fs-card" style="margin-bottom: 18px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <h3 class="card-title" style="margin:0;">My Gym Associations</h3>
+              <span class="nav-pill" id="trainerAssociatedCountBadge" style="background:#EEF2FF;color:#2563EB;">0 Active</span>
+            </div>
+            <div id="trainerAssociatedGymsList" style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--text-secondary);">
+              Loading your gym associations...
+            </div>
+          </div>
+
+          <div class="fs-card" style="margin-bottom: 18px;">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+              <input type="text" id="trainerGymSearchInput" placeholder="Search gyms by name, city, or facility..." oninput="renderTrainerGymsDirectory()" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;">
+              <select id="trainerGymCityFilter" onchange="renderTrainerGymsDirectory()" style="padding:9px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;background:#fff;">
+                <option value="all">All Cities</option>
+              </select>
+              <select id="trainerGymFacilityFilter" onchange="renderTrainerGymsDirectory()" style="padding:9px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;background:#fff;">
+                <option value="all">All Facilities</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="trainerGymsDirectoryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;">
+            <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--text-secondary);">Loading published FitSync gyms...</div>
+          </div>
+        </section>
+
+        <!-- ===================================================================== -->
         <!-- VIEW 8: NOTIFICATIONS -->
         <!-- ===================================================================== -->
         <section id="view-notifications" class="trainer-view-section">
@@ -1073,6 +1116,8 @@
         renderScheduleView();
       } else if (viewId === 'members') {
         renderMembersDirectoryView();
+      } else if (viewId === 'find_gyms') {
+        loadTrainerGymsDirectory();
       } else if (viewId === 'settings') {
         populateSettingsForm();
       }
@@ -2360,6 +2405,133 @@
         await syncTrainerDataFromDb();
       } catch (err) {
         console.error('Invitation response err:', err);
+      }
+    }
+
+    let trainerGymsCache = [];
+    let trainerAffiliationsCache = [];
+
+    async function loadTrainerGymsDirectory() {
+      try {
+        const res = await fetch('api/trainer/gyms.php', { credentials: 'include' });
+        const json = await res.json();
+        if (!res.ok || !json.success) return;
+        trainerGymsCache = Array.isArray(json.data?.gyms) ? json.data.gyms : [];
+        trainerAffiliationsCache = Array.isArray(json.data?.affiliations) ? json.data.affiliations : [];
+
+        const citySel = document.getElementById('trainerGymCityFilter');
+        if (citySel) {
+          const prev = citySel.value;
+          const cities = Array.from(new Set(trainerGymsCache.map(g => g.city).filter(Boolean))).sort();
+          citySel.innerHTML = '<option value="all">All Cities</option>' + cities.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+          if (cities.includes(prev)) citySel.value = prev;
+        }
+        const facSel = document.getElementById('trainerGymFacilityFilter');
+        if (facSel) {
+          const prev = facSel.value;
+          const facs = Array.from(new Set(trainerGymsCache.flatMap(g => Array.isArray(g.facilities) ? g.facilities : []))).sort();
+          facSel.innerHTML = '<option value="all">All Facilities</option>' + facs.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+          if (facs.includes(prev)) facSel.value = prev;
+        }
+        renderTrainerGymsDirectory();
+      } catch (err) {
+        console.warn('loadTrainerGymsDirectory err:', err);
+      }
+    }
+
+    function renderTrainerGymsDirectory() {
+      const assocEl = document.getElementById('trainerAssociatedGymsList');
+      const countBadge = document.getElementById('trainerAssociatedCountBadge');
+      if (assocEl) {
+        const activeAffs = trainerAffiliationsCache.filter(a => a.affiliation_status === 'active');
+        if (countBadge) countBadge.innerText = `${activeAffs.length} Active`;
+        if (trainerAffiliationsCache.length === 0) {
+          assocEl.innerHTML = '<span>No gym associations yet. Request association with any published gym below.</span>';
+        } else {
+          assocEl.innerHTML = trainerAffiliationsCache.map(a => {
+            const st = String(a.affiliation_status || 'pending');
+            const bg = st === 'active' ? '#DCFCE7' : (st === 'pending' || st === 'invited' ? '#FEF3C7' : '#FEE2E2');
+            const fg = st === 'active' ? '#166534' : (st === 'pending' || st === 'invited' ? '#92400E' : '#991B1B');
+            return `<div style="padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:#F8FAFC;display:flex;align-items:center;gap:8px;">
+              <strong>${escapeHtml(a.gym_name)}</strong>
+              <span style="font-size:11px;color:var(--text-secondary);">(${escapeHtml(a.gym_city || '')})</span>
+              <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:${bg};color:${fg};text-transform:uppercase;">${escapeHtml(st)}</span>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      const grid = document.getElementById('trainerGymsDirectoryGrid');
+      if (!grid) return;
+
+      const q = (document.getElementById('trainerGymSearchInput')?.value || '').trim().toLowerCase();
+      const cityFilter = (document.getElementById('trainerGymCityFilter')?.value || 'all').toLowerCase();
+      const facFilter = (document.getElementById('trainerGymFacilityFilter')?.value || 'all').toLowerCase();
+
+      const filtered = trainerGymsCache.filter(g => {
+        const facs = Array.isArray(g.facilities) ? g.facilities : [];
+        const hay = [g.name, g.city, g.state, g.address_line1, g.owner_name, ...facs].join(' ').toLowerCase();
+        if (q && !hay.includes(q)) return false;
+        if (cityFilter !== 'all' && String(g.city || '').toLowerCase() !== cityFilter) return false;
+        if (facFilter !== 'all' && !facs.some(f => String(f).toLowerCase() === facFilter)) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;background:#F8FAFC;border:1px dashed var(--border-color);border-radius:10px;color:var(--text-secondary);">No published gyms matched your filters.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(g => {
+        const st = g.affiliation_status || 'none';
+        const facs = (Array.isArray(g.facilities) ? g.facilities : []).slice(0, 5);
+        let actionHtml = '';
+        if (st === 'active') {
+          actionHtml = `<span style="display:inline-block;padding:6px 12px;border-radius:6px;background:#DCFCE7;color:#166534;font-size:12px;font-weight:700;">Active Coaching Staff</span>`;
+        } else if (st === 'pending') {
+          actionHtml = `<span style="display:inline-block;padding:6px 12px;border-radius:6px;background:#FEF3C7;color:#92400E;font-size:12px;font-weight:700;">Association Request Pending</span>`;
+        } else if (st === 'invited') {
+          actionHtml = `<button type="button" class="btn-primary-block" style="padding:7px 12px;font-size:12px;" onclick="respondGymInvite(${g.id}, 'accept')">Accept Owner Invitation</button>`;
+        } else {
+          actionHtml = `<div style="display:flex;gap:8px;align-items:center;">
+            <select id="trEmpType-${g.id}" style="padding:7px 8px;border:1px solid var(--border-color);border-radius:6px;font-size:12px;background:#fff;">
+              <option value="full_time">Full Time</option>
+              <option value="part_time">Part Time</option>
+              <option value="freelance">Freelance</option>
+            </select>
+            <button type="button" class="btn-primary-block" style="flex:1;padding:7px 12px;font-size:12px;" onclick="requestGymAssociation(${g.id})">Request Association</button>
+          </div>`;
+        }
+        return `<div class="fs-card" style="display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+              <h4 style="font-size:15px;font-weight:700;color:var(--text-main);margin:0;">${escapeHtml(g.name)}</h4>
+              <span style="font-size:11px;color:#2563EB;font-weight:600;">${escapeHtml(g.city || '')}</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-secondary);margin:4px 0 6px;">${escapeHtml(g.address_line1 || '')}${g.state ? ', ' + escapeHtml(g.state) : ''}</p>
+            <p style="font-size:12px;color:#475569;margin:0 0 8px;">Owner: <strong>${escapeHtml(g.owner_name || 'FitSync Partner')}</strong> &bull; ${escapeHtml(g.hours_summary || 'Open Daily')}</p>
+            ${facs.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">${facs.map(f => `<span style="font-size:10px;padding:2px 7px;background:#F1F5F9;border-radius:4px;color:#334155;">${escapeHtml(f)}</span>`).join('')}</div>` : ''}
+          </div>
+          <div>${actionHtml}</div>
+        </div>`;
+      }).join('');
+    }
+
+    async function requestGymAssociation(gymId) {
+      const empType = document.getElementById(`trEmpType-${gymId}`)?.value || 'full_time';
+      try {
+        const res = await fetch('api/trainer/gyms.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ action: 'request', gym_id: gymId, employment_type: empType })
+        });
+        const json = await res.json();
+        alert(json.message || (json.success ? 'Request sent!' : 'Unable to send request.'));
+        await loadTrainerGymsDirectory();
+        await syncTrainerDataFromDb();
+      } catch (err) {
+        console.error('requestGymAssociation err:', err);
       }
     }
 

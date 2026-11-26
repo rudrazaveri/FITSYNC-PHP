@@ -4267,6 +4267,8 @@ function renderGymsDirectoryFromCache() {
   const current = window.__USER_CURRENT_MEMBERSHIP__ || null;
   const q = (document.getElementById('gymSearchInput')?.value || '').trim().toLowerCase();
   const facFilter = (document.getElementById('gymFacilityFilter')?.value || 'all').trim().toLowerCase();
+  const priceFilterRaw = (document.getElementById('gymPriceFilter')?.value || 'all').trim();
+  const maxPrice = priceFilterRaw !== 'all' ? parseFloat(priceFilterRaw) : NaN;
 
   const filtered = gyms.filter(g => {
     const facs = Array.isArray(g.facilities) ? g.facilities : [];
@@ -4277,6 +4279,10 @@ function renderGymsDirectoryFromCache() {
     ].join(' ').toLowerCase();
     if (q && !hay.includes(q)) return false;
     if (facFilter !== 'all' && !facs.some(f => String(f).toLowerCase() === facFilter)) return false;
+    if (!Number.isNaN(maxPrice)) {
+      const plans = Array.isArray(g.plans) ? g.plans : [];
+      if (plans.length === 0 || !plans.some(p => Number(p.price || 0) <= maxPrice)) return false;
+    }
     if (activeGymFilterChip !== 'all') {
       if ((g.city || '').toLowerCase() !== activeGymFilterChip.toLowerCase() && !hay.includes(activeGymFilterChip.toLowerCase())) {
         return false;
@@ -4570,8 +4576,100 @@ async function loadMembershipPortalData() {
 
     renderGymsDirectoryFromCache();
     renderMembershipHistory(history);
+    await loadUserInvitations();
   } catch (err) {
     console.warn('Failed to load membership portal:', err);
+  }
+}
+
+async function loadUserInvitations() {
+  const sec = document.getElementById('memberGymInvitationsSection');
+  const listEl = document.getElementById('memberGymInvitationsList');
+  const badgeEl = document.getElementById('memberInvitationsCountBadge');
+  if (!sec || !listEl) return;
+
+  try {
+    const res = await fetch('api/user/invitations.php', { cache: 'no-store' });
+    if (!res.ok) return;
+    const json = await res.json();
+    const invs = Array.isArray(json.data?.invitations) ? json.data.invitations : [];
+    const emailVerified = Boolean(json.data?.email_verified);
+
+    if (invs.length === 0) {
+      sec.style.display = 'none';
+      return;
+    }
+
+    sec.style.display = 'block';
+    if (badgeEl) badgeEl.textContent = `${invs.length} Pending`;
+
+    listEl.innerHTML = invs.map(inv => `
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 14px;background:#fff;border:1px solid #FDE68A;border-radius:10px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#0F172A;">${escapeHtml(inv.gym_name)} ${inv.gym_city ? `<span style="font-weight:500;color:#64748B;">(${escapeHtml(inv.gym_city)})</span>` : ''}</div>
+          <div style="font-size:12px;color:#475569;margin-top:2px;">
+            Plan: <strong>${escapeHtml(inv.plan_name || 'Standard Membership')}</strong>
+            ${inv.plan_price ? ` • ₹${Number(inv.plan_price).toLocaleString()}` : ''}
+            ${inv.trainer_name ? ` • Coach: <strong>${escapeHtml(inv.trainer_name)}</strong>` : ''}
+            • Invited by ${escapeHtml(inv.invited_by_name || 'Gym Owner')}
+          </div>
+          ${!emailVerified ? `<div style="font-size:11px;color:#DC2626;margin-top:4px;">Verify your email before accepting this invitation. <a href="javascript:void(0)" onclick="promptMemberEmailVerification()" style="color:#2563EB;font-weight:600;">Verify Email Now</a></div>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button type="button" class="btn-primary-block" style="width:auto;padding:7px 14px;font-size:12px;" onclick="respondGymInvitation(${inv.id}, 'accept')">Accept Invitation</button>
+          <button type="button" class="btn-secondary" style="padding:7px 12px;font-size:12px;color:#DC2626;" onclick="respondGymInvitation(${inv.id}, 'reject')">Decline</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.warn('loadUserInvitations err:', err);
+  }
+}
+
+async function promptMemberEmailVerification() {
+  try {
+    const r1 = await fetch('api/auth/verify_email.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'resend' })
+    });
+    const j1 = await r1.json();
+    const hint = j1.data?.verification_code ? ` (Dev code: ${j1.data.verification_code})` : '';
+    const code = prompt(`Enter the 6-digit verification code sent to your email${hint}:`);
+    if (!code) return;
+    const r2 = await fetch('api/auth/verify_email.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verify', code: code.trim() })
+    });
+    const j2 = await r2.json();
+    alert(j2.message || (j2.success ? 'Email verified!' : 'Verification failed.'));
+    if (j2.success) await loadUserInvitations();
+  } catch (err) {
+    alert('Unable to verify email.');
+  }
+}
+
+async function respondGymInvitation(invitationId, decision) {
+  try {
+    const res = await fetch('api/user/invitations.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invitation_id: invitationId, decision })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      alert(json.message || 'Unable to process invitation.');
+      if (json.message && json.message.toLowerCase().includes('verify your email')) {
+        await promptMemberEmailVerification();
+      }
+      return;
+    }
+    alert(json.message || 'Invitation updated!');
+    await loadMembershipPortalData();
+    await loadUserDashboardData();
+  } catch (err) {
+    alert('Network error while responding to invitation.');
   }
 }
 

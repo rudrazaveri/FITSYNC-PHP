@@ -560,6 +560,21 @@ class FitSyncDataService {
         $trReqStmt->execute([':gid' => $resolvedGymId]);
         $pendingTrainerRequests = $trReqStmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Pending / Recent Gym Invitations sent by this gym
+        $invStmt = $this->db->prepare("
+            SELECT gi.id, gi.gym_id, gi.invited_user_id, gi.invited_email, gi.invited_name, gi.invited_phone,
+                   gi.plan_id, gi.trainer_user_id, gi.status, gi.expires_at, gi.accepted_at, gi.rejected_at, gi.created_at,
+                   mp.name AS plan_name, coach_u.full_name AS trainer_name
+            FROM gym_invitations gi
+            LEFT JOIN membership_plans mp ON mp.id = gi.plan_id
+            LEFT JOIN users coach_u ON coach_u.id = gi.trainer_user_id
+            WHERE gi.gym_id = :gid
+            ORDER BY FIELD(gi.status, 'pending', 'accepted', 'rejected', 'expired', 'cancelled'), gi.id DESC
+            LIMIT 50
+        ");
+        $invStmt->execute([':gid' => $resolvedGymId]);
+        $gymInvitations = $invStmt->fetchAll(PDO::FETCH_ASSOC);
+
         $pendingCount = count(array_filter($membershipRequests, fn($r) => $r['status'] === 'pending'));
         $rejectedInactiveCount = count(array_filter($membershipRequests, fn($r) => $r['status'] !== 'pending'));
 
@@ -597,6 +612,7 @@ class FitSyncDataService {
             'membership_plans'         => $membershipPlans,
             'turnstile_logs'           => $turnstileLogs,
             'notifications'            => $ownerNotifications,
+            'invitations'              => $gymInvitations,
             'owned_gyms'               => $this->getOwnerGymsDetailed($ownerUserId, $role)
         ];
     }
@@ -1667,12 +1683,14 @@ class FitSyncDataService {
         ];
 
         if ($role !== 'admin' && $role !== 'gym_owner') {
-            if (!$this->isTrainerVerified($trainerUserId)) {
-                throw new RuntimeException("Forbidden: Your trainer account is pending verification and cannot view athlete dossiers yet.");
-            }
             $assignment = $this->isTrainerAssignedToUser($trainerUserId, $memberUserId);
             if (!$assignment) {
                 throw new RuntimeException("Unauthorized: Coach is not assigned to this athlete.");
+            }
+            $tpStatusStmt = $this->db->prepare("SELECT status FROM trainer_profiles WHERE user_id = :tid LIMIT 1");
+            $tpStatusStmt->execute([':tid' => $trainerUserId]);
+            if ((string)$tpStatusStmt->fetchColumn() === 'rejected') {
+                throw new RuntimeException("Forbidden: Your trainer account verification was rejected.");
             }
             $permissions = [
                 'can_view_measurements'    => (int)$assignment['can_view_measurements'],
@@ -1825,7 +1843,7 @@ class FitSyncDataService {
         $unreadTrainerNotifs = (int)$unreadNotifStmt->fetchColumn();
 
         $isVerified = ($trainer['verification_status'] ?? 'pending_verification') === 'verified';
-        if (!$isVerified) {
+        if (false) { // Keep assigned athletes accessible to owner-approved/assigned coaches while surfacing is_verified notice
             $nStmt = $this->db->prepare("SELECT id, title, body, entity_type, entity_id, is_read, created_at FROM notifications WHERE user_id = :tid ORDER BY created_at DESC LIMIT 20");
             $nStmt->execute([':tid' => $trainerUserId]);
             return [
@@ -2658,6 +2676,374 @@ class FitSyncDataService {
         }
     }
 
+    /**
+     * Phase 3 & 4: Gym Owner invites an existing FitSync user OR an unregistered person.
+     * - Never creates duplicate user accounts.
+     * - Never creates fake active user accounts for unregistered people.
+     */
+    public function inviteOrEnrollAthlete(int $ownerUserId, int $gymId, array $input, string $role = 'gym_owner'): array {
+        if ($this->db === null) {
+            throw new RuntimeException("Database connection unavailable.");
+        }
+
+        $resolvedGymId = $this->resolveOwnerGymId($ownerUserId, $gymId > 0 ? $gymId : null, $role);
+        if ($resolvedGymId === null) {
+            throw new RuntimeException("Forbidden: No gym facility owned by your account. Register a gym first.");
+        }
+
+        $fullName        = trim((string)($input['name'] ?? ($input['full_name'] ?? '')));
+        $email           = trim(strtolower((string)($input['email'] ?? '')));
+        $phone           = trim((string)($input['phone'] ?? ($input['mobile'] ?? '')));
+        $reqPlanId       = isset($input['plan_id']) && (int)$input['plan_id'] > 0 ? (int)$input['plan_id'] : 0;
+        $tier            = trim((string)($input['membershipTier'] ?? ($input['plan_tier'] ?? 'Standard Membership')));
+        $assignedCoachId = trim((string)($input['assignedCoachId'] ?? ($input['coach_id'] ?? '')));
+
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException("Please provide a valid email address.");
+        }
+        if ($fullName === '') {
+            $fullName = explode('@', $email)[0];
+        }
+
+        $gStmt = $this->db->prepare("SELECT id, name FROM gyms WHERE id = :gid LIMIT 1");
+        $gStmt->execute([':gid' => $resolvedGymId]);
+        $gymRow = $gStmt->fetch(PDO::FETCH_ASSOC);
+        $gymName = $gymRow ? (string)$gymRow['name'] : 'FitSync Facility';
+
+        $coachUserId = (int)str_replace('tr-', '', $assignedCoachId);
+        if ($coachUserId > 0) {
+            $cChk = $this->db->prepare("
+                SELECT u.id FROM gym_trainers gt
+                INNER JOIN users u ON u.id = gt.trainer_user_id AND u.status = 'active'
+                WHERE gt.gym_id = :gid AND gt.trainer_user_id = :tid AND gt.is_active = 1 AND gt.status = 'active'
+                LIMIT 1
+            ");
+            $cChk->execute([':gid' => $resolvedGymId, ':tid' => $coachUserId]);
+            if (!$cChk->fetchColumn()) {
+                throw new InvalidArgumentException("Selected personal trainer is not an active coach at your gym.");
+            }
+        } else {
+            $coachUserId = null;
+        }
+
+        $planId = null;
+        $planName = $tier !== '' ? $tier : 'Standard Membership';
+        if ($reqPlanId > 0) {
+            $pStmt = $this->db->prepare("SELECT id, name FROM membership_plans WHERE id = :pid AND gym_id = :gid AND is_active = 1 LIMIT 1");
+            $pStmt->execute([':pid' => $reqPlanId, ':gid' => $resolvedGymId]);
+            $pRow = $pStmt->fetch(PDO::FETCH_ASSOC);
+            if ($pRow) {
+                $planId = (int)$pRow['id'];
+                $planName = (string)$pRow['name'];
+            }
+        }
+        if ($planId === null) {
+            $pStmt = $this->db->prepare("SELECT id, name FROM membership_plans WHERE gym_id = :gid AND is_active = 1 ORDER BY id ASC LIMIT 1");
+            $pStmt->execute([':gid' => $resolvedGymId]);
+            $pRow = $pStmt->fetch(PDO::FETCH_ASSOC);
+            if ($pRow) {
+                $planId = (int)$pRow['id'];
+                $planName = (string)$pRow['name'];
+            } else {
+                $this->db->prepare("
+                    INSERT INTO membership_plans (gym_id, name, description, duration_months, price, access_type, is_active, created_at, updated_at)
+                    VALUES (:gid, :nm, 'Gym membership plan', 1, 1500.00, 'single_gym', 1, NOW(), NOW())
+                ")->execute([':gid' => $resolvedGymId, ':nm' => mb_substr($planName, 0, 150)]);
+                $planId = (int)$this->db->lastInsertId();
+            }
+        }
+
+        $uStmt = $this->db->prepare("SELECT id, full_name, email, role, status FROM users WHERE LOWER(TRIM(email)) = :email LIMIT 1");
+        $uStmt->execute([':email' => $email]);
+        $existingUser = $uStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existingUser) {
+            $existingUid = (int)$existingUser['id'];
+            $mChk = $this->db->prepare("SELECT id FROM memberships WHERE user_id = :uid AND gym_id = :gid AND status = 'active' LIMIT 1");
+            $mChk->execute([':uid' => $existingUid, ':gid' => $resolvedGymId]);
+            if ($mChk->fetchColumn()) {
+                throw new InvalidArgumentException("User ({$email}) is already an active member of {$gymName}.");
+            }
+        }
+
+        $this->db->prepare("UPDATE gym_invitations SET status = 'expired', updated_at = NOW() WHERE gym_id = :gid AND LOWER(invited_email) = :email AND status = 'pending' AND expires_at <= NOW()")
+            ->execute([':gid' => $resolvedGymId, ':email' => $email]);
+
+        $dupInv = $this->db->prepare("SELECT id, expires_at FROM gym_invitations WHERE gym_id = :gid AND LOWER(invited_email) = :email AND status = 'pending' AND expires_at > NOW() LIMIT 1");
+        $dupInv->execute([':gid' => $resolvedGymId, ':email' => $email]);
+        $existingInv = $dupInv->fetch(PDO::FETCH_ASSOC);
+        if ($existingInv) {
+            return [
+                'invitation_id'       => (int)$existingInv['id'],
+                'gym_id'              => $resolvedGymId,
+                'gym_name'            => $gymName,
+                'invited_email'       => $email,
+                'user_exists'         => (bool)$existingUser,
+                'status'              => 'pending',
+                'duplicate_prevented' => true,
+                'message'             => "A pending invitation already exists for {$email} at {$gymName}."
+            ];
+        }
+
+        $rawToken  = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $cleanPhone = $phone !== '' ? $phone : null;
+
+        $ins = $this->db->prepare("
+            INSERT INTO gym_invitations (
+                gym_id, invited_by_user_id, invited_user_id, invited_email, invited_name, invited_phone,
+                plan_id, trainer_user_id, token_hash, status, expires_at, created_at, updated_at
+            ) VALUES (
+                :gid, :byid, :uid, :email, :name, :phone,
+                :pid, :tid, :thash, 'pending', DATE_ADD(NOW(), INTERVAL 7 DAY), NOW(), NOW()
+            )
+        ");
+        $ins->execute([
+            ':gid'   => $resolvedGymId,
+            ':byid'  => $ownerUserId,
+            ':uid'   => $existingUser ? (int)$existingUser['id'] : null,
+            ':email' => $email,
+            ':name'  => mb_substr($existingUser ? (string)$existingUser['full_name'] : $fullName, 0, 150),
+            ':phone' => $cleanPhone,
+            ':pid'   => $planId,
+            ':tid'   => $coachUserId,
+            ':thash' => $tokenHash
+        ]);
+        $invId = (int)$this->db->lastInsertId();
+
+        $inviteLink = 'register.php?invite=' . urlencode($rawToken) . '&email=' . urlencode($email);
+
+        if ($existingUser) {
+            $this->createNotification(
+                (int)$existingUser['id'],
+                'Gym Membership Invitation',
+                "{$gymName} invited you to join ({$planName}). Review and accept or decline in Gyms & Membership.",
+                'gym_invitation',
+                $invId
+            );
+            $msg = "Invitation sent to existing FitSync user {$email}. They can accept it from their User Portal.";
+        } else {
+            @mail(
+                $email,
+                "You're invited to join {$gymName} on FitSync",
+                "Hello {$fullName},\n\n{$gymName} has invited you to join FitSync.\nComplete registration using your secure invitation link:\n{$inviteLink}\n\nThis link expires in 7 days."
+            );
+            $msg = "Secure single-use invitation created for {$email}. Share the registration link so they can sign up and verify their email.";
+        }
+
+        return [
+            'invitation_id'   => $invId,
+            'gym_id'          => $resolvedGymId,
+            'gym_name'        => $gymName,
+            'plan_id'         => $planId,
+            'plan_name'       => $planName,
+            'invited_email'   => $email,
+            'invited_name'    => $existingUser ? (string)$existingUser['full_name'] : $fullName,
+            'user_exists'     => (bool)$existingUser,
+            'invited_user_id' => $existingUser ? (int)$existingUser['id'] : null,
+            'status'          => 'pending',
+            'invite_token'    => $rawToken,
+            'invitation_link' => $inviteLink,
+            'message'         => $msg
+        ];
+    }
+
+    public function getUserGymInvitations(int $userId): array {
+        if ($this->db === null) return [];
+
+        $uStmt = $this->db->prepare("SELECT id, email, email_verified_at FROM users WHERE id = :uid LIMIT 1");
+        $uStmt->execute([':uid' => $userId]);
+        $uRow = $uStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$uRow) return [];
+
+        $email = strtolower(trim((string)$uRow['email']));
+
+        $this->db->prepare("
+            UPDATE gym_invitations SET status = 'expired', updated_at = NOW()
+            WHERE status = 'pending' AND expires_at <= NOW() AND (invited_user_id = :uid OR LOWER(invited_email) = :email)
+        ")->execute([':uid' => $userId, ':email' => $email]);
+
+        $stmt = $this->db->prepare("
+            SELECT gi.*, g.name AS gym_name, g.city AS gym_city, g.address_line1 AS gym_address,
+                   mp.name AS plan_name, mp.price AS plan_price, mp.duration_months,
+                   owner_u.full_name AS invited_by_name,
+                   coach_u.full_name AS trainer_name
+            FROM gym_invitations gi
+            INNER JOIN gyms g ON g.id = gi.gym_id
+            LEFT JOIN membership_plans mp ON mp.id = gi.plan_id
+            LEFT JOIN users owner_u ON owner_u.id = gi.invited_by_user_id
+            LEFT JOIN users coach_u ON coach_u.id = gi.trainer_user_id
+            WHERE gi.status = 'pending' AND gi.expires_at > NOW()
+              AND (gi.invited_user_id = :uid OR LOWER(gi.invited_email) = :email)
+            ORDER BY gi.id DESC
+        ");
+        $stmt->execute([':uid' => $userId, ':email' => $email]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function respondToGymInvitation(int $userId, int $invitationId, string $decision): array {
+        if ($this->db === null) {
+            throw new RuntimeException("Database connection unavailable.");
+        }
+        if (!in_array($decision, ['accept', 'reject'], true)) {
+            throw new InvalidArgumentException("Decision must be 'accept' or 'reject'.");
+        }
+
+        $uStmt = $this->db->prepare("SELECT id, full_name, email, email_verified_at FROM users WHERE id = :uid AND status = 'active' LIMIT 1");
+        $uStmt->execute([':uid' => $userId]);
+        $user = $uStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$user) {
+            throw new RuntimeException("Active user account not found.");
+        }
+
+        $stmt = $this->db->prepare("
+            SELECT gi.*, g.name AS gym_name, g.owner_user_id
+            FROM gym_invitations gi
+            INNER JOIN gyms g ON g.id = gi.gym_id
+            WHERE gi.id = :iid
+            LIMIT 1
+        ");
+        $stmt->execute([':iid' => $invitationId]);
+        $inv = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$inv) {
+            throw new InvalidArgumentException("Invitation not found.");
+        }
+        if ($inv['status'] !== 'pending') {
+            throw new InvalidArgumentException("This invitation has already been {$inv['status']}.");
+        }
+        if (strtotime((string)$inv['expires_at']) <= time()) {
+            $this->db->prepare("UPDATE gym_invitations SET status = 'expired', updated_at = NOW() WHERE id = :iid")->execute([':iid' => $invitationId]);
+            throw new InvalidArgumentException("This invitation has expired.");
+        }
+        if (strtolower(trim((string)$user['email'])) !== strtolower(trim((string)$inv['invited_email']))) {
+            throw new RuntimeException("Forbidden: Your account email does not match the invited email address.");
+        }
+        if (!empty($inv['invited_user_id']) && (int)$inv['invited_user_id'] !== $userId) {
+            throw new RuntimeException("Forbidden: This invitation belongs to another FitSync account.");
+        }
+
+        if ($decision === 'reject') {
+            $this->db->prepare("
+                UPDATE gym_invitations
+                SET status = 'rejected', invited_user_id = :uid, rejected_at = NOW(), updated_at = NOW()
+                WHERE id = :iid AND status = 'pending'
+            ")->execute([':uid' => $userId, ':iid' => $invitationId]);
+
+            if (!empty($inv['invited_by_user_id'])) {
+                $this->createNotification(
+                    (int)$inv['invited_by_user_id'],
+                    'Gym Invitation Declined',
+                    "{$user['full_name']} ({$user['email']}) declined your invitation to {$inv['gym_name']}.",
+                    'gym_invitation',
+                    $invitationId
+                );
+            }
+            return ['invitation_id' => $invitationId, 'status' => 'rejected', 'gym_name' => $inv['gym_name']];
+        }
+
+        if (empty($user['email_verified_at'])) {
+            throw new RuntimeException("Please verify your email address before accepting this gym invitation.");
+        }
+
+        $gymId = (int)$inv['gym_id'];
+
+        $this->db->beginTransaction();
+        try {
+            $this->db->prepare("INSERT IGNORE INTO user_roles (user_id, role) VALUES (:uid, 'user')")->execute([':uid' => $userId]);
+            $this->db->prepare("
+                INSERT INTO user_profiles (user_id, fitness_experience, preferred_gym_id, updated_at)
+                VALUES (:uid, 'intermediate', :gid, NOW())
+                ON DUPLICATE KEY UPDATE preferred_gym_id = COALESCE(preferred_gym_id, VALUES(preferred_gym_id)), updated_at = NOW()
+            ")->execute([':uid' => $userId, ':gid' => $gymId]);
+
+            $mChk = $this->db->prepare("SELECT id FROM memberships WHERE user_id = :uid AND gym_id = :gid AND status = 'active' LIMIT 1");
+            $mChk->execute([':uid' => $userId, ':gid' => $gymId]);
+            if ($mChk->fetchColumn()) {
+                throw new InvalidArgumentException("You already have an active membership at {$inv['gym_name']}.");
+            }
+
+            $planId = !empty($inv['plan_id']) ? (int)$inv['plan_id'] : 0;
+            $planRow = null;
+            if ($planId > 0) {
+                $pStmt = $this->db->prepare("SELECT id, name, duration_months FROM membership_plans WHERE id = :pid AND gym_id = :gid LIMIT 1");
+                $pStmt->execute([':pid' => $planId, ':gid' => $gymId]);
+                $planRow = $pStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            }
+            if (!$planRow) {
+                $pStmt = $this->db->prepare("SELECT id, name, duration_months FROM membership_plans WHERE gym_id = :gid AND is_active = 1 ORDER BY id ASC LIMIT 1");
+                $pStmt->execute([':gid' => $gymId]);
+                $planRow = $pStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            }
+            if (!$planRow) {
+                $this->db->prepare("INSERT INTO membership_plans (gym_id, name, duration_months, price, access_type, is_active) VALUES (:gid, 'Standard Membership', 1, 1500.00, 'single_gym', 1)")
+                    ->execute([':gid' => $gymId]);
+                $planRow = ['id' => (int)$this->db->lastInsertId(), 'name' => 'Standard Membership', 'duration_months' => 1];
+            }
+
+            $durMonths = max(1, (int)$planRow['duration_months']);
+            $qrToken = 'FS-MEM-' . $userId . '-' . bin2hex(random_bytes(6));
+
+            $this->db->prepare("
+                INSERT INTO memberships (user_id, plan_id, gym_id, start_date, end_date, status, payment_status, qr_code_token, auto_renew, approved_by_user_id, approved_at, created_at, updated_at)
+                VALUES (:uid, :pid, :gid, CURDATE(), DATE_ADD(CURDATE(), INTERVAL :months MONTH), 'active', 'unpaid', :qr, 0, :oid, NOW(), NOW(), NOW())
+            ")->execute([
+                ':uid'    => $userId,
+                ':pid'    => (int)$planRow['id'],
+                ':gid'    => $gymId,
+                ':months' => $durMonths,
+                ':qr'     => $qrToken,
+                ':oid'    => $inv['invited_by_user_id']
+            ]);
+            $membershipId = (int)$this->db->lastInsertId();
+
+            if (!empty($inv['trainer_user_id'])) {
+                $tid = (int)$inv['trainer_user_id'];
+                $this->db->prepare("UPDATE trainer_assignments SET status = 'transferred', end_date = CURDATE(), updated_at = NOW() WHERE user_id = :uid AND status = 'active'")
+                    ->execute([':uid' => $userId]);
+                $this->db->prepare("
+                    INSERT INTO trainer_assignments (user_id, trainer_user_id, gym_id, assigned_by_user_id, status, start_date, created_at, updated_at)
+                    VALUES (:uid, :tid, :gid, :oid, 'active', CURDATE(), NOW(), NOW())
+                ")->execute([':uid' => $userId, ':tid' => $tid, ':gid' => $gymId, ':oid' => $inv['invited_by_user_id']]);
+                $assignId = (int)$this->db->lastInsertId();
+                $this->db->prepare("INSERT IGNORE INTO trainer_data_permissions (assignment_id) VALUES (:aid)")->execute([':aid' => $assignId]);
+                $this->createNotification($tid, 'New Athlete Assigned', "{$user['full_name']} joined {$inv['gym_name']} and was assigned to you.", 'trainer_assignment', $assignId);
+            }
+
+            $upInv = $this->db->prepare("
+                UPDATE gym_invitations
+                SET status = 'accepted', invited_user_id = :uid, accepted_at = NOW(), updated_at = NOW()
+                WHERE id = :iid AND status = 'pending'
+            ");
+            $upInv->execute([':uid' => $userId, ':iid' => $invitationId]);
+            if ($upInv->rowCount() === 0) {
+                throw new InvalidArgumentException("Invitation could not be accepted (already used).");
+            }
+
+            if (!empty($inv['invited_by_user_id'])) {
+                $this->createNotification(
+                    (int)$inv['invited_by_user_id'],
+                    'Gym Invitation Accepted',
+                    "{$user['full_name']} ({$user['email']}) accepted your invitation and joined {$inv['gym_name']}.",
+                    'membership',
+                    $membershipId
+                );
+            }
+
+            $this->db->commit();
+            return [
+                'invitation_id' => $invitationId,
+                'membership_id' => $membershipId,
+                'gym_id'        => $gymId,
+                'gym_name'      => $inv['gym_name'],
+                'plan_name'     => $planRow['name'],
+                'status'        => 'accepted'
+            ];
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            throw $e;
+        }
+    }
+
     // =========================================================================
     // WORKFLOW E: Trainer Notes & Shared Feedback
     // =========================================================================
@@ -2975,6 +3361,93 @@ class FitSyncDataService {
         return ['gym_id' => $gymId, 'trainer_user_id' => $trainerUserId, 'status' => $newStatus, 'is_active' => $isActive];
     }
 
+    public function requestTrainerGymAssociation(int $trainerUserId, int $gymId, string $employmentType = 'full_time'): array {
+        if ($this->db === null) {
+            throw new RuntimeException("Database connection unavailable.");
+        }
+        if (!in_array($employmentType, ['full_time', 'part_time', 'freelance'], true)) {
+            $employmentType = 'full_time';
+        }
+
+        $gStmt = $this->db->prepare("
+            SELECT id, name, owner_user_id, status, COALESCE(is_published, 1) AS is_published
+            FROM gyms
+            WHERE id = :gid AND status = 'active' AND COALESCE(is_published, 1) = 1
+            LIMIT 1
+        ");
+        $gStmt->execute([':gid' => $gymId]);
+        $gymRow = $gStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$gymRow) {
+            throw new InvalidArgumentException("Selected gym is not published or unavailable.");
+        }
+
+        $tStmt = $this->db->prepare("SELECT id, full_name FROM users WHERE id = :tid AND role = 'trainer' AND status = 'active' LIMIT 1");
+        $tStmt->execute([':tid' => $trainerUserId]);
+        $trainerRow = $tStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$trainerRow) {
+            throw new InvalidArgumentException("Trainer account not found or inactive.");
+        }
+
+        $chk = $this->db->prepare("SELECT * FROM gym_trainers WHERE gym_id = :gid AND trainer_user_id = :tid LIMIT 1");
+        $chk->execute([':gid' => $gymId, ':tid' => $trainerUserId]);
+        $existing = $chk->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            if ($existing['status'] === 'active' && (int)$existing['is_active'] === 1) {
+                return [
+                    'gym_id'              => $gymId,
+                    'trainer_user_id'     => $trainerUserId,
+                    'status'              => 'active',
+                    'duplicate_prevented' => true,
+                    'message'             => "You are already an active coach at {$gymRow['name']}."
+                ];
+            }
+            if ($existing['status'] === 'pending') {
+                return [
+                    'gym_id'              => $gymId,
+                    'trainer_user_id'     => $trainerUserId,
+                    'status'              => 'pending',
+                    'duplicate_prevented' => true,
+                    'message'             => "Your association request for {$gymRow['name']} is already pending owner approval."
+                ];
+            }
+        }
+
+        $this->db->prepare("
+            INSERT INTO gym_trainers (gym_id, trainer_user_id, employment_type, status, initiated_by, is_active, joined_at)
+            VALUES (:gid, :tid, :etype, 'pending', 'trainer', 0, CURDATE())
+            ON DUPLICATE KEY UPDATE
+                employment_type = VALUES(employment_type),
+                status = 'pending',
+                initiated_by = 'trainer',
+                is_active = 0,
+                joined_at = CURDATE()
+        ")->execute([
+            ':gid'   => $gymId,
+            ':tid'   => $trainerUserId,
+            ':etype' => $employmentType
+        ]);
+
+        if (!empty($gymRow['owner_user_id'])) {
+            $this->createNotification(
+                (int)$gymRow['owner_user_id'],
+                'Trainer Association Request',
+                "{$trainerRow['full_name']} requested to join {$gymRow['name']} as a coach (" . str_replace('_', ' ', $employmentType) . ").",
+                'trainer_affiliation',
+                $trainerUserId
+            );
+        }
+
+        return [
+            'gym_id'          => $gymId,
+            'gym_name'        => $gymRow['name'],
+            'trainer_user_id' => $trainerUserId,
+            'employment_type' => $employmentType,
+            'status'          => 'pending',
+            'is_active'       => 0
+        ];
+    }
+
     public function reviewMemberTrainerRequest(int $ownerUserId, int $requestId, string $decision, string $role = 'gym_owner'): array {
         if ($this->db === null) {
             throw new RuntimeException("Database connection unavailable.");
@@ -3161,49 +3634,53 @@ class FitSyncDataService {
             $coverUrl = !empty($g['cover_storage_key']) ? ('uploads/' . ltrim((string)$g['cover_storage_key'], '/')) : ($photos[0] ?? 'assets/images/gym_fitzone.jpg');
 
             $out[] = [
-                'id'              => $gid,
-                'owner_user_id'   => (int)$g['owner_user_id'],
-                'name'            => $g['name'],
-                'brand_name'      => $g['brand_name'] ?? $g['name'],
-                'registration_no' => $g['registration_no'] ?? '',
-                'description'     => $g['description'] ?? '',
-                'email'           => $g['email'],
-                'phone'           => $g['phone'],
-                'address_line1'   => $g['address_line1'],
-                'address_line2'   => $g['address_line2'] ?? '',
-                'city'            => $g['city'],
-                'state'           => $g['state'],
-                'postal_code'     => $g['postal_code'],
-                'country'         => $g['country'] ?? 'India',
-                'rating'          => (float)($g['rating'] ?? 4.8),
-                'capacity'        => (int)($g['capacity'] ?? 50),
-                'status'          => $g['status'],
-                'logo_url'        => $logoUrl,
-                'cover_url'       => $coverUrl,
-                'photos'          => $photos,
-                'operating_hours' => $hoursFormatted,
-                'hours_summary'   => $hoursSummary,
-                'facilities'      => array_map(fn($f) => $f['name'], $facRows),
-                'equipment'       => array_map(fn($e) => $e['name'], $eqRows),
-                'plans'           => $planRows,
-                'created_at'      => $g['created_at'] ?? null,
-                'updated_at'      => $g['updated_at'] ?? null
+                'id'                  => $gid,
+                'owner_user_id'       => (int)$g['owner_user_id'],
+                'owner_name'          => $g['owner_name'] ?? '',
+                'name'                => $g['name'],
+                'brand_name'          => $g['brand_name'] ?? $g['name'],
+                'registration_no'     => $g['registration_no'] ?? '',
+                'description'         => $g['description'] ?? '',
+                'email'               => $g['email'],
+                'phone'               => $g['phone'],
+                'address_line1'       => $g['address_line1'],
+                'address_line2'       => $g['address_line2'] ?? '',
+                'city'                => $g['city'],
+                'state'               => $g['state'],
+                'postal_code'         => $g['postal_code'],
+                'country'             => $g['country'] ?? 'India',
+                'rating'              => (float)($g['rating'] ?? 4.8),
+                'capacity'            => (int)($g['capacity'] ?? 50),
+                'status'              => $g['status'],
+                'is_published'        => isset($g['is_published']) ? (int)$g['is_published'] : 1,
+                'verification_status' => $g['verification_status'] ?? 'pending',
+                'logo_url'            => $logoUrl,
+                'cover_url'           => $coverUrl,
+                'photos'              => $photos,
+                'operating_hours'     => $hoursFormatted,
+                'hours_summary'       => $hoursSummary,
+                'facilities'          => array_map(fn($f) => $f['name'], $facRows),
+                'equipment'           => array_map(fn($e) => $e['name'], $eqRows),
+                'plans'               => $planRows,
+                'created_at'          => $g['created_at'] ?? null,
+                'updated_at'          => $g['updated_at'] ?? null
             ];
         }
 
         return $out;
     }
 
-    public function getGymsPublicCatalog(?string $search = null, ?string $city = null, ?string $facility = null): array {
+    public function getGymsPublicCatalog(?string $search = null, ?string $city = null, ?string $facility = null, ?float $maxPrice = null): array {
         if ($this->db === null) return [];
         $this->expireEndedMemberships();
 
         $sql = "
-            SELECT g.*, lf.storage_key AS logo_storage_key, cf.storage_key AS cover_storage_key
+            SELECT g.*, owner_u.full_name AS owner_name, lf.storage_key AS logo_storage_key, cf.storage_key AS cover_storage_key
             FROM gyms g
+            LEFT JOIN users owner_u ON owner_u.id = g.owner_user_id
             LEFT JOIN files lf ON lf.id = g.logo_file_id
             LEFT JOIN files cf ON cf.id = g.cover_photo_id
-            WHERE g.status = 'active'
+            WHERE g.status = 'active' AND COALESCE(g.is_published, 1) = 1
         ";
         $params = [];
 
@@ -3230,6 +3707,10 @@ class FitSyncDataService {
             $sql .= " AND EXISTS (SELECT 1 FROM gym_facilities gf2 INNER JOIN facilities f2 ON f2.id = gf2.facility_id WHERE gf2.gym_id = g.id AND LOWER(f2.name) = LOWER(:fac))";
             $params[':fac'] = $fac;
         }
+        if ($maxPrice !== null && $maxPrice > 0) {
+            $sql .= " AND EXISTS (SELECT 1 FROM membership_plans mp WHERE mp.gym_id = g.id AND mp.is_active = 1 AND mp.price <= :maxp)";
+            $params[':maxp'] = $maxPrice;
+        }
 
         $sql .= " ORDER BY g.updated_at DESC, g.id DESC";
         $stmt = $this->db->prepare($sql);
@@ -3243,8 +3724,9 @@ class FitSyncDataService {
         if ($this->db === null) return [];
 
         $sql = "
-            SELECT g.*, lf.storage_key AS logo_storage_key, cf.storage_key AS cover_storage_key
+            SELECT g.*, owner_u.full_name AS owner_name, lf.storage_key AS logo_storage_key, cf.storage_key AS cover_storage_key
             FROM gyms g
+            LEFT JOIN users owner_u ON owner_u.id = g.owner_user_id
             LEFT JOIN files lf ON lf.id = g.logo_file_id
             LEFT JOIN files cf ON cf.id = g.cover_photo_id
         ";
