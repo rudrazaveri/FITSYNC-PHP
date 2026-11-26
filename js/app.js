@@ -4490,7 +4490,9 @@ function openGymDetailsModal(gymId) {
   if (typeof openModal === 'function') openModal('gymDetailsModal');
 }
 
-async function loadMembershipPortalData() {
+let lastMembershipPortalSig = '';
+
+async function loadMembershipPortalData(forceRender = false) {
   try {
     const res = await fetch('api/user/membership.php', { cache: 'no-store' });
     if (!res.ok) return;
@@ -4502,6 +4504,13 @@ async function loadMembershipPortalData() {
     const gyms = Array.isArray(json.data.gyms) ? json.data.gyms : [];
     window.__USER_GYMS_DIRECTORY__ = gyms;
     window.__USER_CURRENT_MEMBERSHIP__ = current;
+
+    const nextSig = JSON.stringify({ current, history, gyms });
+    if (!forceRender && nextSig === lastMembershipPortalSig) {
+      await loadUserInvitations();
+      return;
+    }
+    lastMembershipPortalSig = nextSig;
 
     const badgeEl = document.getElementById('memBannerBadge');
     const titleEl = document.getElementById('memBannerTitle');
@@ -4582,6 +4591,8 @@ async function loadMembershipPortalData() {
   }
 }
 
+let lastUserInvitationsSig = '';
+
 async function loadUserInvitations() {
   const sec = document.getElementById('memberGymInvitationsSection');
   const listEl = document.getElementById('memberGymInvitationsList');
@@ -4594,6 +4605,10 @@ async function loadUserInvitations() {
     const json = await res.json();
     const invs = Array.isArray(json.data?.invitations) ? json.data.invitations : [];
     const emailVerified = Boolean(json.data?.email_verified);
+
+    const invSig = JSON.stringify({ invs, emailVerified });
+    if (invSig === lastUserInvitationsSig) return;
+    lastUserInvitationsSig = invSig;
 
     if (invs.length === 0) {
       sec.style.display = 'none';
