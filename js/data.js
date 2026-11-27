@@ -1283,13 +1283,19 @@ class FitSyncStore {
   }
 
   getExerciseLibrary() {
-    if (!this.state.exerciseLibrary || this.state.exerciseLibrary.length < 30) {
+    if (window.__HAS_SERVER_EXERCISES__ && Array.isArray(this.state.exerciseLibrary)) {
+      return this.state.exerciseLibrary;
+    }
+    if (!Array.isArray(this.state.exerciseLibrary) || this.state.exerciseLibrary.length === 0) {
       this.state.exerciseLibrary = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.exerciseLibrary));
     }
     return this.state.exerciseLibrary;
   }
 
   getWorkoutPlan(dayKey) {
+    if (window.__HAS_SERVER_WORKOUT_SYNC__) {
+      return (this.state.workoutPlans && this.state.workoutPlans[dayKey]) ? this.state.workoutPlans[dayKey] : null;
+    }
     if (!this.state.workoutPlans) {
       this.state.workoutPlans = JSON.parse(JSON.stringify(DEFAULT_FITSYNC_DATA.workoutPlans));
     }

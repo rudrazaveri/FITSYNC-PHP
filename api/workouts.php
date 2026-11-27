@@ -1,7 +1,6 @@
 <?php
 /**
- * FitSync AI — Workouts API Endpoint (Authoritative MySQL CRUD)
- * Fetches assigned workout plans & logs real exercise sets and completed sessions.
+ * FitSync AI — Workouts API Endpoint (Member Plan, Execution Runner, Recovery, Sets & Feedback)
  */
 
 declare(strict_types=1);
@@ -34,13 +33,29 @@ if ($method === 'POST') {
     $action = (string)($input['action'] ?? 'complete_session');
 
     try {
+        if ($action === 'start_session') {
+            $planDayId = !empty($input['plan_day_id']) ? (int)$input['plan_day_id'] : null;
+            $res = $service->startWorkoutSession($userId, $planDayId);
+            apiResponse(true, !empty($res['recovered']) ? 'Resumed in-progress workout session.' : 'Workout session started.', $res);
+        }
+
+        if ($action === 'pause_session' || $action === 'resume_session') {
+            $sessionId = (int)($input['session_id'] ?? 0);
+            $elapsed   = (int)($input['elapsed_seconds'] ?? 0);
+            $res = $service->pauseOrResumeWorkoutSession($userId, $sessionId, $action === 'pause_session' ? 'pause' : 'resume', $elapsed);
+            apiResponse(true, $action === 'pause_session' ? 'Workout paused.' : 'Workout resumed.', $res);
+        }
+
         if ($action === 'log_set') {
             $planDayId     = !empty($input['plan_day_id']) ? (int)$input['plan_day_id'] : null;
             $exerciseId    = (int)($input['exercise_id'] ?? 0);
-            $setNumber     = max(1, (int)($input['set_number'] ?? 1));
-            $weightKg      = max(0.0, (float)($input['weight_kg'] ?? 0));
-            $repsCompleted = max(1, (int)($input['reps'] ?? 10));
+            $setNumber     = (int)($input['set_number'] ?? 1);
+            $weightKg      = (float)($input['weight_kg'] ?? 0);
+            $repsCompleted = (int)($input['reps'] ?? 10);
             $rpe           = isset($input['rpe']) && is_numeric($input['rpe']) ? (float)$input['rpe'] : null;
+            $weightUnit    = (string)($input['weight_unit'] ?? 'kg');
+            $notes         = isset($input['notes']) ? trim((string)$input['notes']) : null;
+            $sessionId     = !empty($input['session_id']) ? (int)$input['session_id'] : null;
 
             if ($exerciseId <= 0) {
                 $db = $service->getDb();
@@ -55,18 +70,25 @@ if ($method === 'POST') {
                 }
             }
 
-            $res = $service->logExerciseSet($userId, $planDayId, $exerciseId, $setNumber, $weightKg, $repsCompleted, $rpe);
+            $res = $service->logExerciseSet($userId, $planDayId, $exerciseId, $setNumber, $weightKg, $repsCompleted, $rpe, $weightUnit, $notes, $sessionId);
             apiResponse(true, 'Exercise set recorded in database.', $res);
         }
 
-        // Complete Workout Session
+        // Complete / Finish Workout Session
         $exercises = is_array($input['exercises'] ?? null) ? $input['exercises'] : [];
         $planDayId = !empty($input['plan_day_id']) ? (int)$input['plan_day_id'] : null;
         $notes     = !empty($input['notes']) ? trim((string)$input['notes']) : null;
         $duration  = !empty($input['duration_minutes']) ? (int)$input['duration_minutes'] : 45;
+        $feedbackOpts = [
+            'session_id'        => !empty($input['session_id']) ? (int)$input['session_id'] : 0,
+            'difficulty_rating' => $input['difficulty_rating'] ?? null,
+            'feedback_text'     => $input['feedback_text'] ?? null
+        ];
 
-        $res = $service->logWorkoutSession($userId, $exercises, $planDayId, $notes, $duration);
+        $res = $service->logWorkoutSession($userId, $exercises, $planDayId, $notes, $duration, $feedbackOpts);
         apiResponse(true, 'Workout session completed and saved to database!', $res);
+    } catch (InvalidArgumentException $e) {
+        apiResponse(false, $e->getMessage(), null, 400);
     } catch (Throwable $e) {
         error_log('[FitSync workouts.php POST] ' . $e->getMessage());
         apiResponse(false, 'Unable to save workout session.', null, 500);

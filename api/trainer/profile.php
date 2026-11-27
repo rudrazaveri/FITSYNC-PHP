@@ -6,6 +6,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../../config/bootstrap.php';
+require_once __DIR__ . '/../../includes/upload_helper.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -25,9 +26,11 @@ if ($method === 'GET') {
             SELECT u.id, u.email, u.mobile, u.full_name, u.role, u.status,
                    tp.certification_name, tp.certifying_body, tp.certification_year,
                    tp.experience_years, tp.specializations_summary, tp.bio, tp.hourly_rate,
-                   tp.rating, tp.reviews_count
+                   tp.rating, tp.reviews_count,
+                   f.storage_key AS avatar_storage_key
             FROM users u
             LEFT JOIN trainer_profiles tp ON tp.user_id = u.id
+            LEFT JOIN files f ON f.id = u.profile_picture_id
             WHERE u.id = :tid LIMIT 1
         ");
         $stmt->execute([':tid' => $trainerId]);
@@ -36,6 +39,8 @@ if ($method === 'GET') {
         if (!$profile) {
             apiResponse(false, 'Trainer not found.', null, 404);
         }
+
+        $avatarUrl = fitSyncResolveFileUrl($profile['avatar_storage_key'] ?? null, 'assets/images/trainer_raj.jpg');
 
         apiResponse(true, 'Trainer profile loaded.', [
             'id'               => (int)$profile['id'],
@@ -53,7 +58,8 @@ if ($method === 'GET') {
             'specialties'      => !empty($profile['specializations_summary']) ? array_map('trim', explode(',', $profile['specializations_summary'])) : [],
             'specializations'  => $profile['specializations_summary'] ?? '',
             'bio'              => $profile['bio'] ?? '',
-            'rating'           => (float)($profile['rating'] ?? 5.0)
+            'rating'           => (float)($profile['rating'] ?? 5.0),
+            'avatar_url'       => $avatarUrl
         ]);
     } catch (Throwable $e) {
         error_log('[FitSync trainer/profile.php GET] ' . $e->getMessage());
@@ -65,7 +71,26 @@ if ($method === 'POST' || $method === 'PUT') {
     requireCsrfToken();
 
     $rawInput = file_get_contents('php://input');
-    $input = json_decode($rawInput, true) ?: $_POST;
+    $input = (stripos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false)
+        ? (json_decode($rawInput, true) ?: [])
+        : (!empty($_POST) ? $_POST : (json_decode($rawInput, true) ?: []));
+
+    $action = trim((string)($input['action'] ?? 'save'));
+    if ($action === 'remove_avatar') {
+        $db->beginTransaction();
+        try {
+            $oldQ = $db->prepare("SELECT profile_picture_id FROM users WHERE id = :tid LIMIT 1");
+            $oldQ->execute([':tid' => $trainerId]);
+            $oldPicId = (int)($oldQ->fetchColumn() ?: 0);
+            $db->prepare("UPDATE users SET profile_picture_id = NULL, updated_at = NOW() WHERE id = :tid")->execute([':tid' => $trainerId]);
+            if ($oldPicId > 0) fitSyncDeleteStoredFile($db, $oldPicId);
+            $db->commit();
+            apiResponse(true, 'Trainer photo removed.', ['avatar_url' => 'assets/images/trainer_raj.jpg']);
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            apiResponse(false, 'Unable to remove trainer photo.', null, 500);
+        }
+    }
 
     $name  = trim((string)($input['name'] ?? $input['full_name'] ?? ''));
     $phone = trim((string)($input['phone'] ?? $input['mobile'] ?? ''));
@@ -89,10 +114,35 @@ if ($method === 'POST' || $method === 'PUT') {
         apiResponse(false, 'Trainer full name is required.', null, 400);
     }
 
+    $oldQ = $db->prepare("SELECT profile_picture_id FROM users WHERE id = :tid LIMIT 1");
+    $oldQ->execute([':tid' => $trainerId]);
+    $previousPicId = (int)($oldQ->fetchColumn() ?: 0);
+    $uploadedStorageKey = null;
+    $newAvatarUrl = null;
+
     $db->beginTransaction();
     try {
-        $stmtUser = $db->prepare("UPDATE users SET full_name = :fn, mobile = :mob, updated_at = NOW() WHERE id = :tid");
-        $stmtUser->execute([':fn' => $name, ':mob' => $phone ?: null, ':tid' => $trainerId]);
+        $newPicId = null;
+        if (!empty($_FILES['profile_photo']) && (int)($_FILES['profile_photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $newPicId = fitSyncStoreUploadedFile($db, $_FILES['profile_photo'], 'profile_picture', $trainerId, false, false);
+            if ($newPicId) {
+                $skQ = $db->prepare("SELECT storage_key FROM files WHERE id = :fid LIMIT 1");
+                $skQ->execute([':fid' => $newPicId]);
+                $uploadedStorageKey = (string)$skQ->fetchColumn();
+                $newAvatarUrl = fitSyncResolveFileUrl($uploadedStorageKey, 'assets/images/trainer_raj.jpg');
+            }
+        }
+
+        if ($newPicId !== null) {
+            $stmtUser = $db->prepare("UPDATE users SET full_name = :fn, mobile = :mob, profile_picture_id = :ppid, updated_at = NOW() WHERE id = :tid");
+            $stmtUser->execute([':fn' => $name, ':mob' => $phone ?: null, ':ppid' => $newPicId, ':tid' => $trainerId]);
+            if ($previousPicId > 0 && $previousPicId !== $newPicId) {
+                fitSyncDeleteStoredFile($db, $previousPicId);
+            }
+        } else {
+            $stmtUser = $db->prepare("UPDATE users SET full_name = :fn, mobile = :mob, updated_at = NOW() WHERE id = :tid");
+            $stmtUser->execute([':fn' => $name, ':mob' => $phone ?: null, ':tid' => $trainerId]);
+        }
 
         $stmtProfile = $db->prepare("
             INSERT INTO trainer_profiles (user_id, certification_name, certifying_body, experience_years, hourly_rate, specializations_summary, bio, status, rating, reviews_count, updated_at)
@@ -125,10 +175,15 @@ if ($method === 'POST' || $method === 'PUT') {
             'title'           => $title,
             'experience'      => $expYears . '+ Years',
             'hourly_rate'     => '₹' . number_format($hourlyRate, 0) . ' / hr',
-            'specializations' => $specsStr
+            'specializations' => $specsStr,
+            'avatar_url'      => $newAvatarUrl
         ]);
     } catch (Throwable $e) {
-        $db->rollBack();
+        if ($db->inTransaction()) $db->rollBack();
+        if ($uploadedStorageKey) fitSyncUnlinkRelativeStorageKey($uploadedStorageKey);
+        if ($e instanceof InvalidArgumentException) {
+            apiResponse(false, $e->getMessage(), null, 400);
+        }
         error_log('[FitSync trainer/profile.php POST] ' . $e->getMessage());
         apiResponse(false, 'Unable to save trainer profile.', null, 500);
     }

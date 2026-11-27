@@ -19,7 +19,6 @@
 
   <!-- Lucide Icons & Chart.js -->
   <script src="js/lucide.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
   <script>
     if (!window.lucide) {
       document.write('<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"><\/script>');
@@ -529,79 +528,175 @@
         </section>
 
         <!-- ===================================================================== -->
-        <!-- VIEW 3: WORKOUT PLANS -->
+        <!-- VIEW 3: WORKOUT PLANS, TEMPLATES, BUILDER & MONITORING -->
         <!-- ===================================================================== -->
         <section id="view-workouts" class="trainer-view-section">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
             <div>
-              <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Workout Plan Prescriptions</h2>
-              <p style="font-size: 13px; color: var(--text-secondary);">Design, review, and assign progressive resistance training splits to your athletes.</p>
+              <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Workout Planning, Templates &amp; Monitoring</h2>
+              <p style="font-size: 13px; color: var(--text-secondary);">Build weekly splits, manage reusable templates, assign plans to athletes, and track performance.</p>
             </div>
-            <button type="button" class="btn-primary-block" style="width: auto; padding: 8px 16px;" onclick="toggleCreateWorkoutPanel()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 4px;"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg> Create &amp; Assign Workout
-            </button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn-outline-gym" style="margin-top:0;padding:8px 14px;font-size:12px;" onclick="switchWorkoutSubTab('templates')">Templates &amp; Plans</button>
+              <button type="button" class="btn-primary-block" style="width: auto; padding: 8px 16px;" onclick="openNewPlanInBuilder()">
+                + Open Plan Builder
+              </button>
+            </div>
           </div>
 
-          <!-- Create / Assign Workout Form Panel -->
-          <div id="createWorkoutPanel" class="trainer-card" style="display:none; margin-bottom: 20px; border-color: var(--primary-blue);">
-            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">Create &amp; Assign MySQL Workout Plan</h3>
-            <form id="trainerCreateWorkoutForm" onsubmit="handleCreateAndAssignWorkout(event)" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px;">
-              <div>
-                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Plan Title</label>
-                <input type="text" id="wkPlanTitle" required placeholder="e.g. Hypertrophy Push Pull" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+          <!-- Workout Sub-Navigation -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border-color);padding-bottom:10px;">
+            <button type="button" class="wk-subtab active" data-subtab="templates" onclick="switchWorkoutSubTab('templates')" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border-color);background:#EEF2FF;color:#2563EB;font-weight:600;font-size:12px;cursor:pointer;">Templates &amp; Plans</button>
+            <button type="button" class="wk-subtab" data-subtab="builder" onclick="switchWorkoutSubTab('builder')" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border-color);background:#fff;color:var(--text-secondary);font-weight:600;font-size:12px;cursor:pointer;">Visual Plan Builder</button>
+            <button type="button" class="wk-subtab" data-subtab="assignments" onclick="switchWorkoutSubTab('assignments')" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border-color);background:#fff;color:var(--text-secondary);font-weight:600;font-size:12px;cursor:pointer;">Active Assignments</button>
+            <button type="button" class="wk-subtab" data-subtab="monitoring" onclick="switchWorkoutSubTab('monitoring')" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border-color);background:#fff;color:var(--text-secondary);font-weight:600;font-size:12px;cursor:pointer;">Monitoring &amp; PRs</button>
+          </div>
+
+          <!-- SUBTAB 1: TEMPLATES & PLANS -->
+          <div id="wkSubTab-templates" class="wk-subtab-pane">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+              <input type="text" id="wkTemplateSearchInput" placeholder="Search templates &amp; plans..." oninput="renderTrainerTemplatesGrid()" style="flex:1;min-width:220px;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;">
+              <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" id="wkShowArchivedChk" onchange="loadTrainerWorkoutsView()"> Show Archived
+              </label>
+            </div>
+            <div class="trainers-grid" id="trainerWorkoutsGrid">
+              <div class="trainer-card" style="grid-column: 1 / -1; text-align:center; color:var(--text-secondary);">
+                Loading trainer workout plans and templates from database...
               </div>
-              <div>
-                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Focus / Split Goal</label>
-                <select id="wkPlanGoal" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
-                  <option value="hypertrophy">Hypertrophy</option>
-                  <option value="strength">Strength Peak</option>
-                  <option value="fat_loss">Fat Loss &amp; Conditioning</option>
-                  <option value="general_fitness">General Fitness</option>
-                </select>
+            </div>
+          </div>
+
+          <!-- SUBTAB 2: VISUAL PLAN BUILDER -->
+          <div id="wkSubTab-builder" class="wk-subtab-pane" style="display:none;">
+            <div class="trainer-card" style="border-color: var(--primary-blue);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                <h3 id="wkBuilderHeading" style="font-size:16px;font-weight:700;margin:0;color:var(--text-main);">Create Weekly Workout Plan / Template</h3>
+                <button type="button" class="btn-outline-gym" style="margin-top:0;padding:5px 12px;font-size:12px;" onclick="openNewPlanInBuilder()">Reset Builder</button>
               </div>
-              <div>
-                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Assign to Athlete (Optional)</label>
-                <select id="wkAssignMemberSelect" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
-                  <option value="">Save Template Only</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Primary Exercise</label>
-                <select id="wkPrimaryExerciseSelect" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
-                  <option value="">Loading exercises...</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Target Sets &times; Reps</label>
-                <div style="display:flex;gap:8px;">
-                  <input type="number" id="wkTargetSets" value="4" min="1" max="10" style="width:70px;padding:8px;border:1px solid var(--border-color);border-radius:8px;">
-                  <input type="text" id="wkTargetReps" value="8-12" style="flex:1;padding:8px;border:1px solid var(--border-color);border-radius:8px;">
+              <input type="hidden" id="builderPlanId" value="0">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:12px;margin-bottom:16px;">
+                <div>
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Plan / Template Name *</label>
+                  <input type="text" id="builderPlanName" placeholder="e.g. Hypertrophy Upper/Lower" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;">
+                </div>
+                <div>
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Fitness Goal</label>
+                  <select id="builderGoal" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;">
+                    <option value="hypertrophy">Hypertrophy</option>
+                    <option value="strength">Strength</option>
+                    <option value="fat_loss">Fat Loss / Weight Management</option>
+                    <option value="endurance">General Fitness / Endurance</option>
+                    <option value="mobility">Mobility &amp; Recovery</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Difficulty</label>
+                  <select id="builderDifficulty" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;">
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate" selected>Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Workout Split</label>
+                  <select id="builderSplit" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;">
+                    <option value="Custom Split">Custom Split</option>
+                    <option value="Push/Pull/Legs">Push/Pull/Legs</option>
+                    <option value="Upper/Lower">Upper/Lower</option>
+                    <option value="Full Body">Full Body</option>
+                    <option value="Bro Split">Bro Split</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Duration (Weeks)</label>
+                  <input type="number" id="builderDurationWeeks" value="4" min="1" max="52" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;">
+                </div>
+                <div>
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Start Date (if assigning)</label>
+                  <input type="date" id="builderStartDate" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;">
+                </div>
+                <div style="grid-column:1 / -1;">
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Description &amp; Trainer Instructions</label>
+                  <input type="text" id="builderInstructions" placeholder="Warm up 10 mins, control eccentric tempo, log every working set." style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;">
                 </div>
               </div>
-              <div style="grid-column: 1 / -1;">
-                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Plan Notes / Coaching Instructions</label>
-                <input type="text" id="wkPlanDesc" placeholder="Controlled eccentric tempo, 90s rest between working sets" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
-              </div>
-              <div style="grid-column: 1 / -1; display:flex; gap:10px; justify-content:flex-end;">
-                <button type="button" class="btn-outline-gym" style="width:auto;" onclick="toggleCreateWorkoutPanel()">Cancel</button>
-                <button type="submit" class="btn-primary-block" style="width:auto;padding:8px 18px;">Save &amp; Sync Plan</button>
-              </div>
-            </form>
-          </div>
 
-          <div class="trainers-grid" id="trainerWorkoutsGrid">
-            <div class="trainer-card" style="grid-column: 1 / -1; text-align:center; color:var(--text-secondary);">
-              Loading trainer workout plans from database...
+              <!-- Monday - Sunday Schedule Tabs -->
+              <div id="builderDayTabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;"></div>
+
+              <!-- Active Day Editor -->
+              <div id="builderDayEditor" style="background:#F8FAFC;border:1px solid var(--border-color);border-radius:10px;padding:14px;margin-bottom:16px;"></div>
+
+              <!-- Save & Assign Controls -->
+              <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid var(--border-color);padding-top:14px;">
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                  <label style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;">
+                    <input type="checkbox" id="builderSaveAsTemplate" checked> Save as Reusable Template
+                  </label>
+                  <select id="builderAssignMemberSelect" style="padding:7px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;min-width:220px;">
+                    <option value="">Do not assign yet (save only)</option>
+                  </select>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button type="button" class="btn-outline-gym" style="margin-top:0;padding:8px 14px;font-size:12px;" onclick="savePlanFromBuilder(false)">Save Template / Plan</button>
+                  <button type="button" class="btn-primary-block" style="width:auto;padding:8px 18px;font-size:12px;" onclick="savePlanFromBuilder(true)">Save &amp; Assign to Member</button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="trainer-card" style="margin-top: 20px;">
-            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">Completed Athlete Workout Sessions</h3>
-            <div id="trainerCompletedSessionsList" style="font-size: 13px; color: var(--text-secondary);">
-              No completed athlete workout sessions recorded yet.
+          <!-- SUBTAB 3: ACTIVE ASSIGNMENTS -->
+          <div id="wkSubTab-assignments" class="wk-subtab-pane" style="display:none;">
+            <div class="trainer-card">
+              <h3 style="font-size:16px;font-weight:700;color:var(--text-main);margin-bottom:12px;">Assigned Member Workout Plans</h3>
+              <div id="trainerAssignmentsList" style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--text-secondary);">
+                Loading assignments...
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBTAB 4: MONITORING & PRS -->
+          <div id="wkSubTab-monitoring" class="wk-subtab-pane" style="display:none;">
+            <div class="trainer-card" style="margin-bottom: 18px;">
+              <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">Completed Athlete Workout Sessions &amp; Feedback</h3>
+              <div id="trainerCompletedSessionsList" style="font-size: 13px; color: var(--text-secondary);">
+                No completed athlete workout sessions recorded yet.
+              </div>
+            </div>
+            <div class="trainer-card">
+              <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">Assigned Member Personal Records (PRs)</h3>
+              <div id="trainerMemberPrsList" style="font-size: 13px; color: var(--text-secondary);">
+                No personal records logged yet.
+              </div>
             </div>
           </div>
         </section>
+
+        <!-- Exercise Picker Modal for Plan Builder -->
+        <div id="modalBuilderExercisePicker" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:2200;align-items:center;justify-content:center;padding:16px;">
+          <div style="background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.25);">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
+              <h3 style="margin:0;font-size:16px;font-weight:700;">Add Exercises to <span id="pickerDayTitle">Day</span></h3>
+              <button type="button" onclick="closeBuilderExercisePicker()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button>
+            </div>
+            <div style="padding:12px 20px;border-bottom:1px solid var(--border-color);display:flex;gap:8px;flex-wrap:wrap;">
+              <input type="text" id="pickerExSearch" placeholder="Search exercises..." oninput="renderBuilderPickerList()" style="flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;">
+              <select id="pickerExCat" onchange="renderBuilderPickerList()" style="padding:7px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;">
+                <option value="all">All Categories</option>
+                <option value="Chest">Chest</option><option value="Back">Back</option><option value="Shoulders">Shoulders</option>
+                <option value="Biceps">Biceps</option><option value="Triceps">Triceps</option><option value="Forearms">Forearms</option>
+                <option value="Quadriceps">Quadriceps</option><option value="Hamstrings">Hamstrings</option><option value="Glutes">Glutes</option>
+                <option value="Calves">Calves</option><option value="Core">Core</option><option value="Full Body">Full Body</option><option value="Cardio">Cardio</option>
+              </select>
+            </div>
+            <div id="pickerExList" style="padding:14px 20px;overflow-y:auto;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;"></div>
+            <div style="padding:12px 20px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:8px;">
+              <button type="button" class="btn-outline-gym" style="margin-top:0;" onclick="closeBuilderExercisePicker()">Cancel</button>
+              <button type="button" class="btn-primary-block" style="width:auto;padding:8px 16px;" onclick="confirmAddPickedExercises()">Add Selected Exercises</button>
+            </div>
+          </div>
+        </div>
 
         <!-- ===================================================================== -->
         <!-- VIEW 4: SCHEDULE -->
@@ -659,50 +754,118 @@
         <!-- VIEW 6: EXERCISE LIBRARY -->
         <!-- ===================================================================== -->
         <section id="view-exercise_library" class="trainer-view-section">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
             <div>
-              <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Biomechanical Exercise Library</h2>
-              <p style="font-size: 13px; color: var(--text-secondary);">Over 40 high-definition movement kinematics and coaching cues.</p>
+              <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Exercise Library</h2>
+              <p style="font-size: 13px; color: var(--text-secondary);">Browse verified movements across 13 muscle categories or create custom exercises.</p>
             </div>
+            <button type="button" class="btn-primary-block" style="width:auto;padding:8px 16px;" onclick="openCreateExerciseModal()">+ Create Custom Exercise</button>
           </div>
 
-          <div class="filter-search-bar" style="margin-bottom: 20px;">
-            <div class="search-input-box" style="flex: 1;">
+          <div class="filter-search-bar" style="margin-bottom: 16px; display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="search-input-box" style="flex: 1; min-width:200px;">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
-              <input type="text" id="exerciseSearchInput" onkeyup="filterExerciseCards()" placeholder="Search exercises by name or muscle group...">
+              <input type="text" id="exerciseSearchInput" oninput="renderTrainerExerciseLibrary()" placeholder="Search exercises by name, muscle, or cues...">
             </div>
+            <select id="exFilterCategory" onchange="renderTrainerExerciseLibrary()" style="padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;background:#fff;">
+              <option value="all">All Categories</option>
+              <option value="Chest">Chest</option><option value="Back">Back</option><option value="Shoulders">Shoulders</option>
+              <option value="Biceps">Biceps</option><option value="Triceps">Triceps</option><option value="Forearms">Forearms</option>
+              <option value="Quadriceps">Quadriceps</option><option value="Hamstrings">Hamstrings</option><option value="Glutes">Glutes</option>
+              <option value="Calves">Calves</option><option value="Core">Core</option><option value="Full Body">Full Body</option><option value="Cardio">Cardio</option>
+            </select>
+            <select id="exFilterEquipment" onchange="renderTrainerExerciseLibrary()" style="padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;background:#fff;">
+              <option value="all">All Equipment</option>
+              <option value="barbell">Barbell</option><option value="dumbbell">Dumbbell</option><option value="cable">Cable</option>
+              <option value="machine">Machine</option><option value="bodyweight">Bodyweight</option><option value="kettlebell">Kettlebell</option>
+            </select>
+            <select id="exFilterDifficulty" onchange="renderTrainerExerciseLibrary()" style="padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;background:#fff;">
+              <option value="all">All Levels</option>
+              <option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option>
+            </select>
+            <select id="exFilterType" onchange="renderTrainerExerciseLibrary()" style="padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;background:#fff;">
+              <option value="all">All Types</option>
+              <option value="compound">Compound</option><option value="isolation">Isolation</option><option value="cardio">Cardio</option><option value="mobility">Mobility</option>
+            </select>
           </div>
 
           <div class="trainers-grid" id="trainerExerciseGrid">
-            <!-- Sample Movement Cards -->
-            <div class="trainer-card ex-card" data-title="Incline Barbell Bench Press" data-muscle="Chest">
-              <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">Incline Barbell Bench Press</h4>
-              <span class="tag-chip" style="margin: 4px 0 8px 0;">Pectoralis Major (Clavicular)</span>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
-                Bench set to 30-degree incline. Grip shoulder-width, lower barbell cleanly to upper chest, drive up through palms.
-              </p>
-              <div style="font-size: 11px; color: var(--text-muted);">Kinematics: Upper Chest • Anterior Deltoids</div>
-            </div>
-
-            <div class="trainer-card ex-card" data-title="Conventional Barbell Deadlift" data-muscle="Back & Posterior Chain">
-              <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">Conventional Barbell Deadlift</h4>
-              <span class="tag-chip" style="margin: 4px 0 8px 0;">Posterior Kinetic Chain</span>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
-                Feet hip-width apart, grip bar outside shins, pull slack out of the barbell, pack lats, and drive the floor away.
-              </p>
-              <div style="font-size: 11px; color: var(--text-muted);">Kinematics: Glutes • Hamstrings • Erector Spinae</div>
-            </div>
-
-            <div class="trainer-card ex-card" data-title="Barbell Back Squat" data-muscle="Quads & Glutes">
-              <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">Barbell Back Squat</h4>
-              <span class="tag-chip" style="margin: 4px 0 8px 0;">Quadriceps & Gluteus Maximus</span>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
-                Rest bar on upper traps, brace core 360-degrees, descend until hip crease is parallel to knee joints, press up through midfoot.
-              </p>
-              <div style="font-size: 11px; color: var(--text-muted);">Kinematics: Quadriceps • Adductors • Core</div>
-            </div>
+            <div class="trainer-card" style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">Loading Exercise Library from database...</div>
           </div>
         </section>
+
+        <!-- Create Custom Exercise Modal -->
+        <div id="modalCreateExercise" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:2200;align-items:center;justify-content:center;padding:16px;">
+          <div style="background:#fff;border-radius:14px;max-width:560px;width:100%;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+              <h3 style="margin:0;font-size:16px;font-weight:700;">Create Custom Exercise</h3>
+              <button type="button" onclick="closeCreateExerciseModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button>
+            </div>
+            <form onsubmit="submitCustomExercise(event)" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div style="grid-column:1/-1;">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Exercise Name *</label>
+                <input type="text" id="custExName" required placeholder="e.g. Bulgarian Ring Push-Up" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Category *</label>
+                <select id="custExCat" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+                  <option value="Chest">Chest</option><option value="Back">Back</option><option value="Shoulders">Shoulders</option>
+                  <option value="Biceps">Biceps</option><option value="Triceps">Triceps</option><option value="Forearms">Forearms</option>
+                  <option value="Quadriceps">Quadriceps</option><option value="Hamstrings">Hamstrings</option><option value="Glutes">Glutes</option>
+                  <option value="Calves">Calves</option><option value="Core">Core</option><option value="Full Body">Full Body</option><option value="Cardio">Cardio</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Equipment</label>
+                <select id="custExEquip" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+                  <option value="dumbbell">Dumbbell</option><option value="barbell">Barbell</option><option value="cable">Cable</option>
+                  <option value="machine">Machine</option><option value="bodyweight">Bodyweight</option><option value="kettlebell">Kettlebell</option><option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Difficulty</label>
+                <select id="custExDiff" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+                  <option value="beginner">Beginner</option><option value="intermediate" selected>Intermediate</option><option value="advanced">Advanced</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Type</label>
+                <select id="custExType" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+                  <option value="compound">Compound</option><option value="isolation">Isolation</option><option value="cardio">Cardio</option><option value="mobility">Mobility</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Default Sets &amp; Reps</label>
+                <div style="display:flex;gap:6px;">
+                  <input type="number" id="custExSets" value="3" min="1" max="20" style="width:65px;padding:8px;border:1px solid var(--border-color);border-radius:8px;">
+                  <input type="text" id="custExReps" value="8-12" style="flex:1;padding:8px;border:1px solid var(--border-color);border-radius:8px;">
+                </div>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Default Rest (sec)</label>
+                <input type="number" id="custExRest" value="90" min="0" max="600" style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;">
+              </div>
+              <div style="grid-column:1/-1;">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Exercise Image (Optional: JPG, PNG, WEBP — Max 5 MB)</label>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <img id="custExImgPreview" src="assets/images/exercise_placeholder.svg" alt="Exercise preview"
+                    style="width:72px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--border-color);"
+                    onerror="this.src='assets/images/exercise_placeholder.svg'">
+                  <input type="file" id="custExImageFile" accept="image/jpeg,image/png,image/webp" onchange="previewCustomExerciseImg(this)"
+                    style="flex:1;padding:6px 8px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;">
+                </div>
+              </div>
+              <div style="grid-column:1/-1;">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Instructions / Form Cues *</label>
+                <textarea id="custExCues" rows="2" required placeholder="Step-by-step execution cues..." style="width:100%;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;"></textarea>
+              </div>
+              <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+                <button type="button" class="btn-outline-gym" style="margin-top:0;" onclick="closeCreateExerciseModal()">Cancel</button>
+                <button type="submit" class="btn-primary-block" style="width:auto;padding:8px 16px;">Save Exercise</button>
+              </div>
+            </form>
+          </div>
+        </div>
 
         <!-- ===================================================================== -->
         <!-- VIEW 7: MESSAGES -->
@@ -827,6 +990,18 @@
 
           <div class="fs-card" style="max-width: 640px;">
             <form onsubmit="handleSaveCoachSettings(event)">
+              <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 14px; padding: 12px; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 10px;">
+                <img id="settingsCoachAvatarPreview" src="assets/images/trainer_raj.jpg" alt="Coach photo preview"
+                  style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-blue);"
+                  onerror="this.src='assets/images/avatar_placeholder.svg'">
+                <div style="flex: 1;">
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Profile Photo (JPG, PNG, WEBP — Max 5 MB)</label>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <input type="file" id="settingsCoachAvatarFile" accept="image/jpeg,image/png,image/webp" onchange="previewCoachAvatar(this)" style="font-size: 12px; max-width: 240px;">
+                    <button type="button" class="btn-outline-gym" style="margin-top: 0; padding: 4px 10px; font-size: 11px; color: #DC2626;" onclick="removeCoachAvatar()">Remove Photo</button>
+                  </div>
+                </div>
+              </div>
               <div style="margin-bottom: 14px;">
                 <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Full Name</label>
                 <input type="text" id="settingsCoachName" class="form-input" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px;" required>
@@ -875,7 +1050,7 @@
     <div class="fs-modal-content" style="max-width: 840px; max-height: 92vh; overflow-y: auto;">
       <div style="padding: 18px 24px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <img id="dossierAvatarImg" src="assets/images/member_aarav.jpg" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #DBEAFE;" onerror="this.style.display='none'">
+          <img id="dossierAvatarImg" src="assets/images/aarav.jpg" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #DBEAFE;" onerror="this.style.display='none'">
           <div id="dossierAvatar" style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-blue); color: #fff; font-weight: 800; font-size: 18px; display: none; align-items: center; justify-content: center;">AT</div>
           <div>
             <h3 id="dossierName" style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">Athlete Name</h3>
@@ -1108,6 +1283,8 @@
         trainerChatPollTimer = setInterval(() => loadTrainerChatMessages(false), 2000);
       } else if (viewId === 'workouts') {
         loadTrainerWorkoutsView();
+      } else if (viewId === 'exercise_library') {
+        loadTrainerExerciseLibrary();
       } else if (viewId === 'notifications') {
         renderNotificationsView();
       } else if (viewId === 'attendance') {
@@ -1461,7 +1638,7 @@
         <div class="trainer-card member-item-card" data-name="${escapeHtml(m.name)}" data-goal="${escapeHtml(m.goal || '')}" style="display:flex; flex-direction:column; justify-content:space-between;">
           <div>
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-              <img src="${escapeHtml(m.avatar || 'assets/images/member_aarav.jpg')}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-color);" onerror="this.src='assets/images/member_aarav.jpg'" alt="${escapeHtml(m.name)}">
+              <img src="${escapeHtml(m.avatar || 'assets/images/aarav.jpg')}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-color);" onerror="this.src='assets/images/aarav.jpg'" alt="${escapeHtml(m.name)}">
               <div style="flex: 1; min-width: 0;">
                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px; flex-wrap: wrap;">
                   <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin: 0;">${escapeHtml(m.name)}</h3>
@@ -1511,131 +1688,497 @@
       });
     }
 
-    // --- View 3: Workout Plans & Assignments ---
-    function toggleCreateWorkoutPanel() {
-      const panel = document.getElementById('createWorkoutPanel');
-      if (!panel) return;
-      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    // --- View 3: Workout Plans, Templates, Visual Builder & Monitoring ---
+    const WK_DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const WK_DAY_CODES = ['mon','tue','wed','thu','fri','sat','sun'];
+    let builderState = {
+      activeDayIdx: 0,
+      days: WK_DAY_NAMES.map((nm, i) => ({
+        day_number: i + 1, day_code: WK_DAY_CODES[i], day_name: nm,
+        day_type: (i === 3 || i === 6) ? 'rest' : 'training',
+        focus_area: (i === 3 || i === 6) ? 'Rest & Recovery' : `${nm} Training`,
+        exercises: []
+      }))
+    };
+
+    function switchWorkoutSubTab(tab) {
+      document.querySelectorAll('.wk-subtab-pane').forEach(p => p.style.display = 'none');
+      document.querySelectorAll('.wk-subtab').forEach(b => {
+        const active = b.getAttribute('data-subtab') === tab;
+        b.style.background = active ? '#EEF2FF' : '#fff';
+        b.style.color = active ? '#2563EB' : 'var(--text-secondary)';
+      });
+      const target = document.getElementById('wkSubTab-' + tab);
+      if (target) target.style.display = 'block';
     }
 
-    async function loadTrainerWorkoutsView() {
-      const d = getTrainerDashData();
-      const myMembers = d.athletes;
-      const memberSel = document.getElementById('wkAssignMemberSelect');
-      if (memberSel) {
-        memberSel.innerHTML = `<option value="">Save Template Only</option>` +
-          myMembers.map(m => `<option value="${m.user_id}">${escapeHtml(m.name)} (${escapeHtml(m.email)})</option>`).join('');
-      }
-
-      try {
-        const res = await fetch('api/trainer/workouts.php');
-        if (!res.ok) return;
-        const json = await res.json();
-        if (!json.success || !json.data) return;
-
-        const wData = json.data;
-        window.__TRAINER_WORKOUTS__ = wData;
-
-        const exSel = document.getElementById('wkPrimaryExerciseSelect');
-        if (exSel && Array.isArray(wData.exercises)) {
-          exSel.innerHTML = wData.exercises.map(ex => `<option value="${ex.id}">${escapeHtml(ex.name)} (${escapeHtml(ex.muscle_group || 'General')})</option>`).join('');
-        }
-
-        const grid = document.getElementById('trainerWorkoutsGrid');
-        const plans = Array.isArray(wData.plans) ? wData.plans : [];
-        if (grid) {
-          if (plans.length === 0) {
-            grid.innerHTML = `<div class="trainer-card" style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">No workout plans created yet. Click <strong>Create &amp; Assign Workout</strong> above.</div>`;
-          } else {
-            grid.innerHTML = plans.map(p => {
-              const dayExs = (p.days && p.days[0] && Array.isArray(p.days[0].exercises)) ? p.days[0].exercises : [];
-              const exSummary = dayExs.map(e => `${e.exercise_name} (${e.target_sets}×${e.target_reps})`).join(', ') || p.description || 'Structured training split';
-              return `
-                <div class="trainer-card">
-                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-                    <div>
-                      <h3 style="font-size:16px;font-weight:700;color:var(--text-main);margin-bottom:2px;">${escapeHtml(p.name || p.title || 'Workout Plan')}</h3>
-                      <span class="fs-badge fs-badge-blue">${escapeHtml(p.goal || p.goal_focus || 'Training')}</span>
-                    </div>
-                    <span class="fs-badge fs-badge-green">${p.assigned_count || 0} Assigned</span>
-                  </div>
-                  <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">${escapeHtml(exSummary)}</p>
-                  <div style="display:flex;gap:8px;align-items:center;">
-                    <select id="assignPlanSelect-${p.id}" style="flex:1;padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font-size:12px;">
-                      <option value="">Select assigned athlete...</option>
-                      ${myMembers.map(m => `<option value="${m.user_id}">${escapeHtml(m.name)}</option>`).join('')}
-                    </select>
-                    <button type="button" class="btn-primary-block" style="width:auto;padding:6px 12px;font-size:12px;" onclick="assignPlanToSelectedMember(${p.id})">Assign</button>
-                  </div>
-                </div>`;
-            }).join('');
-          }
-        }
-
-        const sessBox = document.getElementById('trainerCompletedSessionsList');
-        const sessions = Array.isArray(wData.completed_sessions) ? wData.completed_sessions : [];
-        if (sessBox) {
-          if (sessions.length === 0) {
-            sessBox.innerHTML = 'No completed athlete workout sessions recorded yet.';
-          } else {
-            sessBox.innerHTML = `
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                ${sessions.map(s => `
-                  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#F8FAFC;border:1px solid var(--border-color);border-radius:8px;">
-                    <div>
-                      <strong style="color:var(--text-main);">${escapeHtml(s.athlete_name)}</strong> — ${escapeHtml(s.day_name || s.focus_area || 'Training Session')}
-                      <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(s.session_date)} • ${s.duration_minutes || 45} mins</div>
-                    </div>
-                    <span class="fs-badge fs-badge-green">${Number(s.total_volume_kg || 0).toLocaleString()} kg volume</span>
-                  </div>
-                `).join('')}
-              </div>`;
-          }
-        }
-      } catch (err) {
-        console.warn('Trainer workouts fetch error:', err);
-      }
+    function openNewPlanInBuilder() {
+      document.getElementById('builderPlanId').value = '0';
+      document.getElementById('wkBuilderHeading').innerText = 'Create Weekly Workout Plan / Template';
+      document.getElementById('builderPlanName').value = '';
+      document.getElementById('builderInstructions').value = '';
+      document.getElementById('builderSaveAsTemplate').checked = true;
+      document.getElementById('builderStartDate').value = new Date().toISOString().slice(0, 10);
+      builderState = {
+        activeDayIdx: 0,
+        days: WK_DAY_NAMES.map((nm, i) => ({
+          day_number: i + 1, day_code: WK_DAY_CODES[i], day_name: nm,
+          day_type: (i === 3 || i === 6) ? 'rest' : 'training',
+          focus_area: (i === 3 || i === 6) ? 'Rest & Recovery' : `${nm} Training`,
+          exercises: []
+        }))
+      };
+      renderBuilderDayTabs();
+      renderBuilderDayEditor();
+      switchWorkoutSubTab('builder');
     }
 
-    async function handleCreateAndAssignWorkout(e) {
-      e.preventDefault();
-      const title = document.getElementById('wkPlanTitle')?.value.trim();
-      const goal = document.getElementById('wkPlanGoal')?.value || 'hypertrophy';
-      const memberId = document.getElementById('wkAssignMemberSelect')?.value;
-      const exId = document.getElementById('wkPrimaryExerciseSelect')?.value;
-      const sets = parseInt(document.getElementById('wkTargetSets')?.value || '4', 10);
-      const reps = document.getElementById('wkTargetReps')?.value.trim() || '8-12';
-      const desc = document.getElementById('wkPlanDesc')?.value.trim() || '';
+    function loadPlanIntoBuilder(planId, asNew = false) {
+      const plans = window.__TRAINER_WORKOUTS__?.plans || [];
+      const p = plans.find(x => parseInt(x.id, 10) === parseInt(planId, 10));
+      if (!p) return;
+      document.getElementById('builderPlanId').value = asNew ? '0' : String(p.id);
+      document.getElementById('wkBuilderHeading').innerText = asNew ? `Customize: ${p.name}` : `Edit: ${p.name}`;
+      document.getElementById('builderPlanName').value = p.name || '';
+      document.getElementById('builderGoal').value = p.goal || 'hypertrophy';
+      document.getElementById('builderDifficulty').value = p.difficulty || 'intermediate';
+      document.getElementById('builderSplit').value = p.split_type || 'Custom Split';
+      document.getElementById('builderDurationWeeks').value = p.duration_weeks || 4;
+      document.getElementById('builderInstructions').value = p.trainer_instructions || p.description || '';
+      document.getElementById('builderSaveAsTemplate').checked = Boolean(parseInt(p.is_template || 0, 10));
+      document.getElementById('builderStartDate').value = new Date().toISOString().slice(0, 10);
 
-      if (!title) return;
+      const daysByNum = {};
+      (p.days || []).forEach(d => { daysByNum[parseInt(d.day_number, 10)] = d; });
+      builderState = {
+        activeDayIdx: 0,
+        days: WK_DAY_NAMES.map((nm, i) => {
+          const src = daysByNum[i + 1];
+          const dayType = src ? (src.day_type || (parseInt(src.is_rest_day, 10) ? 'rest' : 'training')) : 'rest';
+          const exs = (src && Array.isArray(src.exercises)) ? src.exercises.map(e => ({
+            exercise_id: parseInt(e.exercise_id, 10),
+            exercise_name: e.exercise_name,
+            target_sets: parseInt(e.target_sets || 3, 10),
+            target_reps: e.target_reps || '8-12',
+            target_weight: e.target_weight !== null && e.target_weight !== undefined ? e.target_weight : '',
+            weight_unit: e.weight_unit || 'kg',
+            rest_seconds: parseInt(e.rest_seconds || 90, 10),
+            duration_seconds: e.duration_seconds || '',
+            tempo: e.tempo || '',
+            warmup_sets: parseInt(e.warmup_sets || 0, 10),
+            superset_group: e.superset_group || '',
+            notes: e.exercise_notes || '',
+            sets: Array.isArray(e.sets) ? e.sets.map(s => ({
+              set_number: parseInt(s.set_number, 10),
+              target_reps: s.target_reps || '10',
+              target_weight: s.target_weight !== null && s.target_weight !== undefined ? s.target_weight : '',
+              weight_unit: s.weight_unit || 'kg',
+              rest_seconds: parseInt(s.rest_seconds || 90, 10),
+              is_warmup: Boolean(parseInt(s.is_warmup || 0, 10))
+            })) : []
+          })) : [];
+          return {
+            day_number: i + 1, day_code: WK_DAY_CODES[i], day_name: nm,
+            day_type: dayType, focus_area: src ? src.focus_area : (dayType === 'rest' ? 'Rest & Recovery' : `${nm} Training`),
+            exercises: exs
+          };
+        })
+      };
+      renderBuilderDayTabs();
+      renderBuilderDayEditor();
+      switchWorkoutSubTab('builder');
+    }
+
+    function renderBuilderDayTabs() {
+      const box = document.getElementById('builderDayTabs');
+      if (!box) return;
+      box.innerHTML = builderState.days.map((d, idx) => {
+        const active = idx === builderState.activeDayIdx;
+        const badge = d.day_type === 'rest' ? 'Rest' : (d.day_type === 'active_recovery' ? 'Recovery' : `${d.exercises.length} ex`);
+        return `<button type="button" onclick="selectBuilderDay(${idx})" style="padding:7px 12px;border-radius:8px;border:1px solid ${active ? '#2563EB' : 'var(--border-color)'};background:${active ? '#EEF2FF' : '#fff'};color:${active ? '#2563EB' : 'var(--text-main)'};font-size:12px;font-weight:600;cursor:pointer;">
+          ${d.day_name.slice(0,3)} <span style="font-size:10px;opacity:0.8;">(${badge})</span>
+        </button>`;
+      }).join('');
+    }
+
+    function selectBuilderDay(idx) {
+      builderState.activeDayIdx = idx;
+      renderBuilderDayTabs();
+      renderBuilderDayEditor();
+    }
+
+    function renderBuilderDayEditor() {
+      const box = document.getElementById('builderDayEditor');
+      if (!box) return;
+      const d = builderState.days[builderState.activeDayIdx];
+      const isRest = d.day_type === 'rest';
+
+      let exHtml = '';
+      if (isRest) {
+        exHtml = `<div style="padding:24px;text-align:center;color:var(--text-secondary);font-size:13px;">${d.day_name} is configured as a Rest Day. Switch Day Type above to add exercises.</div>`;
+      } else if (d.exercises.length === 0) {
+        exHtml = `<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">No exercises added to ${d.day_name} yet. Click <strong>+ Add Exercises from Library</strong>.</div>`;
+      } else {
+        exHtml = d.exercises.map((ex, eIdx) => {
+          const setsRows = (ex.sets || []).map((s, sIdx) => `
+            <div style="display:flex;gap:6px;align-items:center;margin-top:4px;font-size:11px;">
+              <span style="width:45px;font-weight:600;">Set ${sIdx+1}</span>
+              <input type="text" value="${escapeHtml(s.target_reps)}" placeholder="Reps" onchange="updateBuilderSet(${eIdx},${sIdx},'target_reps',this.value)" style="width:65px;padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;">
+              <input type="number" step="0.5" min="0" value="${escapeHtml(s.target_weight)}" placeholder="kg" onchange="updateBuilderSet(${eIdx},${sIdx},'target_weight',this.value)" style="width:70px;padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;">
+              <input type="number" min="0" value="${s.rest_seconds}" placeholder="Rest s" onchange="updateBuilderSet(${eIdx},${sIdx},'rest_seconds',this.value)" style="width:65px;padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;">
+              <button type="button" onclick="removeBuilderSet(${eIdx},${sIdx})" style="border:none;background:none;color:#DC2626;cursor:pointer;">&times;</button>
+            </div>
+          `).join('');
+          return `<div style="background:#fff;border:1px solid var(--border-color);border-radius:10px;padding:12px;margin-top:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+              <strong style="font-size:13px;color:var(--text-main);">${eIdx+1}. ${escapeHtml(ex.exercise_name)}</strong>
+              <div style="display:flex;gap:6px;">
+                <button type="button" onclick="moveBuilderExercise(${eIdx},-1)" style="padding:3px 8px;font-size:11px;border:1px solid var(--border-color);border-radius:6px;background:#fff;cursor:pointer;">&uarr;</button>
+                <button type="button" onclick="moveBuilderExercise(${eIdx},1)" style="padding:3px 8px;font-size:11px;border:1px solid var(--border-color);border-radius:6px;background:#fff;cursor:pointer;">&darr;</button>
+                <button type="button" onclick="duplicateBuilderExercise(${eIdx})" style="padding:3px 8px;font-size:11px;border:1px solid var(--border-color);border-radius:6px;background:#fff;cursor:pointer;">Duplicate</button>
+                <button type="button" onclick="removeBuilderExercise(${eIdx})" style="padding:3px 8px;font-size:11px;border:1px solid #FCA5A5;color:#DC2626;border-radius:6px;background:#fff;cursor:pointer;">Remove</button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;font-size:11px;">
+              <div><label>Sets</label><input type="number" min="1" max="20" value="${ex.target_sets}" onchange="updateBuilderEx(${eIdx},'target_sets',this.value)" style="width:100%;padding:5px;border:1px solid var(--border-color);border-radius:6px;"></div>
+              <div><label>Reps</label><input type="text" value="${escapeHtml(ex.target_reps)}" onchange="updateBuilderEx(${eIdx},'target_reps',this.value)" style="width:100%;padding:5px;border:1px solid var(--border-color);border-radius:6px;"></div>
+              <div><label>Weight (${ex.weight_unit})</label><input type="number" step="0.5" min="0" value="${escapeHtml(ex.target_weight)}" onchange="updateBuilderEx(${eIdx},'target_weight',this.value)" style="width:100%;padding:5px;border:1px solid var(--border-color);border-radius:6px;"></div>
+              <div><label>Rest (sec)</label><input type="number" min="0" value="${ex.rest_seconds}" onchange="updateBuilderEx(${eIdx},'rest_seconds',this.value)" style="width:100%;padding:5px;border:1px solid var(--border-color);border-radius:6px;"></div>
+              <div><label>Superset</label><input type="text" value="${escapeHtml(ex.superset_group)}" placeholder="e.g. A1" onchange="updateBuilderEx(${eIdx},'superset_group',this.value)" style="width:100%;padding:5px;border:1px solid var(--border-color);border-radius:6px;"></div>
+              <div><label>Tempo</label><input type="text" value="${escapeHtml(ex.tempo)}" placeholder="3-1-1-0" onchange="updateBuilderEx(${eIdx},'tempo',this.value)" style="width:100%;padding:5px;border:1px solid var(--border-color);border-radius:6px;"></div>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="text" value="${escapeHtml(ex.notes)}" placeholder="Trainer notes for this exercise..." onchange="updateBuilderEx(${eIdx},'notes',this.value)" style="flex:1;min-width:180px;padding:5px 8px;border:1px solid var(--border-color);border-radius:6px;font-size:11px;">
+              <button type="button" onclick="addBuilderSetRow(${eIdx})" style="padding:4px 10px;font-size:11px;border:1px solid #93C5FD;background:#EFF6FF;color:#1D4ED8;border-radius:6px;cursor:pointer;">+ Per-Set Target</button>
+            </div>
+            ${setsRows ? `<div style="margin-top:6px;padding:6px 8px;background:#F8FAFC;border-radius:6px;">${setsRows}</div>` : ''}
+          </div>`;
+        }).join('');
+      }
+
+      box.innerHTML = `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <strong style="font-size:14px;">${d.day_name}</strong>
+            <select onchange="updateBuilderDayField('day_type',this.value)" style="padding:6px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;background:#fff;">
+              <option value="training" ${d.day_type==='training'?'selected':''}>Training Day</option>
+              <option value="rest" ${d.day_type==='rest'?'selected':''}>Rest Day</option>
+              <option value="active_recovery" ${d.day_type==='active_recovery'?'selected':''}>Active Recovery</option>
+            </select>
+            <input type="text" value="${escapeHtml(d.focus_area)}" placeholder="Focus area (e.g. Push / Chest)" onchange="updateBuilderDayField('focus_area',this.value)" style="padding:6px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;min-width:190px;">
+          </div>
+          ${!isRest ? `<button type="button" class="btn-primary-block" style="width:auto;padding:7px 14px;font-size:12px;" onclick="openBuilderExercisePicker()">+ Add Exercises from Library</button>` : ''}
+        </div>
+        ${exHtml}
+      `;
+    }
+
+    function updateBuilderDayField(field, val) {
+      builderState.days[builderState.activeDayIdx][field] = val;
+      renderBuilderDayTabs();
+      renderBuilderDayEditor();
+    }
+    function updateBuilderEx(eIdx, field, val) {
+      builderState.days[builderState.activeDayIdx].exercises[eIdx][field] = val;
+    }
+    function moveBuilderExercise(eIdx, dir) {
+      const arr = builderState.days[builderState.activeDayIdx].exercises;
+      const ni = eIdx + dir;
+      if (ni < 0 || ni >= arr.length) return;
+      [arr[eIdx], arr[ni]] = [arr[ni], arr[eIdx]];
+      renderBuilderDayEditor();
+    }
+    function duplicateBuilderExercise(eIdx) {
+      const arr = builderState.days[builderState.activeDayIdx].exercises;
+      arr.splice(eIdx + 1, 0, JSON.parse(JSON.stringify(arr[eIdx])));
+      renderBuilderDayTabs();
+      renderBuilderDayEditor();
+    }
+    function removeBuilderExercise(eIdx) {
+      builderState.days[builderState.activeDayIdx].exercises.splice(eIdx, 1);
+      renderBuilderDayTabs();
+      renderBuilderDayEditor();
+    }
+    function addBuilderSetRow(eIdx) {
+      const ex = builderState.days[builderState.activeDayIdx].exercises[eIdx];
+      if (!Array.isArray(ex.sets)) ex.sets = [];
+      ex.sets.push({ set_number: ex.sets.length + 1, target_reps: ex.target_reps || '10', target_weight: ex.target_weight || 10, weight_unit: ex.weight_unit || 'kg', rest_seconds: ex.rest_seconds || 90, is_warmup: false });
+      ex.target_sets = ex.sets.length;
+      renderBuilderDayEditor();
+    }
+    function updateBuilderSet(eIdx, sIdx, field, val) {
+      builderState.days[builderState.activeDayIdx].exercises[eIdx].sets[sIdx][field] = val;
+    }
+    function removeBuilderSet(eIdx, sIdx) {
+      const ex = builderState.days[builderState.activeDayIdx].exercises[eIdx];
+      ex.sets.splice(sIdx, 1);
+      ex.target_sets = Math.max(1, ex.sets.length);
+      renderBuilderDayEditor();
+    }
+
+    async function openBuilderExercisePicker() {
+      if (!window.__EX_LIBRARY_CACHE__) await loadTrainerExerciseLibrary();
+      document.getElementById('pickerDayTitle').innerText = builderState.days[builderState.activeDayIdx].day_name;
+      renderBuilderPickerList();
+      document.getElementById('modalBuilderExercisePicker').style.display = 'flex';
+    }
+    function closeBuilderExercisePicker() {
+      document.getElementById('modalBuilderExercisePicker').style.display = 'none';
+    }
+    function renderBuilderPickerList() {
+      const box = document.getElementById('pickerExList');
+      const all = window.__EX_LIBRARY_CACHE__ || [];
+      const q = (document.getElementById('pickerExSearch')?.value || '').toLowerCase();
+      const cat = (document.getElementById('pickerExCat')?.value || 'all').toLowerCase();
+      const filtered = all.filter(ex => (!q || ex.name.toLowerCase().includes(q) || (ex.muscle || '').toLowerCase().includes(q)) && (cat === 'all' || String(ex.category || '').toLowerCase() === cat));
+      box.innerHTML = filtered.map(ex => `
+        <label style="display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;font-size:12px;">
+          <input type="checkbox" class="picker-ex-chk" value="${ex.db_id}">
+          <div><strong>${escapeHtml(ex.name)}</strong><div style="font-size:11px;color:var(--text-secondary);">${escapeHtml(ex.category)} • ${escapeHtml(ex.equipment)}</div></div>
+        </label>
+      `).join('');
+    }
+    function confirmAddPickedExercises() {
+      const all = window.__EX_LIBRARY_CACHE__ || [];
+      const chks = Array.from(document.querySelectorAll('.picker-ex-chk:checked'));
+      const d = builderState.days[builderState.activeDayIdx];
+      chks.forEach(c => {
+        const ex = all.find(x => parseInt(x.db_id, 10) === parseInt(c.value, 10));
+        if (ex) {
+          d.exercises.push({
+            exercise_id: ex.db_id, exercise_name: ex.name,
+            target_sets: ex.default_target_sets || 3, target_reps: ex.default_target_reps || '8-12',
+            target_weight: '', weight_unit: 'kg', rest_seconds: ex.default_rest_seconds || 90,
+            duration_seconds: '', tempo: '', warmup_sets: 0, superset_group: '', notes: '', sets: []
+          });
+        }
+      });
+      closeBuilderExercisePicker();
+      renderBuilderDayTabs();
+      renderBuilderDayEditor();
+    }
+
+    async function savePlanFromBuilder(shouldAssign) {
+      const name = document.getElementById('builderPlanName')?.value.trim();
+      if (!name) { alert('Please enter a plan or template name.'); return; }
+      const memberId = document.getElementById('builderAssignMemberSelect')?.value;
+      if (shouldAssign && !memberId) { alert('Please select an assigned member to assign this plan.'); return; }
+
+      const trainDaysCount = Math.max(1, builderState.days.filter(d => d.day_type !== 'rest').length);
+      const payload = {
+        plan_id: parseInt(document.getElementById('builderPlanId')?.value || '0', 10),
+        name,
+        description: document.getElementById('builderInstructions')?.value.trim() || '',
+        trainer_instructions: document.getElementById('builderInstructions')?.value.trim() || '',
+        goal: document.getElementById('builderGoal')?.value || 'hypertrophy',
+        difficulty: document.getElementById('builderDifficulty')?.value || 'intermediate',
+        split_type: document.getElementById('builderSplit')?.value || 'Custom Split',
+        duration_weeks: parseInt(document.getElementById('builderDurationWeeks')?.value || '4', 10),
+        days_per_week: trainDaysCount,
+        is_template: document.getElementById('builderSaveAsTemplate')?.checked ? 1 : 0,
+        start_date: document.getElementById('builderStartDate')?.value || '',
+        assign_to_member_id: shouldAssign && memberId ? parseInt(memberId, 10) : null,
+        days: builderState.days
+      };
 
       try {
         const res = await fetch('api/trainer/workouts.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: title,
-            goal: goal,
-            description: desc,
-            exercise_ids: exId ? [parseInt(exId, 10)] : [],
-            target_sets: sets,
-            target_reps: reps,
-            assign_to_member_id: memberId ? parseInt(memberId, 10) : null
-          })
+          body: JSON.stringify(payload)
         });
         const json = await res.json();
         if (json.success) {
-          alert(json.message || 'Workout plan saved & synced!');
-          document.getElementById('trainerCreateWorkoutForm')?.reset();
-          toggleCreateWorkoutPanel();
+          alert(shouldAssign ? 'Workout plan saved & assigned to member!' : 'Workout template/plan saved!');
           await loadTrainerWorkoutsView();
           await syncTrainerDataFromDb();
+          switchWorkoutSubTab(shouldAssign ? 'assignments' : 'templates');
         } else {
-          alert(json.message || json.error || 'Failed to save workout plan.');
+          alert(json.message || 'Unable to save workout plan.');
         }
       } catch (err) {
-        console.error('Save workout error:', err);
+        console.error('Save builder err:', err);
       }
+    }
+
+    async function loadTrainerWorkoutsView() {
+      const d = getTrainerDashData();
+      const myMembers = d.athletes || [];
+      const bSel = document.getElementById('builderAssignMemberSelect');
+      if (bSel) {
+        const prev = bSel.value;
+        bSel.innerHTML = `<option value="">Do not assign yet (save only)</option>` +
+          myMembers.map(m => `<option value="${m.user_id}">${escapeHtml(m.name)} (${escapeHtml(m.email)})</option>`).join('');
+        if (prev) bSel.value = prev;
+      }
+
+      try {
+        const incArch = document.getElementById('wkShowArchivedChk')?.checked ? 1 : 0;
+        const res = await fetch(`api/trainer/workouts.php?include_archived=${incArch}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!json.success || !json.data) return;
+
+        window.__TRAINER_WORKOUTS__ = json.data;
+        renderTrainerTemplatesGrid();
+        renderTrainerAssignmentsList();
+        renderTrainerMonitoringView();
+      } catch (err) {
+        console.warn('Trainer workouts fetch error:', err);
+      }
+    }
+
+    function renderTrainerTemplatesGrid() {
+      const grid = document.getElementById('trainerWorkoutsGrid');
+      if (!grid) return;
+      const wData = window.__TRAINER_WORKOUTS__ || {};
+      const plans = Array.isArray(wData.plans) ? wData.plans : [];
+      const q = (document.getElementById('wkTemplateSearchInput')?.value || '').toLowerCase();
+      const myMembers = getTrainerDashData().athletes || [];
+
+      const filtered = plans.filter(p => !q || String(p.name || '').toLowerCase().includes(q) || String(p.goal || '').toLowerCase().includes(q) || String(p.split_type || '').toLowerCase().includes(q));
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="trainer-card" style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">No workout templates or plans found. Click <strong>+ Open Plan Builder</strong> above.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => {
+        const trainDays = (p.days || []).filter(d => d.day_type !== 'rest' && !parseInt(d.is_rest_day || 0, 10));
+        const exCount = trainDays.reduce((acc, d) => acc + (d.exercises?.length || 0), 0);
+        return `<div class="trainer-card" style="display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
+              <div>
+                <h3 style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:4px;">${escapeHtml(p.name)}</h3>
+                <span class="fs-badge fs-badge-blue">${escapeHtml(p.goal)}</span>
+                <span class="fs-badge" style="background:#F1F5F9;color:#334155;">${escapeHtml(p.split_type || 'Split')} • ${p.days_per_week}d/wk</span>
+              </div>
+              <span class="fs-badge ${parseInt(p.is_template,10) ? 'fs-badge-orange' : 'fs-badge-green'}">${parseInt(p.is_template,10) ? 'Template' : (p.assigned_count + ' Assigned')}</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">${escapeHtml(p.description || 'Structured weekly program')} (${exCount} exercises across ${trainDays.length} training days)</p>
+          </div>
+          <div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+              <button type="button" class="btn-outline-gym" style="margin-top:0;padding:4px 10px;font-size:11px;" onclick="loadPlanIntoBuilder(${p.id}, false)">Edit / Customize</button>
+              <button type="button" class="btn-outline-gym" style="margin-top:0;padding:4px 10px;font-size:11px;" onclick="duplicateTemplate(${p.id})">Duplicate</button>
+              ${p.author_trainer_id ? `<button type="button" class="btn-outline-gym" style="margin-top:0;padding:4px 10px;font-size:11px;" onclick="archiveTemplate(${p.id}, ${parseInt(p.is_archived||0,10)?0:1})">${parseInt(p.is_archived||0,10)?'Unarchive':'Archive'}</button>` : ''}
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="assignPlanSelect-${p.id}" style="flex:1;padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font-size:12px;">
+                <option value="">Assign to member...</option>
+                ${myMembers.map(m => `<option value="${m.user_id}">${escapeHtml(m.name)}</option>`).join('')}
+              </select>
+              <button type="button" class="btn-primary-block" style="width:auto;padding:6px 12px;font-size:12px;" onclick="assignPlanToSelectedMember(${p.id})">Assign</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function duplicateTemplate(planId) {
+      const res = await fetch('api/trainer/workouts.php', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'duplicate_template', plan_id: planId })
+      });
+      const j = await res.json();
+      alert(j.message || 'Duplicated.');
+      await loadTrainerWorkoutsView();
+    }
+
+    async function archiveTemplate(planId, archived) {
+      const res = await fetch('api/trainer/workouts.php', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'archive_template', plan_id: planId, archived: Boolean(archived) })
+      });
+      const j = await res.json();
+      alert(j.message || 'Updated.');
+      await loadTrainerWorkoutsView();
+    }
+
+    function renderTrainerAssignmentsList() {
+      const box = document.getElementById('trainerAssignmentsList');
+      if (!box) return;
+      const list = window.__TRAINER_WORKOUTS__?.assignments || [];
+      if (list.length === 0) {
+        box.innerHTML = 'No workout plan assignments yet.';
+        return;
+      }
+      box.innerHTML = list.map(a => `
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:12px;background:#F8FAFC;border:1px solid var(--border-color);border-radius:10px;">
+          <div>
+            <strong>${escapeHtml(a.member_name)}</strong> &rarr; <span style="color:#2563EB;font-weight:600;">${escapeHtml(a.plan_name)}</span>
+            <div style="font-size:11px;color:var(--text-secondary);">Status: <strong>${escapeHtml(a.status).toUpperCase()}</strong> • Start: ${escapeHtml(a.start_date)} • Completed Sessions: ${a.completed_sessions_count || 0}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" class="btn-outline-gym" style="margin-top:0;padding:5px 10px;font-size:11px;" onclick="loadPlanIntoBuilder(${a.plan_id}, false)">Edit Future Workouts</button>
+            ${a.status === 'active' ? `<button type="button" class="btn-outline-gym" style="margin-top:0;padding:5px 10px;font-size:11px;" onclick="updateAssignmentStatus(${a.assignment_id},'pause')">Pause</button>` : ''}
+            ${a.status === 'paused' ? `<button type="button" class="btn-outline-gym" style="margin-top:0;padding:5px 10px;font-size:11px;" onclick="updateAssignmentStatus(${a.assignment_id},'resume')">Resume</button>` : ''}
+            ${a.status !== 'completed' ? `<button type="button" class="btn-outline-gym" style="margin-top:0;padding:5px 10px;font-size:11px;color:#DC2626;" onclick="updateAssignmentStatus(${a.assignment_id},'end')">End</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function updateAssignmentStatus(assignmentId, decision) {
+      const res = await fetch('api/trainer/workouts.php', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'assignment_status', assignment_id: assignmentId, decision })
+      });
+      const j = await res.json();
+      alert(j.message || 'Updated.');
+      await loadTrainerWorkoutsView();
+    }
+
+    function renderTrainerMonitoringView() {
+      const sessBox = document.getElementById('trainerCompletedSessionsList');
+      const sessions = window.__TRAINER_WORKOUTS__?.completed_sessions || [];
+      if (sessBox) {
+        if (sessions.length === 0) {
+          sessBox.innerHTML = 'No completed athlete workout sessions recorded yet.';
+        } else {
+          sessBox.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;">` + sessions.map(s => {
+            const exs = (s.exercises_performed || []).map(e => `${e.exercise_name} S${e.set_number}: ${e.reps_completed}×${e.weight_kg}${e.weight_unit||'kg'}`).join(' • ');
+            return `<div style="padding:12px;background:#F8FAFC;border:1px solid var(--border-color);border-radius:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div><strong>${escapeHtml(s.athlete_name)}</strong> — ${escapeHtml(s.day_name || s.focus_area || 'Training Session')}
+                  <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(s.session_date)} • ${s.duration_minutes || 45} mins • ${s.total_sets_completed || 0} sets</div>
+                </div>
+                <span class="fs-badge fs-badge-green">${Number(s.total_volume_kg || 0).toLocaleString()} kg volume</span>
+              </div>
+              ${exs ? `<div style="font-size:11px;color:#334155;margin-top:6px;">${escapeHtml(exs)}</div>` : ''}
+              ${s.feedback_text || s.difficulty_rating ? `<div style="font-size:11px;color:#475569;margin-top:6px;background:#fff;padding:6px 8px;border-radius:6px;border:1px solid #E2E8F0;">Feedback (${escapeHtml(s.difficulty_rating || 'just_right')}): ${escapeHtml(s.feedback_text || 'Completed')} ${s.trainer_reply ? `<br><strong>Your Reply:</strong> ${escapeHtml(s.trainer_reply)}` : ''}</div>` : ''}
+              <div style="margin-top:6px;"><button type="button" class="btn-outline-gym" style="margin-top:0;padding:3px 10px;font-size:11px;" onclick="replySessionFeedback(${s.id})">Send Coach Feedback</button></div>
+            </div>`;
+          }).join('') + `</div>`;
+        }
+      }
+
+      const prBox = document.getElementById('trainerMemberPrsList');
+      const prs = window.__TRAINER_WORKOUTS__?.member_prs || [];
+      if (prBox) {
+        if (prs.length === 0) {
+          prBox.innerHTML = 'No personal records logged yet.';
+        } else {
+          prBox.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">` +
+            prs.map(pr => `<div style="padding:10px;border:1px solid var(--border-color);border-radius:8px;background:#F8FAFC;">
+              <div style="font-size:12px;font-weight:700;">${escapeHtml(pr.athlete_name)}</div>
+              <div style="font-size:13px;color:#2563EB;font-weight:600;">${escapeHtml(pr.exercise_name)}</div>
+              <div style="font-size:12px;margin-top:4px;">Best: <strong>${pr.max_weight_kg} kg</strong> • Max Reps: <strong>${pr.max_reps}</strong></div>
+            </div>`).join('') + `</div>`;
+        }
+      }
+    }
+
+    async function replySessionFeedback(sessionId) {
+      const reply = prompt('Enter coaching feedback for this workout session:');
+      if (!reply || !reply.trim()) return;
+      const res = await fetch('api/trainer/workouts.php', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'reply_feedback', session_id: sessionId, reply: reply.trim() })
+      });
+      const j = await res.json();
+      alert(j.message || 'Sent.');
+      await loadTrainerWorkoutsView();
     }
 
     async function assignPlanToSelectedMember(planId) {
@@ -2013,9 +2556,58 @@
           setVal('settingsCoachRate', d.hourly_rate);
           setVal('settingsCoachPhone', d.phone);
           setVal('settingsCoachSpecialties', Array.isArray(d.specialties) ? d.specialties.join(', ') : d.specializations);
+          const prev = document.getElementById('settingsCoachAvatarPreview');
+          if (prev && d.avatar_url) prev.src = d.avatar_url;
         }
       } catch (err) {
         console.warn('Trainer profile fetch error:', err);
+      }
+    }
+
+    function validateTrainerImageFile(file) {
+      if (!file) return true;
+      const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowed.includes(file.type)) {
+        alert('Unsupported image format. Please choose JPG, PNG, or WEBP.');
+        return false;
+      }
+      if (file.size <= 0 || file.size > 5 * 1024 * 1024) {
+        alert('Image file size must be under 5 MB.');
+        return false;
+      }
+      return true;
+    }
+
+    function previewCoachAvatar(inputEl) {
+      const f = inputEl?.files?.[0];
+      if (!f) return;
+      if (!validateTrainerImageFile(f)) { inputEl.value = ''; return; }
+      const r = new FileReader();
+      r.onload = () => {
+        const prev = document.getElementById('settingsCoachAvatarPreview');
+        if (prev && r.result) prev.src = String(r.result);
+      };
+      r.readAsDataURL(f);
+    }
+
+    async function removeCoachAvatar() {
+      const res = await fetch('api/trainer/profile.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'remove_avatar' })
+      });
+      const j = await res.json();
+      if (j.success) {
+        const defAv = j.data?.avatar_url || 'assets/images/trainer_raj.jpg';
+        const prev = document.getElementById('settingsCoachAvatarPreview');
+        const side = document.getElementById('sidebarCoachAvatar');
+        if (prev) prev.src = defAv;
+        if (side) side.src = defAv;
+        const inp = document.getElementById('settingsCoachAvatarFile');
+        if (inp) inp.value = '';
+        await syncTrainerDataFromDb();
+      } else {
+        alert(j.message || 'Unable to remove photo.');
       }
     }
 
@@ -2027,27 +2619,52 @@
       const rate = document.getElementById('settingsCoachRate')?.value.trim();
       const phone = document.getElementById('settingsCoachPhone')?.value.trim();
       const specsRaw = document.getElementById('settingsCoachSpecialties')?.value.trim();
+      const fileEl = document.getElementById('settingsCoachAvatarFile');
+      const avatarFile = fileEl?.files?.[0] || null;
 
       if (!name) {
         alert('Coach full name is required.');
         return;
       }
+      if (avatarFile && !validateTrainerImageFile(avatarFile)) {
+        return;
+      }
 
       try {
-        const res = await fetch('api/trainer/profile.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: name,
-            title: title,
-            experience: exp,
-            hourly_rate: rate,
-            phone: phone,
-            specializations: specsRaw
-          })
-        });
+        let res;
+        if (avatarFile) {
+          const fd = new FormData();
+          fd.append('name', name);
+          fd.append('title', title || '');
+          fd.append('experience', exp || '');
+          fd.append('hourly_rate', rate || '');
+          fd.append('phone', phone || '');
+          fd.append('specializations', specsRaw || '');
+          fd.append('profile_photo', avatarFile);
+          res = await fetch('api/trainer/profile.php', { method: 'POST', body: fd });
+        } else {
+          res = await fetch('api/trainer/profile.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: name,
+              title: title,
+              experience: exp,
+              hourly_rate: rate,
+              phone: phone,
+              specializations: specsRaw
+            })
+          });
+        }
         const json = await res.json();
         if (json.success) {
+          if (json.data?.avatar_url) {
+            const prev = document.getElementById('settingsCoachAvatarPreview');
+            const side = document.getElementById('sidebarCoachAvatar');
+            if (prev) prev.src = json.data.avatar_url;
+            if (side) side.src = json.data.avatar_url;
+          }
+          if (fileEl) fileEl.value = '';
           alert('Coach profile updated successfully in database!');
           await syncTrainerDataFromDb();
         } else {
@@ -2137,7 +2754,7 @@
 
         const avImg = document.getElementById('dossierAvatarImg');
         if (avImg) {
-          avImg.src = a.avatar || 'assets/images/member_aarav.jpg';
+          avImg.src = a.avatar || 'assets/images/aarav.jpg';
           avImg.style.display = 'block';
         }
         document.getElementById('dossierAvatar').innerText = getInitials(a.full_name || 'AT');
@@ -2364,13 +2981,134 @@
       document.getElementById('dossierModal').style.display = 'none';
     }
 
-    function filterExerciseCards() {
+    async function loadTrainerExerciseLibrary() {
+      try {
+        const res = await fetch('api/exercises.php');
+        const json = await res.json();
+        if (json && json.success) {
+          window.__EX_LIBRARY_CACHE__ = Array.isArray(json.exercises) ? json.exercises : [];
+          renderTrainerExerciseLibrary();
+        }
+      } catch (err) {
+        console.warn('Exercise library load err:', err);
+      }
+    }
+
+    function renderTrainerExerciseLibrary() {
+      const grid = document.getElementById('trainerExerciseGrid');
+      if (!grid) return;
+      const all = window.__EX_LIBRARY_CACHE__ || [];
       const q = (document.getElementById('exerciseSearchInput')?.value || '').toLowerCase();
-      document.querySelectorAll('.ex-card').forEach(card => {
-        const title = (card.getAttribute('data-title') || '').toLowerCase();
-        const muscle = (card.getAttribute('data-muscle') || '').toLowerCase();
-        card.style.display = (title.includes(q) || muscle.includes(q)) ? 'block' : 'none';
+      const cat = (document.getElementById('exFilterCategory')?.value || 'all').toLowerCase();
+      const eq = (document.getElementById('exFilterEquipment')?.value || 'all').toLowerCase();
+      const diff = (document.getElementById('exFilterDifficulty')?.value || 'all').toLowerCase();
+      const etype = (document.getElementById('exFilterType')?.value || 'all').toLowerCase();
+
+      const filtered = all.filter(ex => {
+        if (q && ![ex.name, ex.muscle, ex.category, ex.cues, ex.description].join(' ').toLowerCase().includes(q)) return false;
+        if (cat !== 'all' && String(ex.category || '').toLowerCase() !== cat) return false;
+        if (eq !== 'all' && String(ex.equipment_key || ex.equipment || '').toLowerCase() !== eq) return false;
+        if (diff !== 'all' && String(ex.difficulty_key || ex.difficulty || '').toLowerCase() !== diff) return false;
+        if (etype !== 'all' && String(ex.type_key || ex.type || '').toLowerCase() !== etype) return false;
+        return true;
       });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="trainer-card" style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">No exercises matched your filters. Click <strong>+ Create Custom Exercise</strong> to add one.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(ex => `
+        <div class="trainer-card ex-card" style="display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+          <div>
+            <img src="${escapeHtml(ex.image || 'assets/images/exercise_placeholder.svg')}" alt="${escapeHtml(ex.name)}" onerror="this.src='assets/images/exercise_placeholder.svg'" style="width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
+              <h4 style="font-size:15px;font-weight:700;color:var(--text-main);margin:0;">${escapeHtml(ex.name)}</h4>
+              <span class="fs-badge fs-badge-blue">${escapeHtml(ex.category || 'General')}</span>
+            </div>
+            <div style="font-size:11px;color:#2563EB;font-weight:600;margin:4px 0;">${escapeHtml(ex.muscle || '')} • ${escapeHtml(ex.equipment)} • ${escapeHtml(ex.difficulty)} • ${escapeHtml(ex.type)}</div>
+            <p style="font-size:12px;color:var(--text-secondary);margin:6px 0;">${escapeHtml(ex.cues || ex.description || '')}</p>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border-color);padding-top:8px;font-size:11px;color:var(--text-muted);gap:6px;flex-wrap:wrap;">
+            <span>Default: ${escapeHtml(ex.target)} • ${escapeHtml(ex.rest)}</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button type="button" class="btn-outline-gym" style="margin-top:0;padding:3px 8px;font-size:11px;" onclick="promptUploadExerciseImage(${ex.db_id}, '${escapeHtml(ex.name)}')">Upload Photo</button>
+              ${ex.video_url ? `<a href="${escapeHtml(ex.video_url)}" target="_blank" style="color:#2563EB;font-weight:600;">Video</a>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function previewCustomExerciseImg(inputEl) {
+      const f = inputEl?.files?.[0];
+      const prev = document.getElementById('custExImgPreview');
+      if (!f) return;
+      if (!validateTrainerImageFile(f)) { inputEl.value = ''; return; }
+      const r = new FileReader();
+      r.onload = () => { if (prev && r.result) prev.src = String(r.result); };
+      r.readAsDataURL(f);
+    }
+
+    function promptUploadExerciseImage(exerciseId, exerciseName) {
+      const picker = document.createElement('input');
+      picker.type = 'file';
+      picker.accept = 'image/jpeg,image/png,image/webp';
+      picker.onchange = async () => {
+        const f = picker.files?.[0];
+        if (!f || !validateTrainerImageFile(f)) return;
+        const fd = new FormData();
+        fd.append('action', 'update_image');
+        fd.append('exercise_id', String(exerciseId));
+        fd.append('exercise_image', f);
+        try {
+          const res = await fetch('api/exercises.php', { method: 'POST', body: fd });
+          const j = await res.json();
+          alert(j.message || (j.success ? `Updated image for ${exerciseName}.` : 'Upload failed.'));
+          if (j.success) await loadTrainerExerciseLibrary();
+        } catch (err) {
+          alert('Network error uploading exercise image.');
+        }
+      };
+      picker.click();
+    }
+
+    function openCreateExerciseModal() {
+      const prev = document.getElementById('custExImgPreview');
+      if (prev) prev.src = 'assets/images/exercise_placeholder.svg';
+      const fi = document.getElementById('custExImageFile');
+      if (fi) fi.value = '';
+      document.getElementById('modalCreateExercise').style.display = 'flex';
+    }
+    function closeCreateExerciseModal() {
+      document.getElementById('modalCreateExercise').style.display = 'none';
+    }
+    async function submitCustomExercise(e) {
+      e.preventDefault();
+      const fi = document.getElementById('custExImageFile');
+      const imgFile = fi?.files?.[0] || null;
+      if (imgFile && !validateTrainerImageFile(imgFile)) return;
+
+      const fd = new FormData();
+      fd.append('name', document.getElementById('custExName').value.trim());
+      fd.append('category', document.getElementById('custExCat').value);
+      fd.append('equipment_required', document.getElementById('custExEquip').value);
+      fd.append('difficulty', document.getElementById('custExDiff').value);
+      fd.append('exercise_type', document.getElementById('custExType').value);
+      fd.append('default_target_sets', String(parseInt(document.getElementById('custExSets').value || '3', 10)));
+      fd.append('default_target_reps', document.getElementById('custExReps').value.trim() || '8-12');
+      fd.append('default_rest_seconds', String(parseInt(document.getElementById('custExRest').value || '90', 10)));
+      fd.append('form_cues', document.getElementById('custExCues').value.trim());
+      if (imgFile) fd.append('exercise_image', imgFile);
+
+      const res = await fetch('api/exercises.php', { method: 'POST', body: fd });
+      const j = await res.json();
+      alert(j.message || 'Updated.');
+      if (j.success) {
+        closeCreateExerciseModal();
+        e.target.reset();
+        await loadTrainerExerciseLibrary();
+      }
     }
 
     try {
@@ -2385,11 +3123,25 @@
         if (!sess || !sess.isLoggedIn || !sess.authorized) return;
       }
       await syncTrainerDataFromDb();
-      setInterval(syncTrainerDataFromDb, 5000);
+      let trainerSyncInFlight = false;
+      let lastTrainerSyncAt = Date.now();
+      const runTrainerSync = async (isPeriodic = false) => {
+        if (trainerSyncInFlight || (isPeriodic && document.hidden)) return;
+        const nowMs = Date.now();
+        if (!isPeriodic && (nowMs - lastTrainerSyncAt) < 5000) return;
+        trainerSyncInFlight = true;
+        lastTrainerSyncAt = nowMs;
+        try {
+          await syncTrainerDataFromDb();
+        } finally {
+          trainerSyncInFlight = false;
+        }
+      };
+      setInterval(() => runTrainerSync(true), 30000);
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') syncTrainerDataFromDb();
+        if (document.visibilityState === 'visible') runTrainerSync(false);
       });
-      window.addEventListener('focus', syncTrainerDataFromDb);
+      window.addEventListener('focus', () => runTrainerSync(false));
       if (typeof initIcons === 'function') initIcons();
     });
 

@@ -49,17 +49,23 @@ if ($switchAccount && isLoggedIn()) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim((string)($_POST['email'] ?? ''));
-    $password = (string)($_POST['password'] ?? '');
-    $remember = !empty($_POST['remember']);
-
-    $result = authenticateUser($email, $password, $remember);
-    if ($result['success']) {
-        $dest = $result['redirect'] ?? getRedirectUrlForRole($_SESSION['role'] ?? 'user');
-        header('Location: ' . $dest);
-        exit;
+    $submittedCsrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+    if (!validateCsrfToken(is_string($submittedCsrf) ? $submittedCsrf : null)) {
+        http_response_code(403);
+        $errorMessage = 'CSRF security token validation failed. Please refresh the page.';
     } else {
-        $errorMessage = $result['message'] ?? 'Invalid email address or password.';
+        $email = trim((string)($_POST['email'] ?? ''));
+        $password = (string)($_POST['password'] ?? '');
+        $remember = !empty($_POST['remember']);
+
+        $result = authenticateUser($email, $password, $remember);
+        if ($result['success']) {
+            $dest = $result['redirect'] ?? getRedirectUrlForRole($_SESSION['role'] ?? 'user');
+            header('Location: ' . $dest);
+            exit;
+        } else {
+            $errorMessage = $result['message'] ?? 'Invalid email address or password.';
+        }
     }
 }
 ?>
@@ -334,5 +340,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </div>
 
+  <script>
+    window.addEventListener('pageshow', async (e) => {
+      if (e.persisted) {
+        try {
+          const portalCtx = new URLSearchParams(window.location.search).get('portal_ctx') || '';
+          const res = await fetch('api/auth/csrf.php', {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: portalCtx ? { 'X-FitSync-Portal': portalCtx } : {}
+          });
+          const json = await res.json().catch(() => null);
+          const inp = document.querySelector('input[name="csrf_token"]');
+          if (inp && json && json.csrf_token) inp.value = json.csrf_token;
+        } catch (err) {}
+      }
+    });
+  </script>
 </body>
 </html>

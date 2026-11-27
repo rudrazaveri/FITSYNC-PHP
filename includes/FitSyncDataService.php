@@ -15,10 +15,12 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/upload_helper.php';
 
 class FitSyncDataService {
     private static ?FitSyncDataService $instance = null;
     private ?PDO $db;
+    private bool $expiredMembershipsChecked = false;
 
     private function __construct(?PDO $db = null) {
         $this->db = $db ?? getDbConnection();
@@ -40,7 +42,8 @@ class FitSyncDataService {
     // =========================================================================
 
     public function expireEndedMemberships(): void {
-        if ($this->db === null) return;
+        if ($this->db === null || $this->expiredMembershipsChecked) return;
+        $this->expiredMembershipsChecked = true;
         try {
             $this->db->exec("
                 UPDATE memberships
@@ -151,13 +154,23 @@ class FitSyncDataService {
         // Resolve Gym strictly owned by this Gym Owner (unless admin)
         $resolvedGymId = $this->resolveOwnerGymId($ownerUserId, $gymId, $role);
 
-        $ownerStmt = $this->db->prepare("SELECT id, full_name, email, mobile FROM users WHERE id = :oid LIMIT 1");
-        $ownerStmt->execute([':oid' => $ownerUserId]);
-        $ownerInfo = $ownerStmt->fetch(PDO::FETCH_ASSOC) ?: null;
-
-        $unreadNotifStmt = $this->db->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = :oid AND is_read = 0");
-        $unreadNotifStmt->execute([':oid' => $ownerUserId]);
-        $unreadOwnerNotifs = (int)$unreadNotifStmt->fetchColumn();
+        // Combine owner scalar info + unread count in a single round-trip
+        $ownerMetaStmt = $this->db->prepare("
+            SELECT u.id, u.full_name, u.email, u.mobile,
+                   (SELECT COUNT(*) FROM notifications n WHERE n.user_id = u.id AND n.is_read = 0) AS unread_notifs
+            FROM users u
+            WHERE u.id = :oid
+            LIMIT 1
+        ");
+        $ownerMetaStmt->execute([':oid' => $ownerUserId]);
+        $ownerRow = $ownerMetaStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        $unreadOwnerNotifs = $ownerRow ? (int)$ownerRow['unread_notifs'] : 0;
+        $ownerInfo = $ownerRow ? [
+            'id'        => $ownerRow['id'],
+            'full_name' => $ownerRow['full_name'],
+            'email'     => $ownerRow['email'],
+            'mobile'    => $ownerRow['mobile']
+        ] : null;
 
         $notifStmt = $this->db->prepare("SELECT id, title, body, entity_type, entity_id, is_read, created_at FROM notifications WHERE user_id = :oid ORDER BY created_at DESC, id DESC LIMIT 25");
         $notifStmt->execute([':oid' => $ownerUserId]);
@@ -204,6 +217,7 @@ class FitSyncDataService {
         $stmt = $this->db->prepare("
             SELECT 
                 u.id, u.full_name AS name, u.email, u.mobile AS phone,
+                avf.storage_key AS avatar_storage_key,
                 tp.certification_name AS title, tp.experience_years, tp.hourly_rate,
                 tp.specializations_summary AS specialties, tp.qualifications, tp.bio, tp.rating,
                 COALESCE(tp.status, 'pending_verification') AS verification_status,
@@ -219,6 +233,7 @@ class FitSyncDataService {
                  WHERE ta.trainer_user_id = u.id AND ta.gym_id = :gid2 AND ta.status = 'active') AS assigned_athletes
             FROM gym_trainers gt
             INNER JOIN users u ON u.id = gt.trainer_user_id
+            LEFT JOIN files avf ON avf.id = u.profile_picture_id
             LEFT JOIN trainer_profiles tp ON tp.user_id = u.id
             WHERE gt.gym_id = :gid AND gt.is_active = 1 AND gt.status = 'active' AND u.status = 'active' AND u.role = 'trainer'
             ORDER BY u.id ASC
@@ -245,7 +260,7 @@ class FitSyncDataService {
                 'employment_type'     => $r['employment_type'],
                 'rating'              => $r['rating'] ?? '5.0',
                 'assignedAthletes'    => (int)$r['assigned_athletes'],
-                'avatar'              => 'assets/images/trainer_raj.jpg'
+                'avatar'              => fitSyncResolveFileUrl($r['avatar_storage_key'] ?? null, 'assets/images/trainer_raj.jpg')
             ];
         }, $coachRows);
 
@@ -253,6 +268,7 @@ class FitSyncDataService {
         $allTrStmt = $this->db->prepare("
             SELECT 
                 u.id, u.full_name, u.email, u.mobile, u.status AS account_status, u.created_at,
+                avf.storage_key AS avatar_storage_key,
                 tp.certification_name, tp.certifying_body, tp.experience_years,
                 tp.specializations_summary, tp.qualifications, tp.areas_of_expertise,
                 tp.training_approach, tp.bio, tp.hourly_rate, tp.rating,
@@ -266,6 +282,7 @@ class FitSyncDataService {
                  INNER JOIN gyms g2 ON g2.id = gt2.gym_id
                  WHERE gt2.trainer_user_id = u.id AND gt2.status = 'active' AND gt2.is_active = 1) AS active_gyms_list
             FROM users u
+            LEFT JOIN files avf ON avf.id = u.profile_picture_id
             LEFT JOIN trainer_profiles tp ON tp.user_id = u.id
             LEFT JOIN gym_trainers gt_self ON gt_self.trainer_user_id = u.id AND gt_self.gym_id = :gid
             WHERE u.role = 'trainer' AND u.status = 'active'
@@ -280,7 +297,7 @@ class FitSyncDataService {
             return [
                 'user_id'             => (int)$r['id'],
                 'name'                => $r['full_name'],
-                'avatar'              => 'assets/images/trainer_raj.jpg',
+                'avatar'              => fitSyncResolveFileUrl($r['avatar_storage_key'] ?? null, 'assets/images/trainer_raj.jpg'),
                 'email'               => $canSeeContact ? $r['email'] : $this->maskEmailAddress($r['email']),
                 'phone'               => $canSeeContact ? ($r['mobile'] ?? 'Not provided') : 'Private until affiliated',
                 'contact_visible'     => $canSeeContact,
@@ -370,7 +387,7 @@ class FitSyncDataService {
                 'assignedCoach'      => $r['assigned_coach_name'] ?? 'Unassigned',
                 'coach_id'           => $r['assigned_coach_id'] ? (int)$r['assigned_coach_id'] : null,
                 'assignment_history' => $assignHistoryByUser[$uid] ?? [],
-                'avatar'             => 'assets/images/member_aarav.jpg'
+                'avatar'             => 'assets/images/aarav.jpg'
             ];
         }, $memberRows);
 
@@ -422,7 +439,7 @@ class FitSyncDataService {
             return [
                 'user_id'               => $uid,
                 'name'                  => $r['full_name'],
-                'avatar'                => 'assets/images/member_aarav.jpg',
+                'avatar'                => 'assets/images/aarav.jpg',
                 'email'                 => $canSeeContact ? $r['email'] : $this->maskEmailAddress($r['email']),
                 'phone'                 => $canSeeContact ? ($r['mobile'] ?? 'Not provided') : 'Private',
                 'contact_visible'       => $canSeeContact,
@@ -474,7 +491,7 @@ class FitSyncDataService {
         ");
         $reqStmt->execute([':gid' => $resolvedGymId]);
         $membershipRequests = array_map(function($r) {
-            $r['member_avatar'] = 'assets/images/member_aarav.jpg';
+            $r['member_avatar'] = 'assets/images/aarav.jpg';
             return $r;
         }, $reqStmt->fetchAll(PDO::FETCH_ASSOC));
 
@@ -506,26 +523,23 @@ class FitSyncDataService {
         $planStmt->execute([':gid' => $resolvedGymId]);
         $membershipPlans = $planStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Live Facility Capacity & Occupancy from Attendance (last 4h open check-ins)
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) FROM attendance
-            WHERE gym_id = :gid 
-              AND check_out_time IS NULL 
-              AND check_in_time >= DATE_SUB(NOW(), INTERVAL 4 HOUR)
+        // Live Facility Capacity & Occupancy + Monthly Revenue in a single round-trip
+        $kpiStmt = $this->db->prepare("
+            SELECT
+                (SELECT COUNT(*) FROM attendance
+                 WHERE gym_id = :gid_att
+                   AND check_out_time IS NULL
+                   AND check_in_time >= DATE_SUB(NOW(), INTERVAL 4 HOUR)) AS active_checkins,
+                (SELECT COALESCE(SUM(amount), 0) FROM payments
+                 WHERE gym_id = :gid_pay
+                   AND payment_status = 'completed'
+                   AND transaction_date >= DATE_FORMAT(NOW(), '%Y-%m-01 00:00:00')) AS monthly_revenue
         ");
-        $stmt->execute([':gid' => $resolvedGymId]);
-        $activeCheckins = (int)$stmt->fetchColumn();
+        $kpiStmt->execute([':gid_att' => $resolvedGymId, ':gid_pay' => $resolvedGymId]);
+        $kpiRow = $kpiStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $activeCheckins = (int)($kpiRow['active_checkins'] ?? 0);
         $capacityPct = $gymCapacity > 0 ? min(100, (int)round(($activeCheckins / $gymCapacity) * 100)) : 0;
-
-        // Monthly Revenue from Verified Completed Payments in current calendar month
-        $stmt = $this->db->prepare("
-            SELECT COALESCE(SUM(amount), 0) FROM payments
-            WHERE gym_id = :gid
-              AND payment_status = 'completed'
-              AND transaction_date >= DATE_FORMAT(NOW(), '%Y-%m-01 00:00:00')
-        ");
-        $stmt->execute([':gid' => $resolvedGymId]);
-        $monthlyRevenue = (float)$stmt->fetchColumn();
+        $monthlyRevenue = (float)($kpiRow['monthly_revenue'] ?? 0);
 
         // Recent Attendance / Turnstile Logs
         $stmt = $this->db->prepare("
@@ -644,7 +658,7 @@ class FitSyncDataService {
         if (!$user) {
             throw new RuntimeException("User not found.");
         }
-        $avatarUrl = !empty($user['avatar_storage_key']) ? $user['avatar_storage_key'] : 'assets/images/member_aarav.jpg';
+        $avatarUrl = fitSyncResolveFileUrl($user['avatar_storage_key'] ?? null, 'assets/images/aarav.jpg');
 
         $heightCm = $user['height_cm'] ? (float)$user['height_cm'] : null;
         $age = null;
@@ -652,34 +666,30 @@ class FitSyncDataService {
             $age = (new DateTime($user['date_of_birth']))->diff(new DateTime())->y;
         }
 
-        // 2. Latest & Historical Body Measurements
+        // 2. Latest & Historical Body Measurements (single query instead of 3)
         $stmt = $this->db->prepare("
-            SELECT * FROM body_measurements 
+            SELECT id, user_id, recorded_at, weight_kg, body_fat_pct, chest_cm, waist_cm, hips_cm, arms_cm, thighs_cm, calves_cm, notes, created_at
+            FROM body_measurements 
             WHERE user_id = :uid 
             ORDER BY recorded_at DESC, id DESC 
-            LIMIT 1
-        ");
-        $stmt->execute([':uid' => $userId]);
-        $latestMeasurement = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-
-        $stmt = $this->db->prepare("
-            SELECT * FROM body_measurements 
-            WHERE user_id = :uid 
-            ORDER BY recorded_at DESC, id DESC 
-            LIMIT 1 OFFSET 1
-        ");
-        $stmt->execute([':uid' => $userId]);
-        $previousMeasurement = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-
-        $stmt = $this->db->prepare("
-            SELECT id, recorded_at, weight_kg, waist_cm, chest_cm, hips_cm, arms_cm, thighs_cm, body_fat_pct, notes
-            FROM body_measurements
-            WHERE user_id = :uid
-            ORDER BY recorded_at ASC, id ASC
             LIMIT 30
         ");
         $stmt->execute([':uid' => $userId]);
-        $measurementHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $measurementDesc = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $latestMeasurement = $measurementDesc[0] ?? null;
+        $previousMeasurement = $measurementDesc[1] ?? null;
+        $measurementHistory = array_reverse(array_map(fn($r) => [
+            'id'           => $r['id'],
+            'recorded_at'  => $r['recorded_at'],
+            'weight_kg'    => $r['weight_kg'],
+            'waist_cm'     => $r['waist_cm'],
+            'chest_cm'     => $r['chest_cm'],
+            'hips_cm'      => $r['hips_cm'],
+            'arms_cm'      => $r['arms_cm'],
+            'thighs_cm'    => $r['thighs_cm'],
+            'body_fat_pct' => $r['body_fat_pct'],
+            'notes'        => $r['notes']
+        ], $measurementDesc));
 
         $currentWeight = null;
         $bmi = null;
@@ -710,21 +720,8 @@ class FitSyncDataService {
         $assessmentHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $assessment = $assessmentHistory[0] ?? null;
 
-        // 4. Nutrition & Daily Calories (Asia/Kolkata date)
+        // 4. Nutrition & Daily Calories (Asia/Kolkata date) — sum directly from today's rows
         $today = date('Y-m-d');
-        $stmt = $this->db->prepare("
-            SELECT 
-                COALESCE(SUM(total_calories), 0) AS total_calories,
-                COALESCE(SUM(total_protein_g), 0) AS total_protein,
-                COALESCE(SUM(total_carbs_g), 0) AS total_carbs,
-                COALESCE(SUM(total_fat_g), 0) AS total_fat,
-                COUNT(*) AS meal_count
-            FROM meals
-            WHERE user_id = :uid AND meal_date = :today
-        ");
-        $stmt->execute([':uid' => $userId, ':today' => $today]);
-        $nutritionSummary = $stmt->fetch(PDO::FETCH_ASSOC);
-
         $stmt = $this->db->prepare("
             SELECT m.*, 
                    (SELECT unit FROM meal_items mi WHERE mi.meal_id = m.id LIMIT 1) AS food_name,
@@ -735,6 +732,14 @@ class FitSyncDataService {
         ");
         $stmt->execute([':uid' => $userId, ':today' => $today]);
         $todayMeals = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $nutritionSummary = ['total_calories' => 0, 'total_protein' => 0.0, 'total_carbs' => 0.0, 'total_fat' => 0.0, 'meal_count' => count($todayMeals)];
+        foreach ($todayMeals as $tm) {
+            $nutritionSummary['total_calories'] += (int)($tm['total_calories'] ?? 0);
+            $nutritionSummary['total_protein']  += (float)($tm['total_protein_g'] ?? 0);
+            $nutritionSummary['total_carbs']    += (float)($tm['total_carbs_g'] ?? 0);
+            $nutritionSummary['total_fat']      += (float)($tm['total_fat_g'] ?? 0);
+        }
 
         $mhStmt = $this->db->prepare("
             SELECT m.id, m.meal_type, m.meal_date, m.total_calories, m.total_protein_g, m.total_carbs_g, m.total_fat_g, m.logged_at,
@@ -774,18 +779,22 @@ class FitSyncDataService {
         ");
         $ppStmt->execute([':uid' => $userId]);
         $progressPhotos = array_map(function($pp) {
-            $sk = ltrim((string)$pp['storage_key'], '/');
-            $pp['image_url'] = str_starts_with($sk, 'assets/') ? $sk : ('uploads/' . $sk);
+            $pp['image_url'] = fitSyncResolveFileUrl($pp['storage_key'] ?? null, 'assets/images/exercise_placeholder.svg');
             return $pp;
         }, $ppStmt->fetchAll(PDO::FETCH_ASSOC));
 
-        // 5. Daily Water Intake
-        $stmt = $this->db->prepare("
-            SELECT COALESCE(SUM(amount_ml), 0) FROM water_logs
-            WHERE user_id = :uid AND log_date = :today
+        // 5. Daily Water Intake + Scalar Counts (batched single round-trip)
+        $scalarStmt = $this->db->prepare("
+            SELECT
+                (SELECT COALESCE(SUM(amount_ml), 0) FROM water_logs WHERE user_id = :uid1 AND log_date = :today) AS water_ml,
+                (SELECT COUNT(*) FROM notifications WHERE user_id = :uid2 AND is_read = 0) AS unread_notifs,
+                (SELECT COUNT(*) FROM memberships WHERE user_id = :uid3 AND status = 'active') AS active_memberships
         ");
-        $stmt->execute([':uid' => $userId, ':today' => $today]);
-        $waterTotalMl = (int)$stmt->fetchColumn();
+        $scalarStmt->execute([':uid1' => $userId, ':uid2' => $userId, ':uid3' => $userId, ':today' => $today]);
+        $scalarCounts = $scalarStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $waterTotalMl = (int)($scalarCounts['water_ml'] ?? 0);
+        $unreadNotifications = (int)($scalarCounts['unread_notifs'] ?? 0);
+        $activeMembershipsCount = (int)($scalarCounts['active_memberships'] ?? 0);
 
         // 6. Assigned Workout Plan + Days + Exercises + Recent Sessions
         $workoutOverview = $this->getUserWorkoutOverview($userId);
@@ -852,11 +861,8 @@ class FitSyncDataService {
         $stmt->execute([':uid' => $userId]);
         $attendanceHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // 11. Unread chat messages & notifications
+        // 11. Unread chat messages & recent notifications
         $unreadMessages = $this->getUnreadMessagesCount($userId);
-        $unreadNotifStmt = $this->db->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = :uid AND is_read = 0");
-        $unreadNotifStmt->execute([':uid' => $userId]);
-        $unreadNotifications = (int)$unreadNotifStmt->fetchColumn();
 
         $notifListStmt = $this->db->prepare("
             SELECT id, title, body, entity_type, entity_id, is_read, created_at
@@ -866,11 +872,9 @@ class FitSyncDataService {
         $notifListStmt->execute([':uid' => $userId]);
         $recentNotifications = $notifListStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $activeMembershipsStmt = $this->db->prepare("SELECT COUNT(*) FROM memberships WHERE user_id = :uid AND status = 'active'");
-        $activeMembershipsStmt->execute([':uid' => $userId]);
-        $activeMembershipsCount = (int)$activeMembershipsStmt->fetchColumn();
-
-        $eligibleTrainers = $this->getMemberTrainerDirectory($userId, []);
+        $knownGymId = ($membership && ($membership['status'] ?? '') === 'active') ? (int)($membership['gym_id'] ?? 0) : 0;
+        $knownTrainerId = $assignedTrainer ? (int)($assignedTrainer['coach_id'] ?? 0) : 0;
+        $eligibleTrainers = $this->getMemberTrainerDirectory($userId, [], $knownGymId, $knownTrainerId);
 
         return [
             'user' => [
@@ -933,16 +937,24 @@ class FitSyncDataService {
         ];
     }
 
-    public function getMemberTrainerDirectory(int $memberUserId, array $filters = []): array {
+    public function getMemberTrainerDirectory(int $memberUserId, array $filters = [], ?int $knownActiveGymId = null, ?int $knownAssignedTrainerId = null): array {
         if ($this->db === null) return [];
 
-        $memGymStmt = $this->db->prepare("SELECT gym_id FROM memberships WHERE user_id = :uid AND status = 'active' ORDER BY id DESC LIMIT 1");
-        $memGymStmt->execute([':uid' => $memberUserId]);
-        $activeGymId = (int)($memGymStmt->fetchColumn() ?: 0);
+        if ($knownActiveGymId === null) {
+            $memGymStmt = $this->db->prepare("SELECT gym_id FROM memberships WHERE user_id = :uid AND status = 'active' ORDER BY id DESC LIMIT 1");
+            $memGymStmt->execute([':uid' => $memberUserId]);
+            $activeGymId = (int)($memGymStmt->fetchColumn() ?: 0);
+        } else {
+            $activeGymId = $knownActiveGymId;
+        }
 
-        $assignedStmt = $this->db->prepare("SELECT trainer_user_id FROM trainer_assignments WHERE user_id = :uid AND status = 'active' LIMIT 1");
-        $assignedStmt->execute([':uid' => $memberUserId]);
-        $assignedTrainerId = (int)($assignedStmt->fetchColumn() ?: 0);
+        if ($knownAssignedTrainerId === null) {
+            $assignedStmt = $this->db->prepare("SELECT trainer_user_id FROM trainer_assignments WHERE user_id = :uid AND status = 'active' LIMIT 1");
+            $assignedStmt->execute([':uid' => $memberUserId]);
+            $assignedTrainerId = (int)($assignedStmt->fetchColumn() ?: 0);
+        } else {
+            $assignedTrainerId = $knownAssignedTrainerId;
+        }
 
         $search = trim((string)($filters['search'] ?? ''));
         $specFilter = trim((string)($filters['specialization'] ?? ''));
@@ -951,6 +963,7 @@ class FitSyncDataService {
         $sql = "
             SELECT 
                 u.id AS user_id, u.full_name, u.created_at,
+                avf.storage_key AS avatar_storage_key,
                 tp.certification_name, tp.certifying_body, tp.experience_years,
                 tp.specializations_summary, tp.qualifications, tp.areas_of_expertise,
                 tp.training_approach, tp.bio, tp.hourly_rate, tp.rating,
@@ -970,6 +983,7 @@ class FitSyncDataService {
                  WHERE mtr.member_user_id = :muid AND mtr.trainer_user_id = u.id
                  ORDER BY mtr.id DESC LIMIT 1) AS request_status
             FROM users u
+            LEFT JOIN files avf ON avf.id = u.profile_picture_id
             LEFT JOIN trainer_profiles tp ON tp.user_id = u.id
             WHERE u.role = 'trainer' AND u.status = 'active'
         ";
@@ -1007,7 +1021,7 @@ class FitSyncDataService {
                 'id'                   => 'tr-' . $r['user_id'],
                 'user_id'              => (int)$r['user_id'],
                 'name'                 => $r['full_name'],
-                'avatar'               => 'assets/images/trainer_raj.jpg',
+                'avatar'               => fitSyncResolveFileUrl($r['avatar_storage_key'] ?? null, 'assets/images/trainer_raj.jpg'),
                 'title'                => $isVerified ? ($r['certification_name'] ?: 'Certified Strength Coach') : 'Trainer (Verification Pending)',
                 'experience'           => ((int)($r['experience_years'] ?? 0)) . ' Years',
                 'experience_years'     => (int)($r['experience_years'] ?? 0),
@@ -1119,14 +1133,17 @@ class FitSyncDataService {
     public function getUserWorkoutOverview(int $userId): array {
         $stmt = $this->db->prepare("
             SELECT 
-                pa.id AS assignment_id, pa.plan_id, pa.start_date, pa.status, pa.assigned_at,
+                pa.id AS assignment_id, pa.plan_id, pa.start_date, pa.end_date, pa.status, pa.assigned_at,
+                pa.updated_at AS assignment_updated_at,
+                COALESCE(pa.trainer_instructions, wp.trainer_instructions) AS trainer_instructions,
                 wp.name AS plan_name, wp.description AS plan_desc, wp.days_per_week, wp.goal, wp.difficulty,
+                wp.split_type, wp.duration_weeks, wp.source_template_id, wp.updated_at AS plan_updated_at,
                 coach.id AS coach_id, coach.full_name AS coach_name
             FROM plan_assignments pa
             INNER JOIN workout_plans wp ON wp.id = pa.plan_id
             LEFT JOIN users coach ON coach.id = pa.assigned_by_trainer_id
-            WHERE pa.user_id = :uid AND pa.is_active = 1
-            ORDER BY pa.assigned_at DESC, pa.id DESC
+            WHERE pa.user_id = :uid AND pa.status IN ('active', 'paused')
+            ORDER BY FIELD(pa.status, 'active', 'paused'), pa.is_active DESC, pa.assigned_at DESC, pa.id DESC
             LIMIT 1
         ");
         $stmt->execute([':uid' => $userId]);
@@ -1146,23 +1163,57 @@ class FitSyncDataService {
             $dStmt->execute([':pid' => $assignedPlan['plan_id']]);
             $rawDays = $dStmt->fetchAll(PDO::FETCH_ASSOC);
 
+            $exByDay = [];
+            $setsByPde = [];
+            if (!empty($rawDays)) {
+                $dayIds = array_values(array_filter(array_map(fn($d) => (int)$d['id'], $rawDays)));
+                if (!empty($dayIds)) {
+                    $dayPlaceholders = implode(',', array_fill(0, count($dayIds), '?'));
+                    $eStmt = $this->db->prepare("
+                        SELECT
+                            pde.id AS plan_day_exercise_id, pde.plan_day_id, pde.sort_order, pde.target_sets, pde.target_reps,
+                            pde.target_weight, pde.weight_unit, pde.rest_seconds, pde.duration_seconds,
+                            pde.tempo, pde.warmup_sets, pde.superset_group, pde.exercise_notes,
+                            e.id AS exercise_id, COALESCE(pde.exercise_name_snapshot, e.name) AS exercise_name,
+                            e.equipment_required, e.difficulty, e.exercise_type, e.form_cues, e.image_path, e.video_url,
+                            mg.name AS muscle_group_name
+                        FROM plan_day_exercises pde
+                        INNER JOIN exercises e ON e.id = pde.exercise_id
+                        LEFT JOIN muscle_groups mg ON mg.id = e.primary_muscle_id
+                        WHERE pde.plan_day_id IN ($dayPlaceholders)
+                        ORDER BY pde.plan_day_id ASC, pde.sort_order ASC, pde.id ASC
+                    ");
+                    $eStmt->execute($dayIds);
+                    $allExRows = $eStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    $pdeIds = array_values(array_filter(array_map(fn($er) => (int)$er['plan_day_exercise_id'], $allExRows)));
+                    if (!empty($pdeIds)) {
+                        $pdePlaceholders = implode(',', array_fill(0, count($pdeIds), '?'));
+                        $setStmt = $this->db->prepare("
+                            SELECT plan_day_exercise_id, set_number, target_reps, target_weight, weight_unit, rest_seconds, is_warmup
+                            FROM plan_day_exercise_sets
+                            WHERE plan_day_exercise_id IN ($pdePlaceholders)
+                            ORDER BY plan_day_exercise_id ASC, set_number ASC
+                        ");
+                        $setStmt->execute($pdeIds);
+                        foreach ($setStmt->fetchAll(PDO::FETCH_ASSOC) as $sRow) {
+                            $setsByPde[(int)$sRow['plan_day_exercise_id']][] = $sRow;
+                        }
+                    }
+
+                    foreach ($allExRows as $er) {
+                        $er['sets'] = $setsByPde[(int)$er['plan_day_exercise_id']] ?? [];
+                        $exByDay[(int)$er['plan_day_id']][] = $er;
+                    }
+                }
+            }
+
             foreach ($rawDays as $d) {
-                $eStmt = $this->db->prepare("
-                    SELECT 
-                        pde.id AS plan_day_exercise_id, pde.target_sets, pde.target_reps, pde.rest_seconds, pde.exercise_notes,
-                        e.id AS exercise_id, e.name AS exercise_name, e.equipment_required, e.difficulty, e.image_path,
-                        mg.name AS muscle_group_name
-                    FROM plan_day_exercises pde
-                    INNER JOIN exercises e ON e.id = pde.exercise_id
-                    LEFT JOIN muscle_groups mg ON mg.id = e.primary_muscle_id
-                    WHERE pde.plan_day_id = :pdid
-                    ORDER BY pde.sort_order ASC, pde.id ASC
-                ");
-                $eStmt->execute([':pdid' => $d['id']]);
-                $d['exercises'] = $eStmt->fetchAll(PDO::FETCH_ASSOC);
+                $d['day_type'] = $d['day_type'] ?? (!empty($d['is_rest_day']) ? 'rest' : 'training');
+                $d['exercises'] = $exByDay[(int)$d['id']] ?? [];
                 $days[] = $d;
 
-                if ((int)$d['day_number'] === $dayOfWeek || ($todayPlanDay === null && !$d['is_rest_day'])) {
+                if ((int)$d['day_number'] === $dayOfWeek || ($todayPlanDay === null && $d['day_type'] === 'training' && !$d['is_rest_day'])) {
                     if ((int)$d['day_number'] === $dayOfWeek || $todayPlanDay === null) {
                         $todayPlanDay = $d;
                         $dayExercises = $d['exercises'];
@@ -1171,31 +1222,84 @@ class FitSyncDataService {
             }
         }
 
-        // Completed / Recent Workout Sessions + Exercise-Level Set Performance
-        $sStmt = $this->db->prepare("
+        // Recover any unfinished (in_progress or paused) session
+        $actStmt = $this->db->prepare("
             SELECT ws.*, pd.day_name, pd.focus_area
             FROM workout_sessions ws
             LEFT JOIN plan_days pd ON pd.id = ws.plan_day_id
-            WHERE ws.user_id = :uid
+            WHERE ws.user_id = :uid AND ws.status IN ('in_progress', 'paused')
+            ORDER BY ws.id DESC LIMIT 1
+        ");
+        $actStmt->execute([':uid' => $userId]);
+        $activeSession = $actStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        // Completed Workout Sessions + Exercise-Level Set Performance + Feedback
+        $sStmt = $this->db->prepare("
+            SELECT ws.*, pd.day_name, pd.focus_area,
+                   wf.difficulty_rating, wf.energy_level, wf.feedback_text, wf.trainer_reply
+            FROM workout_sessions ws
+            LEFT JOIN plan_days pd ON pd.id = ws.plan_day_id
+            LEFT JOIN workout_feedback wf ON wf.session_id = ws.id
+            WHERE ws.user_id = :uid AND ws.status = 'completed'
             ORDER BY ws.session_date DESC, ws.id DESC
-            LIMIT 15
+            LIMIT 20
         ");
         $sStmt->execute([':uid' => $userId]);
         $sessions = $sStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $seStmt = $this->db->prepare("
-            SELECT se.id AS session_ex_id, e.name AS exercise_name, esl.set_number, esl.weight_kg, esl.reps_completed, esl.rpe
-            FROM session_exercises se
-            INNER JOIN exercises e ON e.id = se.exercise_id
-            LEFT JOIN exercise_set_logs esl ON esl.session_exercise_id = se.id
-            WHERE se.session_id = :sid
-            ORDER BY se.sort_order ASC, esl.set_number ASC
-        ");
+        $allSessionIds = [];
+        if ($activeSession) {
+            $allSessionIds[] = (int)$activeSession['id'];
+        }
+        foreach ($sessions as $sess) {
+            $allSessionIds[] = (int)$sess['id'];
+        }
+        $allSessionIds = array_values(array_unique(array_filter($allSessionIds)));
+        $sessionExMap = [];
+        if (!empty($allSessionIds)) {
+            $sessPlaceholders = implode(',', array_fill(0, count($allSessionIds), '?'));
+            $seStmt = $this->db->prepare("
+                SELECT se.session_id, se.id AS session_ex_id, se.exercise_id, e.name AS exercise_name,
+                       esl.set_number, esl.weight_kg, esl.weight_unit, esl.reps_completed, esl.is_completed, esl.rpe, esl.notes, esl.logged_at
+                FROM session_exercises se
+                INNER JOIN exercises e ON e.id = se.exercise_id
+                LEFT JOIN exercise_set_logs esl ON esl.session_exercise_id = se.id
+                WHERE se.session_id IN ($sessPlaceholders)
+                ORDER BY se.session_id ASC, se.sort_order ASC, esl.set_number ASC
+            ");
+            $seStmt->execute($allSessionIds);
+            foreach ($seStmt->fetchAll(PDO::FETCH_ASSOC) as $seRow) {
+                $sessionExMap[(int)$seRow['session_id']][] = $seRow;
+            }
+        }
+        if ($activeSession) {
+            $activeSession['exercises_performed'] = $sessionExMap[(int)$activeSession['id']] ?? [];
+        }
         foreach ($sessions as &$sess) {
-            $seStmt->execute([':sid' => (int)$sess['id']]);
-            $sess['exercises_performed'] = $seStmt->fetchAll(PDO::FETCH_ASSOC);
+            $sess['exercises_performed'] = $sessionExMap[(int)$sess['id']] ?? [];
         }
         unset($sess);
+
+        // Personal Records (PRs) — filter sanity bounds so single typo (>500kg) doesn't pollute PRs
+        $prStmt = $this->db->prepare("
+            SELECT e.id AS exercise_id, e.name AS exercise_name,
+                   MAX(CASE WHEN esl.weight_kg > 0 AND esl.weight_kg <= 500 THEN esl.weight_kg ELSE 0 END) AS max_weight_kg,
+                   MAX(CASE WHEN esl.reps_completed > 0 AND esl.reps_completed <= 200 THEN esl.reps_completed ELSE 0 END) AS max_reps,
+                   COUNT(esl.id) AS total_sets_logged,
+                   MAX(esl.logged_at) AS last_logged_at
+            FROM exercise_set_logs esl
+            INNER JOIN session_exercises se ON se.id = esl.session_exercise_id
+            INNER JOIN workout_sessions ws ON ws.id = se.session_id AND ws.user_id = :uid AND ws.status = 'completed'
+            INNER JOIN exercises e ON e.id = se.exercise_id
+            WHERE esl.is_completed = 1
+            GROUP BY e.id, e.name
+            HAVING MAX(CASE WHEN esl.weight_kg > 0 AND esl.weight_kg <= 500 THEN esl.weight_kg ELSE 0 END) > 0
+                OR MAX(CASE WHEN esl.reps_completed > 0 AND esl.reps_completed <= 200 THEN esl.reps_completed ELSE 0 END) > 0
+            ORDER BY max_weight_kg DESC, total_sets_logged DESC
+            LIMIT 25
+        ");
+        $prStmt->execute([':uid' => $userId]);
+        $personalRecords = $prStmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Previous Workout Plans History
         $prevStmt = $this->db->prepare("
@@ -1204,7 +1308,7 @@ class FitSyncDataService {
             FROM plan_assignments pa
             INNER JOIN workout_plans wp ON wp.id = pa.plan_id
             LEFT JOIN users coach ON coach.id = pa.assigned_by_trainer_id
-            WHERE pa.user_id = :uid AND pa.is_active = 0
+            WHERE pa.user_id = :uid AND pa.status NOT IN ('active', 'paused')
             ORDER BY pa.assigned_at DESC, pa.id DESC
             LIMIT 10
         ");
@@ -1223,95 +1327,156 @@ class FitSyncDataService {
         $missStmt->execute([':uid' => $userId]);
         $missedWorkouts = $missStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $cStmt = $this->db->prepare("SELECT COUNT(*) FROM workout_sessions WHERE user_id = :uid");
+        $cStmt = $this->db->prepare("SELECT COUNT(*) FROM workout_sessions WHERE user_id = :uid AND status = 'completed'");
         $cStmt->execute([':uid' => $userId]);
         $completedCount = (int)$cStmt->fetchColumn();
 
         return [
-            'plan'            => $assignedPlan,
-            'previous_plans'  => $previousPlans,
-            'days'            => $days,
-            'today_day'       => $todayPlanDay,
-            'exercises'       => $dayExercises,
-            'sessions'        => $sessions,
-            'missed_workouts' => $missedWorkouts,
-            'completed_count' => $completedCount
+            'plan'             => $assignedPlan,
+            'previous_plans'   => $previousPlans,
+            'days'             => $days,
+            'today_day'        => $todayPlanDay,
+            'exercises'        => $dayExercises,
+            'active_session'   => $activeSession,
+            'sessions'         => $sessions,
+            'personal_records' => $personalRecords,
+            'missed_workouts'  => $missedWorkouts,
+            'completed_count'  => $completedCount
         ];
+    }
+
+    private function assertTrainerCanManageWorkouts(int $trainerUserId): void {
+        $stmt = $this->db->prepare("
+            SELECT u.status AS user_status, COALESCE(tp.status, 'pending_verification') AS tp_status
+            FROM users u
+            LEFT JOIN trainer_profiles tp ON tp.user_id = u.id
+            WHERE u.id = :tid AND u.role IN ('trainer', 'admin')
+            LIMIT 1
+        ");
+        $stmt->execute([':tid' => $trainerUserId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row || $row['user_status'] !== 'active') {
+            throw new RuntimeException("Forbidden: Active trainer account required.");
+        }
+        if ($row['tp_status'] === 'rejected') {
+            throw new RuntimeException("Forbidden: Trainer verification was rejected.");
+        }
     }
 
     public function createOrUpdateWorkoutPlan(int $trainerUserId, array $input): array {
         if ($this->db === null) {
             throw new RuntimeException("Database connection unavailable.");
         }
-        if (!$this->isTrainerVerified($trainerUserId)) {
-            throw new RuntimeException("Forbidden: Trainer verification is pending. Workout plan management is locked until verified.");
+        $this->assertTrainerCanManageWorkouts($trainerUserId);
+
+        $planId       = isset($input['plan_id']) ? (int)$input['plan_id'] : 0;
+        $name         = trim((string)($input['name'] ?? ''));
+        $description  = trim((string)($input['description'] ?? ''));
+        $difficulty   = in_array($input['difficulty'] ?? '', ['beginner','intermediate','advanced'], true) ? $input['difficulty'] : 'intermediate';
+        $goal         = in_array($input['goal'] ?? '', ['hypertrophy','fat_loss','strength','endurance','mobility'], true) ? $input['goal'] : 'hypertrophy';
+        $splitType    = trim((string)($input['split_type'] ?? 'Custom Split')) ?: 'Custom Split';
+        $durationWks  = isset($input['duration_weeks']) ? (int)$input['duration_weeks'] : 4;
+        $instructions = trim((string)($input['trainer_instructions'] ?? ''));
+        $isTemplate   = !empty($input['is_template']) ? 1 : 0;
+        $daysPerWeek  = isset($input['days_per_week']) ? (int)$input['days_per_week'] : 4;
+        $daysInput    = is_array($input['days'] ?? null) ? $input['days'] : [];
+
+        if ($name === '') {
+            throw new InvalidArgumentException("Workout plan name is required.");
+        }
+        if ($daysPerWeek < 1 || $daysPerWeek > 7) {
+            throw new InvalidArgumentException("Training days per week must be between 1 and 7.");
+        }
+        if ($durationWks < 1 || $durationWks > 52) {
+            throw new InvalidArgumentException("Plan duration must be between 1 and 52 weeks.");
         }
 
-        $planId      = isset($input['plan_id']) ? (int)$input['plan_id'] : 0;
-        $name        = trim((string)($input['name'] ?? ''));
-        $description = trim((string)($input['description'] ?? ''));
-        $difficulty  = in_array($input['difficulty'] ?? '', ['beginner','intermediate','advanced'], true) ? $input['difficulty'] : 'intermediate';
-        $goal        = in_array($input['goal'] ?? '', ['hypertrophy','fat_loss','strength','endurance','mobility'], true) ? $input['goal'] : 'hypertrophy';
-        $daysPerWeek = max(1, min(7, (int)($input['days_per_week'] ?? 4)));
-        $daysInput   = is_array($input['days'] ?? null) ? $input['days'] : [];
-
-        if (empty($name)) {
-            throw new InvalidArgumentException("Workout plan name is required.");
+        // Validate all day exercises & per-set prescriptions before mutating
+        foreach ($daysInput as $d) {
+            $exs = is_array($d['exercises'] ?? null) ? $d['exercises'] : [];
+            foreach ($exs as $ex) {
+                $tSets = (int)($ex['target_sets'] ?? 3);
+                $tRest = isset($ex['rest_seconds']) ? (int)$ex['rest_seconds'] : 90;
+                $tW    = isset($ex['target_weight']) && $ex['target_weight'] !== '' && $ex['target_weight'] !== null ? (float)$ex['target_weight'] : 0.0;
+                $tDur  = isset($ex['duration_seconds']) && $ex['duration_seconds'] !== '' && $ex['duration_seconds'] !== null ? (int)$ex['duration_seconds'] : 0;
+                $wSets = isset($ex['warmup_sets']) ? (int)$ex['warmup_sets'] : 0;
+                if ($tSets < 1 || $tRest < 0 || $tW < 0 || $tDur < 0 || $wSets < 0) {
+                    throw new InvalidArgumentException("Sets, weights, rest durations, and exercise durations cannot be negative or invalid.");
+                }
+                if (!empty($ex['sets']) && is_array($ex['sets'])) {
+                    foreach ($ex['sets'] as $s) {
+                        $sw = isset($s['target_weight']) && $s['target_weight'] !== '' && $s['target_weight'] !== null ? (float)$s['target_weight'] : 0.0;
+                        $sr = isset($s['rest_seconds']) ? (int)$s['rest_seconds'] : 90;
+                        $sreps = trim((string)($s['target_reps'] ?? '10'));
+                        if ($sw < 0 || $sr < 0 || ($sreps !== '' && is_numeric($sreps) && (int)$sreps <= 0)) {
+                            throw new InvalidArgumentException("Individual set targets must have valid positive reps and non-negative weight/rest.");
+                        }
+                    }
+                }
+            }
         }
 
         $this->db->beginTransaction();
         try {
             if ($planId > 0) {
-                // Verify ownership
-                $chk = $this->db->prepare("SELECT id FROM workout_plans WHERE id = :pid AND author_trainer_id = :tid LIMIT 1");
-                $chk->execute([':pid' => $planId, ':tid' => $trainerUserId]);
-                if (!$chk->fetchColumn()) {
-                    throw new RuntimeException("Unauthorized: You can only edit workout plans you created.");
+                $chk = $this->db->prepare("SELECT id, author_trainer_id, is_template FROM workout_plans WHERE id = :pid LIMIT 1");
+                $chk->execute([':pid' => $planId]);
+                $existingPlan = $chk->fetch(PDO::FETCH_ASSOC);
+                if (!$existingPlan) {
+                    throw new InvalidArgumentException("Workout plan not found.");
                 }
-                $up = $this->db->prepare("
-                    UPDATE workout_plans
-                    SET name = :name, description = :desc, difficulty = :diff, days_per_week = :dpw, goal = :goal, updated_at = NOW()
-                    WHERE id = :pid
-                ");
-                $up->execute([
-                    ':name' => $name,
-                    ':desc' => $description,
-                    ':diff' => $difficulty,
-                    ':dpw'  => $daysPerWeek,
-                    ':goal' => $goal,
-                    ':pid'  => $planId
-                ]);
-                // Replace days if provided
-                if (!empty($daysInput)) {
-                    $this->db->prepare("DELETE FROM plan_days WHERE plan_id = :pid")->execute([':pid' => $planId]);
+                // If editing a global starter template (author_trainer_id IS NULL), clone it as trainer's own copy instead of mutating global seed
+                if (empty($existingPlan['author_trainer_id'])) {
+                    $ins = $this->db->prepare("
+                        INSERT INTO workout_plans (name, description, author_trainer_id, is_template, is_archived, difficulty, days_per_week, goal, split_type, duration_weeks, trainer_instructions, source_template_id, created_at, updated_at)
+                        VALUES (:name, :desc, :tid, :tmpl, 0, :diff, :dpw, :goal, :split, :dwks, :instr, :src, NOW(), NOW())
+                    ");
+                    $ins->execute([
+                        ':name' => $name, ':desc' => $description, ':tid' => $trainerUserId, ':tmpl' => $isTemplate,
+                        ':diff' => $difficulty, ':dpw' => $daysPerWeek, ':goal' => $goal, ':split' => $splitType,
+                        ':dwks' => $durationWks, ':instr' => $instructions !== '' ? $instructions : null, ':src' => $planId
+                    ]);
+                    $planId = (int)$this->db->lastInsertId();
+                } elseif ((int)$existingPlan['author_trainer_id'] !== $trainerUserId) {
+                    throw new RuntimeException("Unauthorized: You can only edit workout plans you created.");
+                } else {
+                    $up = $this->db->prepare("
+                        UPDATE workout_plans
+                        SET name = :name, description = :desc, is_template = :tmpl, difficulty = :diff,
+                            days_per_week = :dpw, goal = :goal, split_type = :split, duration_weeks = :dwks,
+                            trainer_instructions = :instr, updated_at = NOW()
+                        WHERE id = :pid
+                    ");
+                    $up->execute([
+                        ':name' => $name, ':desc' => $description, ':tmpl' => $isTemplate,
+                        ':diff' => $difficulty, ':dpw' => $daysPerWeek, ':goal' => $goal, ':split' => $splitType,
+                        ':dwks' => $durationWks, ':instr' => $instructions !== '' ? $instructions : null, ':pid' => $planId
+                    ]);
                 }
             } else {
                 $ins = $this->db->prepare("
-                    INSERT INTO workout_plans (name, description, author_trainer_id, is_template, difficulty, days_per_week, goal, created_at, updated_at)
-                    VALUES (:name, :desc, :tid, 0, :diff, :dpw, :goal, NOW(), NOW())
+                    INSERT INTO workout_plans (name, description, author_trainer_id, is_template, is_archived, difficulty, days_per_week, goal, split_type, duration_weeks, trainer_instructions, created_at, updated_at)
+                    VALUES (:name, :desc, :tid, :tmpl, 0, :diff, :dpw, :goal, :split, :dwks, :instr, NOW(), NOW())
                 ");
                 $ins->execute([
-                    ':name' => $name,
-                    ':desc' => $description,
-                    ':tid'  => $trainerUserId,
-                    ':diff' => $difficulty,
-                    ':dpw'  => $daysPerWeek,
-                    ':goal' => $goal
+                    ':name' => $name, ':desc' => $description, ':tid' => $trainerUserId, ':tmpl' => $isTemplate,
+                    ':diff' => $difficulty, ':dpw' => $daysPerWeek, ':goal' => $goal, ':split' => $splitType,
+                    ':dwks' => $durationWks, ':instr' => $instructions !== '' ? $instructions : null
                 ]);
                 $planId = (int)$this->db->lastInsertId();
             }
 
-            if (empty($daysInput) && !isset($input['plan_id'])) {
-                // Default 1-day entry if trainer entered a concise prescription
+            if (empty($daysInput) && empty($input['plan_id'])) {
                 $exIds = is_array($input['exercise_ids'] ?? null) ? $input['exercise_ids'] : [];
                 $daysInput = [[
                     'day_number' => (int)date('N'),
                     'day_code'   => strtolower(date('D')),
                     'day_name'   => date('l') . ' Training',
                     'focus_area' => trim((string)($input['focus_area'] ?? $name)),
+                    'day_type'   => 'training',
                     'exercises'  => array_map(fn($eid) => [
                         'exercise_id'  => (int)$eid,
-                        'target_sets'  => (int)($input['target_sets'] ?? 4),
+                        'target_sets'  => (int)($input['target_sets'] ?? 3),
                         'target_reps'  => (string)($input['target_reps'] ?? '8-12'),
                         'rest_seconds' => (int)($input['rest_seconds'] ?? 90),
                         'notes'        => trim((string)($input['exercise_notes'] ?? ''))
@@ -1319,118 +1484,325 @@ class FitSyncDataService {
                 ]];
             }
 
-            $dayCodes = [1=>'mon',2=>'tue',3=>'wed',4=>'thu',5=>'fri',6=>'sat',7=>'sun'];
-            $dayNames = [1=>'Monday',2=>'Tuesday',3=>'Wednesday',4=>'Thursday',5=>'Friday',6=>'Saturday',7=>'Sunday'];
+            if (!empty($daysInput)) {
+                $dayCodes = [1=>'mon',2=>'tue',3=>'wed',4=>'thu',5=>'fri',6=>'sat',7=>'sun'];
+                $dayNames = [1=>'Monday',2=>'Tuesday',3=>'Wednesday',4=>'Thursday',5=>'Friday',6=>'Saturday',7=>'Sunday'];
 
-            foreach ($daysInput as $idx => $d) {
-                $dNum  = max(1, min(7, (int)($d['day_number'] ?? ($idx + 1))));
-                $dCode = trim((string)($d['day_code'] ?? $dayCodes[$dNum]));
-                $dName = trim((string)($d['day_name'] ?? $dayNames[$dNum]));
-                $focus = trim((string)($d['focus_area'] ?? $name));
-                $isRest = !empty($d['is_rest_day']) ? 1 : 0;
+                // Preserve plan_days IDs if day_number already exists (so completed workout_sessions remain intact)
+                $existingDaysStmt = $this->db->prepare("SELECT id, day_number FROM plan_days WHERE plan_id = :pid");
+                $existingDaysStmt->execute([':pid' => $planId]);
+                $existingDaysMap = [];
+                foreach ($existingDaysStmt->fetchAll(PDO::FETCH_ASSOC) as $ed) {
+                    $existingDaysMap[(int)$ed['day_number']] = (int)$ed['id'];
+                }
 
-                $pdIns = $this->db->prepare("
-                    INSERT INTO plan_days (plan_id, day_number, day_code, day_name, focus_area, is_rest_day, sort_order)
-                    VALUES (:pid, :dnum, :dcode, :dname, :focus, :rest, :sort)
+                $exNameLookup = $this->db->prepare("SELECT name FROM exercises WHERE id = :eid LIMIT 1");
+
+                foreach ($daysInput as $idx => $d) {
+                    $dNum    = max(1, min(7, (int)($d['day_number'] ?? ($idx + 1))));
+                    $dCode   = trim((string)($d['day_code'] ?? $dayCodes[$dNum]));
+                    $dName   = trim((string)($d['day_name'] ?? $dayNames[$dNum]));
+                    $dayType = in_array($d['day_type'] ?? '', ['training','rest','active_recovery'], true)
+                        ? $d['day_type']
+                        : (!empty($d['is_rest_day']) ? 'rest' : 'training');
+                    $isRest  = $dayType === 'rest' ? 1 : 0;
+                    $focus   = trim((string)($d['focus_area'] ?? ($isRest ? 'Rest & Recovery' : $name)));
+
+                    if (isset($existingDaysMap[$dNum])) {
+                        $planDayId = $existingDaysMap[$dNum];
+                        $this->db->prepare("
+                            UPDATE plan_days SET day_code = :dcode, day_name = :dname, focus_area = :focus, day_type = :dtype, is_rest_day = :rest, sort_order = :sort
+                            WHERE id = :pdid
+                        ")->execute([':dcode'=>$dCode, ':dname'=>$dName, ':focus'=>$focus, ':dtype'=>$dayType, ':rest'=>$isRest, ':sort'=>$idx+1, ':pdid'=>$planDayId]);
+                        $this->db->prepare("DELETE FROM plan_day_exercises WHERE plan_day_id = :pdid")->execute([':pdid' => $planDayId]);
+                    } else {
+                        $this->db->prepare("
+                            INSERT INTO plan_days (plan_id, day_number, day_code, day_name, focus_area, day_type, is_rest_day, sort_order)
+                            VALUES (:pid, :dnum, :dcode, :dname, :focus, :dtype, :rest, :sort)
+                        ")->execute([
+                            ':pid'=>$planId, ':dnum'=>$dNum, ':dcode'=>$dCode, ':dname'=>$dName,
+                            ':focus'=>$focus, ':dtype'=>$dayType, ':rest'=>$isRest, ':sort'=>$idx+1
+                        ]);
+                        $planDayId = (int)$this->db->lastInsertId();
+                    }
+
+                    if ($isRest) continue;
+
+                    $exs = is_array($d['exercises'] ?? null) ? $d['exercises'] : [];
+                    foreach ($exs as $eIdx => $ex) {
+                        $exId = (int)($ex['exercise_id'] ?? 0);
+                        if ($exId <= 0) continue;
+                        $exNameLookup->execute([':eid' => $exId]);
+                        $exSnapName = (string)($exNameLookup->fetchColumn() ?: ($ex['exercise_name'] ?? 'Exercise'));
+
+                        $setsList = is_array($ex['sets'] ?? null) ? $ex['sets'] : [];
+                        $targetSets = !empty($setsList) ? count($setsList) : max(1, (int)($ex['target_sets'] ?? 3));
+                        $targetReps = trim((string)($ex['target_reps'] ?? (!empty($setsList[0]['target_reps']) ? $setsList[0]['target_reps'] : '10-12')));
+                        $targetWeight = isset($ex['target_weight']) && $ex['target_weight'] !== '' && $ex['target_weight'] !== null ? (float)$ex['target_weight'] : null;
+                        $weightUnit = in_array($ex['weight_unit'] ?? '', ['kg','lbs'], true) ? $ex['weight_unit'] : 'kg';
+                        $restSec = isset($ex['rest_seconds']) ? max(0, (int)$ex['rest_seconds']) : 90;
+                        $durSec  = isset($ex['duration_seconds']) && $ex['duration_seconds'] !== '' ? max(0, (int)$ex['duration_seconds']) : null;
+                        $tempo   = !empty($ex['tempo']) ? mb_substr(trim((string)$ex['tempo']), 0, 30) : null;
+                        $warmup  = max(0, (int)($ex['warmup_sets'] ?? 0));
+                        $superset = !empty($ex['superset_group']) ? mb_substr(trim((string)$ex['superset_group']), 0, 20) : null;
+                        $exNotes = !empty($ex['notes']) ? trim((string)$ex['notes']) : (!empty($ex['exercise_notes']) ? trim((string)$ex['exercise_notes']) : null);
+
+                        $this->db->prepare("
+                            INSERT INTO plan_day_exercises (
+                                plan_day_id, exercise_id, exercise_name_snapshot, sort_order, target_sets, target_reps,
+                                target_weight, weight_unit, rest_seconds, duration_seconds, tempo, warmup_sets, superset_group, exercise_notes
+                            ) VALUES (
+                                :pdid, :eid, :snap, :sort, :sets, :reps,
+                                :tw, :wu, :rest, :dur, :tempo, :warm, :ss, :notes
+                            )
+                        ")->execute([
+                            ':pdid'=>$planDayId, ':eid'=>$exId, ':snap'=>$exSnapName, ':sort'=>$eIdx+1, ':sets'=>$targetSets,
+                            ':reps'=>$targetReps, ':tw'=>$targetWeight, ':wu'=>$weightUnit, ':rest'=>$restSec,
+                            ':dur'=>$durSec, ':tempo'=>$tempo, ':warm'=>$warmup, ':ss'=>$superset, ':notes'=>$exNotes
+                        ]);
+                        $pdeId = (int)$this->db->lastInsertId();
+
+                        if (!empty($setsList)) {
+                            $setIns = $this->db->prepare("
+                                INSERT INTO plan_day_exercise_sets (plan_day_exercise_id, set_number, target_reps, target_weight, weight_unit, rest_seconds, is_warmup)
+                                VALUES (:pdeid, :snum, :sreps, :sw, :swu, :srest, :swarm)
+                            ");
+                            foreach ($setsList as $sIdx => $s) {
+                                $setIns->execute([
+                                    ':pdeid' => $pdeId,
+                                    ':snum'  => (int)($s['set_number'] ?? ($sIdx + 1)),
+                                    ':sreps' => trim((string)($s['target_reps'] ?? $targetReps)),
+                                    ':sw'    => isset($s['target_weight']) && $s['target_weight'] !== '' && $s['target_weight'] !== null ? (float)$s['target_weight'] : $targetWeight,
+                                    ':swu'   => in_array($s['weight_unit'] ?? '', ['kg','lbs'], true) ? $s['weight_unit'] : $weightUnit,
+                                    ':srest' => isset($s['rest_seconds']) ? max(0, (int)$s['rest_seconds']) : $restSec,
+                                    ':swarm' => !empty($s['is_warmup']) ? 1 : 0
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!$isTemplate && $planId > 0) {
+                $paUp = $this->db->prepare("
+                    UPDATE plan_assignments
+                    SET trainer_instructions = COALESCE(NULLIF(:instr, ''), trainer_instructions), updated_at = NOW()
+                    WHERE plan_id = :pid AND status IN ('active', 'paused')
                 ");
-                $pdIns->execute([
-                    ':pid'   => $planId,
-                    ':dnum'  => $dNum,
-                    ':dcode' => $dCode,
-                    ':dname' => $dName,
-                    ':focus' => $focus,
-                    ':rest'  => $isRest,
-                    ':sort'  => $idx + 1
-                ]);
-                $planDayId = (int)$this->db->lastInsertId();
+                $paUp->execute([':instr' => $instructions, ':pid' => $planId]);
 
-                $exs = is_array($d['exercises'] ?? null) ? $d['exercises'] : [];
-                foreach ($exs as $eIdx => $ex) {
-                    $exId = (int)($ex['exercise_id'] ?? 0);
-                    if ($exId <= 0) continue;
-                    $pdeIns = $this->db->prepare("
-                        INSERT INTO plan_day_exercises (plan_day_id, exercise_id, sort_order, target_sets, target_reps, rest_seconds, exercise_notes)
-                        VALUES (:pdid, :eid, :sort, :sets, :reps, :rest, :notes)
-                    ");
-                    $pdeIns->execute([
-                        ':pdid'  => $planDayId,
-                        ':eid'   => $exId,
-                        ':sort'  => $eIdx + 1,
-                        ':sets'  => max(1, (int)($ex['target_sets'] ?? 3)),
-                        ':reps'  => trim((string)($ex['target_reps'] ?? '10-12')),
-                        ':rest'  => max(15, (int)($ex['rest_seconds'] ?? 90)),
-                        ':notes' => !empty($ex['notes']) ? trim((string)$ex['notes']) : null
-                    ]);
+                $mStmt = $this->db->prepare("SELECT DISTINCT user_id FROM plan_assignments WHERE plan_id = :pid AND status IN ('active', 'paused')");
+                $mStmt->execute([':pid' => $planId]);
+                foreach ($mStmt->fetchAll(PDO::FETCH_COLUMN) as $assignedUid) {
+                    $this->createNotification(
+                        (int)$assignedUid,
+                        'Workout Plan Updated',
+                        "Your trainer updated your workout routine: {$name}.",
+                        'workout_plan',
+                        $planId
+                    );
                 }
             }
 
             $this->db->commit();
-            return ['plan_id' => $planId, 'name' => $name];
+            return ['plan_id' => $planId, 'name' => $name, 'is_template' => $isTemplate];
         } catch (Throwable $e) {
             $this->db->rollBack();
             throw $e;
         }
     }
 
-    public function assignWorkoutPlan(int $trainerUserId, int $memberUserId, int $planId): array {
+    private function clonePlanSnapshot(int $sourcePlanId, int $trainerUserId, int $isTemplate = 0, ?string $newName = null): int {
+        $pStmt = $this->db->prepare("SELECT * FROM workout_plans WHERE id = :pid LIMIT 1");
+        $pStmt->execute([':pid' => $sourcePlanId]);
+        $src = $pStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$src) {
+            throw new InvalidArgumentException("Source workout plan or template not found.");
+        }
+
+        $planName = $newName !== null ? $newName : (string)$src['name'];
+        $this->db->prepare("
+            INSERT INTO workout_plans (
+                name, description, author_trainer_id, is_template, is_archived, difficulty, days_per_week,
+                goal, split_type, duration_weeks, trainer_instructions, source_template_id, created_at, updated_at
+            ) VALUES (
+                :nm, :desc, :tid, :tmpl, 0, :diff, :dpw,
+                :goal, :split, :dwks, :instr, :src, NOW(), NOW()
+            )
+        ")->execute([
+            ':nm'    => mb_substr($planName, 0, 200),
+            ':desc'  => $src['description'],
+            ':tid'   => $trainerUserId,
+            ':tmpl'  => $isTemplate,
+            ':diff'  => $src['difficulty'],
+            ':dpw'   => (int)$src['days_per_week'],
+            ':goal'  => $src['goal'],
+            ':split' => $src['split_type'] ?? 'Custom Split',
+            ':dwks'  => (int)($src['duration_weeks'] ?? 4),
+            ':instr' => $src['trainer_instructions'] ?? null,
+            ':src'   => $sourcePlanId
+        ]);
+        $newPlanId = (int)$this->db->lastInsertId();
+
+        $dStmt = $this->db->prepare("SELECT * FROM plan_days WHERE plan_id = :pid ORDER BY sort_order ASC, day_number ASC");
+        $dStmt->execute([':pid' => $sourcePlanId]);
+        $days = $dStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $eStmt = $this->db->prepare("SELECT * FROM plan_day_exercises WHERE plan_day_id = :pdid ORDER BY sort_order ASC, id ASC");
+        $sStmt = $this->db->prepare("SELECT * FROM plan_day_exercise_sets WHERE plan_day_exercise_id = :pdeid ORDER BY set_number ASC");
+
+        foreach ($days as $d) {
+            $this->db->prepare("
+                INSERT INTO plan_days (plan_id, day_number, day_code, day_name, focus_area, day_type, is_rest_day, sort_order)
+                VALUES (:pid, :dnum, :dcode, :dname, :focus, :dtype, :rest, :sort)
+            ")->execute([
+                ':pid'=>$newPlanId, ':dnum'=>(int)$d['day_number'], ':dcode'=>$d['day_code'],
+                ':dname'=>$d['day_name'], ':focus'=>$d['focus_area'],
+                ':dtype'=>$d['day_type'] ?? ($d['is_rest_day'] ? 'rest' : 'training'),
+                ':rest'=>(int)$d['is_rest_day'], ':sort'=>(int)$d['sort_order']
+            ]);
+            $newDayId = (int)$this->db->lastInsertId();
+
+            $eStmt->execute([':pdid' => (int)$d['id']]);
+            foreach ($eStmt->fetchAll(PDO::FETCH_ASSOC) as $ex) {
+                $this->db->prepare("
+                    INSERT INTO plan_day_exercises (
+                        plan_day_id, exercise_id, exercise_name_snapshot, sort_order, target_sets, target_reps,
+                        target_weight, weight_unit, target_rpe, rest_seconds, duration_seconds, tempo, warmup_sets, superset_group, exercise_notes
+                    ) VALUES (
+                        :pdid, :eid, :snap, :sort, :sets, :reps,
+                        :tw, :wu, :rpe, :rest, :dur, :tempo, :warm, :ss, :notes
+                    )
+                ")->execute([
+                    ':pdid'=>$newDayId, ':eid'=>(int)$ex['exercise_id'], ':snap'=>$ex['exercise_name_snapshot'],
+                    ':sort'=>(int)$ex['sort_order'], ':sets'=>(int)$ex['target_sets'], ':reps'=>$ex['target_reps'],
+                    ':tw'=>$ex['target_weight'], ':wu'=>$ex['weight_unit'] ?? 'kg', ':rpe'=>$ex['target_rpe'],
+                    ':rest'=>(int)$ex['rest_seconds'], ':dur'=>$ex['duration_seconds'], ':tempo'=>$ex['tempo'],
+                    ':warm'=>(int)($ex['warmup_sets'] ?? 0), ':ss'=>$ex['superset_group'], ':notes'=>$ex['exercise_notes']
+                ]);
+                $newPdeId = (int)$this->db->lastInsertId();
+
+                $sStmt->execute([':pdeid' => (int)$ex['id']]);
+                foreach ($sStmt->fetchAll(PDO::FETCH_ASSOC) as $s) {
+                    $this->db->prepare("
+                        INSERT INTO plan_day_exercise_sets (plan_day_exercise_id, set_number, target_reps, target_weight, weight_unit, rest_seconds, is_warmup)
+                        VALUES (:pdeid, :snum, :sreps, :sw, :swu, :srest, :swarm)
+                    ")->execute([
+                        ':pdeid'=>$newPdeId, ':snum'=>(int)$s['set_number'], ':sreps'=>$s['target_reps'],
+                        ':sw'=>$s['target_weight'], ':swu'=>$s['weight_unit'], ':srest'=>(int)$s['rest_seconds'], ':swarm'=>(int)$s['is_warmup']
+                    ]);
+                }
+            }
+        }
+
+        return $newPlanId;
+    }
+
+    public function duplicateWorkoutTemplate(int $trainerUserId, int $planId): array {
+        $this->assertTrainerCanManageWorkouts($trainerUserId);
+        $pStmt = $this->db->prepare("SELECT id, name FROM workout_plans WHERE id = :pid LIMIT 1");
+        $pStmt->execute([':pid' => $planId]);
+        $src = $pStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$src) {
+            throw new InvalidArgumentException("Template not found.");
+        }
+        $this->db->beginTransaction();
+        try {
+            $newId = $this->clonePlanSnapshot($planId, $trainerUserId, 1, $src['name'] . ' (Copy)');
+            $this->db->commit();
+            return ['plan_id' => $newId, 'name' => $src['name'] . ' (Copy)'];
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            if (!empty($uploadedStorageKeys) && function_exists('fitSyncUnlinkRelativeStorageKey')) {
+                foreach ($uploadedStorageKeys as $sk) {
+                    fitSyncUnlinkRelativeStorageKey($sk);
+                }
+            }
+            throw $e;
+        }
+    }
+
+    public function archiveWorkoutTemplate(int $trainerUserId, int $planId, bool $archived = true): array {
+        $this->assertTrainerCanManageWorkouts($trainerUserId);
+        $stmt = $this->db->prepare("UPDATE workout_plans SET is_archived = :arch, updated_at = NOW() WHERE id = :pid AND author_trainer_id = :tid AND is_template = 1");
+        $stmt->execute([':arch' => $archived ? 1 : 0, ':pid' => $planId, ':tid' => $trainerUserId]);
+        if ($stmt->rowCount() === 0) {
+            throw new RuntimeException("Template not found or you do not have permission to archive it.");
+        }
+        return ['plan_id' => $planId, 'is_archived' => $archived ? 1 : 0];
+    }
+
+    public function assignWorkoutPlan(int $trainerUserId, int $memberUserId, int $planId, array $opts = []): array {
         if ($this->db === null) {
             throw new RuntimeException("Database connection unavailable.");
         }
-        if (!$this->isTrainerVerified($trainerUserId)) {
-            throw new RuntimeException("Forbidden: Trainer verification is pending. Workout assignments are locked until verified.");
-        }
+        $this->assertTrainerCanManageWorkouts($trainerUserId);
 
-        // Verify trainer assignment
         if (!$this->isTrainerAssignedToUser($trainerUserId, $memberUserId)) {
             throw new RuntimeException("Unauthorized: Member is not assigned to you.");
         }
 
-        $pStmt = $this->db->prepare("SELECT id, name FROM workout_plans WHERE id = :pid LIMIT 1");
+        $pStmt = $this->db->prepare("SELECT id, name, duration_weeks, trainer_instructions FROM workout_plans WHERE id = :pid LIMIT 1");
         $pStmt->execute([':pid' => $planId]);
         $plan = $pStmt->fetch(PDO::FETCH_ASSOC);
         if (!$plan) {
             throw new InvalidArgumentException("Selected workout plan does not exist.");
         }
 
+        $startDate = !empty($opts['start_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$opts['start_date'])
+            ? (string)$opts['start_date']
+            : date('Y-m-d');
+        $durWeeks = max(1, (int)($plan['duration_weeks'] ?? 4));
+        $endDate = !empty($opts['end_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$opts['end_date'])
+            ? (string)$opts['end_date']
+            : date('Y-m-d', strtotime($startDate . " +{$durWeeks} weeks"));
+        $instructions = !empty($opts['trainer_instructions']) ? trim((string)$opts['trainer_instructions']) : ($plan['trainer_instructions'] ?? null);
+
         $this->db->beginTransaction();
         try {
-            $stmt = $this->db->prepare("
-                UPDATE plan_assignments 
-                SET is_active = 0, status = 'superseded' 
-                WHERE user_id = :mid AND is_active = 1
-            ");
-            $stmt->execute([':mid' => $memberUserId]);
+            // Create an isolated snapshot copy so editing templates never mutates assigned member plans
+            $snapshotPlanId = $this->clonePlanSnapshot($planId, $trainerUserId, 0);
 
-            $stmt = $this->db->prepare("
+            $this->db->prepare("
+                UPDATE plan_assignments
+                SET is_active = 0, status = 'superseded', end_date = COALESCE(end_date, CURDATE()), updated_at = NOW()
+                WHERE user_id = :mid AND status IN ('active', 'paused')
+            ")->execute([':mid' => $memberUserId]);
+
+            $this->db->prepare("
                 INSERT INTO plan_assignments (
-                    plan_id, user_id, assigned_by_trainer_id, start_date, is_active, status, assigned_at
+                    plan_id, user_id, assigned_by_trainer_id, start_date, end_date, trainer_instructions, is_active, status, assigned_at, updated_at
                 ) VALUES (
-                    :pid, :mid, :tid, CURDATE(), 1, 'active', NOW()
+                    :pid, :mid, :tid, :sd, :ed, :instr, 1, 'active', NOW(), NOW()
                 )
-            ");
-            $stmt->execute([
-                ':pid' => $planId,
-                ':mid' => $memberUserId,
-                ':tid' => $trainerUserId
+            ")->execute([
+                ':pid'   => $snapshotPlanId,
+                ':mid'   => $memberUserId,
+                ':tid'   => $trainerUserId,
+                ':sd'    => $startDate,
+                ':ed'    => $endDate,
+                ':instr' => $instructions
             ]);
             $assignmentId = (int)$this->db->lastInsertId();
 
-            // Notify member
             $this->createNotification(
                 $memberUserId,
                 'New Workout Plan Assigned',
-                "Your trainer assigned the workout plan: {$plan['name']}.",
+                "Your trainer assigned the workout plan: {$plan['name']} (starts {$startDate}).",
                 'workout_plan',
-                $planId
+                $snapshotPlanId
             );
 
             $this->db->commit();
 
             return [
-                'assignment_id' => $assignmentId,
-                'plan_id'       => $planId,
-                'plan_name'     => $plan['name'],
-                'user_id'       => $memberUserId
+                'assignment_id'      => $assignmentId,
+                'plan_id'            => $snapshotPlanId,
+                'source_template_id' => $planId,
+                'plan_name'          => $plan['name'],
+                'user_id'            => $memberUserId,
+                'start_date'         => $startDate,
+                'end_date'           => $endDate
             ];
         } catch (Throwable $e) {
             $this->db->rollBack();
@@ -1438,40 +1810,156 @@ class FitSyncDataService {
         }
     }
 
-    public function logWorkoutSession(int $userId, array $exercisesData, ?int $planDayId = null, ?string $notes = null, ?int $durationMinutes = null): array {
+    public function updatePlanAssignmentStatus(int $trainerUserId, int $assignmentId, string $action): array {
+        $this->assertTrainerCanManageWorkouts($trainerUserId);
+        if (!in_array($action, ['pause', 'resume', 'end'], true)) {
+            throw new InvalidArgumentException("Action must be pause, resume, or end.");
+        }
+        $stmt = $this->db->prepare("SELECT * FROM plan_assignments WHERE id = :aid AND assigned_by_trainer_id = :tid LIMIT 1");
+        $stmt->execute([':aid' => $assignmentId, ':tid' => $trainerUserId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            throw new RuntimeException("Unauthorized: Assignment not found under your coaching roster.");
+        }
+        $statusMap = ['pause' => ['paused', 0], 'resume' => ['active', 1], 'end' => ['completed', 0]];
+        [$newStatus, $isActive] = $statusMap[$action];
+
+        $this->db->prepare("
+            UPDATE plan_assignments SET status = :st, is_active = :ia, end_date = IF(:st2 = 'completed', CURDATE(), end_date), updated_at = NOW()
+            WHERE id = :aid
+        ")->execute([':st' => $newStatus, ':ia' => $isActive, ':st2' => $newStatus, ':aid' => $assignmentId]);
+
+        $this->createNotification((int)$row['user_id'], 'Workout Plan Updated', "Your trainer marked your workout assignment as {$newStatus}.", 'workout_plan', (int)$row['plan_id']);
+        return ['assignment_id' => $assignmentId, 'status' => $newStatus, 'is_active' => $isActive];
+    }
+
+    public function startWorkoutSession(int $userId, ?int $planDayId = null): array {
+        if ($this->db === null) {
+            throw new RuntimeException("Database connection unavailable.");
+        }
+
+        // Recover existing in_progress / paused session first (prevents duplicates on refresh)
+        $chk = $this->db->prepare("
+            SELECT id, plan_day_id, assignment_id, status, start_time, elapsed_seconds
+            FROM workout_sessions
+            WHERE user_id = :uid AND status IN ('in_progress', 'paused')
+            ORDER BY id DESC LIMIT 1
+        ");
+        $chk->execute([':uid' => $userId]);
+        $existing = $chk->fetch(PDO::FETCH_ASSOC);
+        if ($existing) {
+            return [
+                'session_id'      => (int)$existing['id'],
+                'plan_day_id'     => $existing['plan_day_id'] ? (int)$existing['plan_day_id'] : null,
+                'assignment_id'   => $existing['assignment_id'] ? (int)$existing['assignment_id'] : null,
+                'status'          => $existing['status'],
+                'elapsed_seconds' => (int)$existing['elapsed_seconds'],
+                'recovered'       => true
+            ];
+        }
+
+        $aStmt = $this->db->prepare("SELECT id FROM plan_assignments WHERE user_id = :uid AND status = 'active' ORDER BY id DESC LIMIT 1");
+        $aStmt->execute([':uid' => $userId]);
+        $assignmentId = $aStmt->fetchColumn() ?: null;
+
+        $gStmt = $this->db->prepare("SELECT gym_id FROM memberships WHERE user_id = :uid AND status = 'active' LIMIT 1");
+        $gStmt->execute([':uid' => $userId]);
+        $gymId = $gStmt->fetchColumn() ?: null;
+
+        $this->db->prepare("
+            INSERT INTO workout_sessions (user_id, plan_day_id, assignment_id, gym_id, session_date, start_time, status, elapsed_seconds, total_volume_kg, total_sets_completed, created_at, updated_at)
+            VALUES (:uid, :pdid, :aid, :gid, CURDATE(), NOW(), 'in_progress', 0, 0, 0, NOW(), NOW())
+        ")->execute([
+            ':uid'  => $userId,
+            ':pdid' => $planDayId ?: null,
+            ':aid'  => $assignmentId ? (int)$assignmentId : null,
+            ':gid'  => $gymId ? (int)$gymId : null
+        ]);
+
+        return [
+            'session_id'      => (int)$this->db->lastInsertId(),
+            'plan_day_id'     => $planDayId,
+            'assignment_id'   => $assignmentId ? (int)$assignmentId : null,
+            'status'          => 'in_progress',
+            'elapsed_seconds' => 0,
+            'recovered'       => false
+        ];
+    }
+
+    public function pauseOrResumeWorkoutSession(int $userId, int $sessionId, string $action, int $elapsedSeconds = 0): array {
+        $stmt = $this->db->prepare("SELECT id, status FROM workout_sessions WHERE id = :sid AND user_id = :uid LIMIT 1");
+        $stmt->execute([':sid' => $sessionId, ':uid' => $userId]);
+        $sess = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$sess || $sess['status'] === 'completed') {
+            throw new InvalidArgumentException("Active workout session not found.");
+        }
+        $newStatus = $action === 'pause' ? 'paused' : 'in_progress';
+        $this->db->prepare("
+            UPDATE workout_sessions
+            SET status = :st, paused_at = IF(:st2 = 'paused', NOW(), NULL), elapsed_seconds = GREATEST(elapsed_seconds, :el), updated_at = NOW()
+            WHERE id = :sid
+        ")->execute([':st' => $newStatus, ':st2' => $newStatus, ':el' => max(0, $elapsedSeconds), ':sid' => $sessionId]);
+
+        return ['session_id' => $sessionId, 'status' => $newStatus, 'elapsed_seconds' => max(0, $elapsedSeconds)];
+    }
+
+    public function logWorkoutSession(int $userId, array $exercisesData, ?int $planDayId = null, ?string $notes = null, ?int $durationMinutes = null, array $feedbackOpts = []): array {
         if ($this->db === null) {
             throw new RuntimeException("Database connection unavailable.");
         }
 
         $this->db->beginTransaction();
         try {
-            // Resolve active gym_id if user has one
             $gStmt = $this->db->prepare("SELECT gym_id FROM memberships WHERE user_id = :uid AND status = 'active' LIMIT 1");
             $gStmt->execute([':uid' => $userId]);
             $gymId = $gStmt->fetchColumn();
             $gymId = $gymId ? (int)$gymId : null;
 
+            $aStmt = $this->db->prepare("SELECT id FROM plan_assignments WHERE user_id = :uid AND status = 'active' ORDER BY id DESC LIMIT 1");
+            $aStmt->execute([':uid' => $userId]);
+            $assignmentId = $aStmt->fetchColumn() ?: null;
+
             $dur = $durationMinutes !== null && $durationMinutes > 0 ? $durationMinutes : 45;
+            $reqSessionId = isset($feedbackOpts['session_id']) ? (int)$feedbackOpts['session_id'] : 0;
 
-            $sStmt = $this->db->prepare("
-                INSERT INTO workout_sessions (
-                    user_id, plan_day_id, gym_id, session_date, start_time, end_time, duration_minutes, total_volume_kg, total_sets_completed, notes, created_at
-                ) VALUES (
-                    :uid, :pdid, :gid, CURDATE(), DATE_SUB(NOW(), INTERVAL :dur MINUTE), NOW(), :dur2, 0, 0, :notes, NOW()
-                )
-            ");
-            $sStmt->execute([
-                ':uid'   => $userId,
-                ':pdid'  => $planDayId ?: null,
-                ':gid'   => $gymId,
-                ':dur'   => $dur,
-                ':dur2'  => $dur,
-                ':notes' => $notes
-            ]);
-            $sessionId = (int)$this->db->lastInsertId();
+            // If completing an existing in_progress/paused session, update it rather than creating duplicate
+            $sessionId = 0;
+            if ($reqSessionId > 0) {
+                $chk = $this->db->prepare("SELECT id, status FROM workout_sessions WHERE id = :sid AND user_id = :uid LIMIT 1");
+                $chk->execute([':sid' => $reqSessionId, ':uid' => $userId]);
+                $sRow = $chk->fetch(PDO::FETCH_ASSOC);
+                if ($sRow) {
+                    if ($sRow['status'] === 'completed') {
+                        throw new InvalidArgumentException("This workout session has already been completed.");
+                    }
+                    $sessionId = (int)$sRow['id'];
+                    $this->db->prepare("
+                        UPDATE workout_sessions
+                        SET status = 'completed', end_time = NOW(), duration_minutes = :dur, notes = COALESCE(:notes, notes), updated_at = NOW()
+                        WHERE id = :sid
+                    ")->execute([':dur' => $dur, ':notes' => $notes, ':sid' => $sessionId]);
+                }
+            }
 
-            $totalVolume = 0.0;
-            $totalSets = 0;
+            if ($sessionId <= 0) {
+                $sStmt = $this->db->prepare("
+                    INSERT INTO workout_sessions (
+                        user_id, plan_day_id, assignment_id, gym_id, session_date, start_time, end_time, duration_minutes, status, total_volume_kg, total_sets_completed, notes, created_at, updated_at
+                    ) VALUES (
+                        :uid, :pdid, :aid, :gid, CURDATE(), DATE_SUB(NOW(), INTERVAL :dur MINUTE), NOW(), :dur2, 'completed', 0, 0, :notes, NOW(), NOW()
+                    )
+                ");
+                $sStmt->execute([
+                    ':uid'   => $userId,
+                    ':pdid'  => $planDayId ?: null,
+                    ':aid'   => $assignmentId ? (int)$assignmentId : null,
+                    ':gid'   => $gymId,
+                    ':dur'   => $dur,
+                    ':dur2'  => $dur,
+                    ':notes' => $notes
+                ]);
+                $sessionId = (int)$this->db->lastInsertId();
+            }
 
             foreach ($exercisesData as $idx => $ex) {
                 $exId = isset($ex['exercise_id']) ? (int)$ex['exercise_id'] : 0;
@@ -1482,58 +1970,77 @@ class FitSyncDataService {
                     $fStmt->execute([':n' => $exName]);
                     $exId = (int)$fStmt->fetchColumn();
                 }
-                if ($exId <= 0) {
-                    // Pick first verified catalog exercise as fallback reference if custom name doesn't match
-                    $exId = (int)$this->db->query("SELECT id FROM exercises ORDER BY id ASC LIMIT 1")->fetchColumn();
-                }
                 if ($exId <= 0) continue;
 
-                $seStmt = $this->db->prepare("
-                    INSERT INTO session_exercises (session_id, exercise_id, sort_order)
-                    VALUES (:sid, :eid, :sort)
-                ");
-                $seStmt->execute([':sid' => $sessionId, ':eid' => $exId, ':sort' => $idx + 1]);
-                $sessionExId = (int)$this->db->lastInsertId();
+                $seChk = $this->db->prepare("SELECT id FROM session_exercises WHERE session_id = :sid AND exercise_id = :eid LIMIT 1");
+                $seChk->execute([':sid' => $sessionId, ':eid' => $exId]);
+                $sessionExId = (int)$seChk->fetchColumn();
+                if ($sessionExId <= 0) {
+                    $this->db->prepare("INSERT INTO session_exercises (session_id, exercise_id, sort_order) VALUES (:sid, :eid, :sort)")
+                        ->execute([':sid' => $sessionId, ':eid' => $exId, ':sort' => $idx + 1]);
+                    $sessionExId = (int)$this->db->lastInsertId();
+                }
 
                 $sets = is_array($ex['sets'] ?? null) ? $ex['sets'] : [];
                 foreach ($sets as $sIdx => $s) {
                     $isDone = isset($s['done']) ? (bool)$s['done'] : true;
                     if (!$isDone) continue;
-                    $weight = (isset($s['weight']) && is_numeric($s['weight'])) ? (float)$s['weight'] : 0.0;
+                    $weight = (isset($s['weight']) && is_numeric($s['weight'])) ? max(0.0, (float)$s['weight']) : 0.0;
                     $reps   = max(1, (int)($s['reps'] ?? 10));
-                    $setNum = (int)($s['set'] ?? ($sIdx + 1));
+                    $setNum = max(1, (int)($s['set'] ?? ($sIdx + 1)));
+                    $wUnit  = in_array($s['weight_unit'] ?? '', ['kg','lbs'], true) ? $s['weight_unit'] : 'kg';
+                    $sNote  = !empty($s['notes']) ? mb_substr(trim((string)$s['notes']), 0, 255) : null;
 
-                    $logStmt = $this->db->prepare("
-                        INSERT INTO exercise_set_logs (session_exercise_id, set_number, weight_kg, reps_completed, is_completed, logged_at)
-                        VALUES (:seid, :snum, :w, :reps, 1, NOW())
-                    ");
-                    $logStmt->execute([
-                        ':seid' => $sessionExId,
-                        ':snum' => $setNum,
-                        ':w'    => $weight,
-                        ':reps' => $reps
+                    $this->db->prepare("
+                        INSERT INTO exercise_set_logs (session_exercise_id, set_number, weight_kg, weight_unit, reps_completed, is_completed, notes, logged_at)
+                        VALUES (:seid, :snum, :w, :wu, :reps, 1, :note, NOW())
+                        ON DUPLICATE KEY UPDATE weight_kg = VALUES(weight_kg), weight_unit = VALUES(weight_unit), reps_completed = VALUES(reps_completed), is_completed = 1, notes = VALUES(notes), logged_at = NOW()
+                    ")->execute([
+                        ':seid' => $sessionExId, ':snum' => $setNum, ':w' => $weight, ':wu' => $wUnit, ':reps' => $reps, ':note' => $sNote
                     ]);
-
-                    $totalSets++;
-                    $totalVolume += ($weight * $reps);
                 }
             }
 
-            // If user clicked Complete Session without pre-toggling individual checkboxes, record baseline sets
-            if ($totalSets === 0 && !empty($exercisesData)) {
-                $totalSets = count($exercisesData);
+            // Recompute exact totals from exercise_set_logs
+            $totStmt = $this->db->prepare("
+                SELECT COUNT(esl.id) AS total_sets, COALESCE(SUM(esl.weight_kg * esl.reps_completed), 0) AS total_vol
+                FROM exercise_set_logs esl
+                INNER JOIN session_exercises se ON se.id = esl.session_exercise_id
+                WHERE se.session_id = :sid AND esl.is_completed = 1
+            ");
+            $totStmt->execute([':sid' => $sessionId]);
+            $tots = $totStmt->fetch(PDO::FETCH_ASSOC);
+            $totalSets   = (int)($tots['total_sets'] ?? 0);
+            $totalVolume = round((float)($tots['total_vol'] ?? 0), 2);
+
+            $this->db->prepare("UPDATE workout_sessions SET total_volume_kg = :vol, total_sets_completed = :sets, updated_at = NOW() WHERE id = :sid")
+                ->execute([':vol' => $totalVolume, ':sets' => $totalSets, ':sid' => $sessionId]);
+
+            // Save optional workout feedback
+            $diffRating = $feedbackOpts['difficulty_rating'] ?? null;
+            $fbText     = !empty($feedbackOpts['feedback_text']) ? trim((string)$feedbackOpts['feedback_text']) : null;
+            if ($diffRating || $fbText !== null) {
+                $cleanRating = in_array($diffRating, ['too_easy','just_right','challenging','very_hard'], true) ? $diffRating : 'just_right';
+                $this->db->prepare("
+                    INSERT INTO workout_feedback (session_id, assignment_id, user_id, difficulty_rating, feedback_text, created_at, updated_at)
+                    VALUES (:sid, :aid, :uid, :dr, :ft, NOW(), NOW())
+                    ON DUPLICATE KEY UPDATE difficulty_rating = VALUES(difficulty_rating), feedback_text = VALUES(feedback_text), updated_at = NOW()
+                ")->execute([
+                    ':sid' => $sessionId,
+                    ':aid' => $assignmentId ? (int)$assignmentId : null,
+                    ':uid' => $userId,
+                    ':dr'  => $cleanRating,
+                    ':ft'  => $fbText
+                ]);
             }
 
-            $upStmt = $this->db->prepare("
-                UPDATE workout_sessions
-                SET total_volume_kg = :vol, total_sets_completed = :sets
-                WHERE id = :sid
-            ");
-            $upStmt->execute([
-                ':vol'  => round($totalVolume, 2),
-                ':sets' => $totalSets,
-                ':sid'  => $sessionId
-            ]);
+            // Mark scheduled_workouts completed if matching plan_day_id exists
+            if ($planDayId) {
+                $this->db->prepare("
+                    UPDATE scheduled_workouts SET status = 'completed', completed_at = NOW()
+                    WHERE user_id = :uid AND plan_day_id = :pdid AND scheduled_date = CURDATE() AND status = 'scheduled'
+                ")->execute([':uid' => $userId, ':pdid' => $planDayId]);
+            }
 
             // Notify assigned trainer
             $tStmt = $this->db->prepare("SELECT trainer_user_id FROM trainer_assignments WHERE user_id = :uid AND status = 'active' LIMIT 1");
@@ -1555,7 +2062,7 @@ class FitSyncDataService {
             return [
                 'session_id'           => $sessionId,
                 'total_sets_completed' => $totalSets,
-                'total_volume_kg'      => round($totalVolume, 2),
+                'total_volume_kg'      => $totalVolume,
                 'session_date'         => date('Y-m-d')
             ];
         } catch (Throwable $e) {
@@ -1571,84 +2078,110 @@ class FitSyncDataService {
         int $setNumber,
         float $weightKg,
         int $repsCompleted,
-        ?float $rpe = null
+        ?float $rpe = null,
+        string $weightUnit = 'kg',
+        ?string $notes = null,
+        ?int $reqSessionId = null
     ): array {
         if ($this->db === null) {
             throw new RuntimeException("Database connection unavailable.");
         }
+        if ($weightKg < 0 || $repsCompleted < 1 || $setNumber < 1) {
+            throw new InvalidArgumentException("Weight cannot be negative, and set number / reps must be positive.");
+        }
+        $wUnit = in_array($weightUnit, ['kg', 'lbs'], true) ? $weightUnit : 'kg';
 
         $this->db->beginTransaction();
         try {
-            $stmt = $this->db->prepare("
-                SELECT id FROM workout_sessions
-                WHERE user_id = :uid AND session_date = CURDATE()
-                ORDER BY id DESC LIMIT 1
-            ");
-            $stmt->execute([':uid' => $userId]);
-            $sessionId = $stmt->fetchColumn();
+            $sessionId = 0;
+            if ($reqSessionId && $reqSessionId > 0) {
+                $chk = $this->db->prepare("SELECT id FROM workout_sessions WHERE id = :sid AND user_id = :uid AND status IN ('in_progress','paused') LIMIT 1");
+                $chk->execute([':sid' => $reqSessionId, ':uid' => $userId]);
+                $sessionId = (int)$chk->fetchColumn();
+            }
+            if ($sessionId <= 0) {
+                $stmt = $this->db->prepare("
+                    SELECT id FROM workout_sessions
+                    WHERE user_id = :uid AND status IN ('in_progress','paused')
+                    ORDER BY id DESC LIMIT 1
+                ");
+                $stmt->execute([':uid' => $userId]);
+                $sessionId = (int)$stmt->fetchColumn();
+            }
 
-            if (!$sessionId) {
+            if ($sessionId <= 0) {
                 $gStmt = $this->db->prepare("SELECT gym_id FROM memberships WHERE user_id = :uid AND status = 'active' LIMIT 1");
                 $gStmt->execute([':uid' => $userId]);
                 $gymId = $gStmt->fetchColumn() ?: null;
 
+                $aStmt = $this->db->prepare("SELECT id FROM plan_assignments WHERE user_id = :uid AND status = 'active' ORDER BY id DESC LIMIT 1");
+                $aStmt->execute([':uid' => $userId]);
+                $assignmentId = $aStmt->fetchColumn() ?: null;
+
                 $stmt = $this->db->prepare("
                     INSERT INTO workout_sessions (
-                        user_id, plan_day_id, gym_id, session_date, start_time, total_volume_kg, total_sets_completed, created_at
+                        user_id, plan_day_id, assignment_id, gym_id, session_date, start_time, status, total_volume_kg, total_sets_completed, created_at, updated_at
                     ) VALUES (
-                        :uid, :pdid, :gid, CURDATE(), NOW(), 0, 0, NOW()
+                        :uid, :pdid, :aid, :gid, CURDATE(), NOW(), 'in_progress', 0, 0, NOW(), NOW()
                     )
                 ");
-                $stmt->execute([':uid' => $userId, ':pdid' => $planDayId ?: null, ':gid' => $gymId]);
+                $stmt->execute([':uid' => $userId, ':pdid' => $planDayId ?: null, ':aid' => $assignmentId ? (int)$assignmentId : null, ':gid' => $gymId]);
                 $sessionId = (int)$this->db->lastInsertId();
-            } else {
-                $sessionId = (int)$sessionId;
             }
 
-            $stmt = $this->db->prepare("
-                SELECT id FROM session_exercises
-                WHERE session_id = :sid AND exercise_id = :eid
-                LIMIT 1
-            ");
+            $stmt = $this->db->prepare("SELECT id FROM session_exercises WHERE session_id = :sid AND exercise_id = :eid LIMIT 1");
             $stmt->execute([':sid' => $sessionId, ':eid' => $exerciseId]);
-            $sessionExerciseId = $stmt->fetchColumn();
+            $sessionExerciseId = (int)$stmt->fetchColumn();
 
-            if (!$sessionExerciseId) {
-                $stmt = $this->db->prepare("
-                    INSERT INTO session_exercises (session_id, exercise_id, sort_order)
-                    VALUES (:sid, :eid, 1)
-                ");
-                $stmt->execute([':sid' => $sessionId, ':eid' => $exerciseId]);
+            if ($sessionExerciseId <= 0) {
+                $this->db->prepare("INSERT INTO session_exercises (session_id, exercise_id, sort_order) VALUES (:sid, :eid, 1)")
+                    ->execute([':sid' => $sessionId, ':eid' => $exerciseId]);
                 $sessionExerciseId = (int)$this->db->lastInsertId();
-            } else {
-                $sessionExerciseId = (int)$sessionExerciseId;
             }
 
-            $stmt = $this->db->prepare("
+            $this->db->prepare("
                 INSERT INTO exercise_set_logs (
-                    session_exercise_id, set_number, weight_kg, reps_completed, is_completed, rpe, logged_at
+                    session_exercise_id, set_number, weight_kg, weight_unit, reps_completed, is_completed, rpe, notes, logged_at
                 ) VALUES (
-                    :seid, :snum, :weight, :reps, 1, :rpe, NOW()
+                    :seid, :snum, :weight, :wu, :reps, 1, :rpe, :notes, NOW()
                 )
-            ");
-            $stmt->execute([
+                ON DUPLICATE KEY UPDATE
+                    weight_kg = VALUES(weight_kg),
+                    weight_unit = VALUES(weight_unit),
+                    reps_completed = VALUES(reps_completed),
+                    is_completed = 1,
+                    rpe = VALUES(rpe),
+                    notes = VALUES(notes),
+                    logged_at = NOW()
+            ")->execute([
                 ':seid'   => $sessionExerciseId,
                 ':snum'   => $setNumber,
                 ':weight' => $weightKg,
+                ':wu'     => $wUnit,
                 ':reps'   => $repsCompleted,
-                ':rpe'    => $rpe
+                ':rpe'    => $rpe,
+                ':notes'  => $notes
             ]);
             $logId = (int)$this->db->lastInsertId();
 
-            $setVolume = $weightKg * $repsCompleted;
-            $stmt = $this->db->prepare("
-                UPDATE workout_sessions
-                SET total_volume_kg = total_volume_kg + :vol,
-                    total_sets_completed = total_sets_completed + 1,
-                    end_time = NOW()
-                WHERE id = :sid
+            $totStmt = $this->db->prepare("
+                SELECT COUNT(esl.id) AS total_sets, COALESCE(SUM(esl.weight_kg * esl.reps_completed), 0) AS total_vol
+                FROM exercise_set_logs esl
+                INNER JOIN session_exercises se ON se.id = esl.session_exercise_id
+                WHERE se.session_id = :sid AND esl.is_completed = 1
             ");
-            $stmt->execute([':vol' => $setVolume, ':sid' => $sessionId]);
+            $totStmt->execute([':sid' => $sessionId]);
+            $tots = $totStmt->fetch(PDO::FETCH_ASSOC);
+
+            $this->db->prepare("
+                UPDATE workout_sessions
+                SET total_volume_kg = :vol, total_sets_completed = :sets, updated_at = NOW()
+                WHERE id = :sid
+            ")->execute([
+                ':vol'  => round((float)($tots['total_vol'] ?? 0), 2),
+                ':sets' => (int)($tots['total_sets'] ?? 0),
+                ':sid'  => $sessionId
+            ]);
 
             $this->db->commit();
 
@@ -1656,12 +2189,35 @@ class FitSyncDataService {
                 'log_id'              => $logId,
                 'session_id'          => $sessionId,
                 'session_exercise_id' => $sessionExerciseId,
-                'volume_added'        => $setVolume
+                'total_sets'          => (int)($tots['total_sets'] ?? 0),
+                'total_volume_kg'     => round((float)($tots['total_vol'] ?? 0), 2)
             ];
         } catch (Throwable $e) {
             $this->db->rollBack();
             throw $e;
         }
+    }
+
+    public function replyWorkoutFeedback(int $trainerUserId, int $sessionId, string $reply): array {
+        $this->assertTrainerCanManageWorkouts($trainerUserId);
+        $sStmt = $this->db->prepare("SELECT id, user_id, assignment_id FROM workout_sessions WHERE id = :sid LIMIT 1");
+        $sStmt->execute([':sid' => $sessionId]);
+        $sess = $sStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$sess || !$this->isTrainerAssignedToUser($trainerUserId, (int)$sess['user_id'])) {
+            throw new RuntimeException("Unauthorized: Session does not belong to an assigned member.");
+        }
+        $this->db->prepare("
+            INSERT INTO workout_feedback (session_id, assignment_id, user_id, difficulty_rating, trainer_reply, created_at, updated_at)
+            VALUES (:sid, :aid, :uid, 'just_right', :rep, NOW(), NOW())
+            ON DUPLICATE KEY UPDATE trainer_reply = VALUES(trainer_reply), updated_at = NOW()
+        ")->execute([
+            ':sid' => $sessionId,
+            ':aid' => $sess['assignment_id'] ?: null,
+            ':uid' => (int)$sess['user_id'],
+            ':rep' => trim($reply)
+        ]);
+        $this->createNotification((int)$sess['user_id'], 'Coach Feedback on Workout', trim($reply), 'workout_session', $sessionId);
+        return ['session_id' => $sessionId, 'trainer_reply' => trim($reply)];
     }
 
     // =========================================================================
@@ -1799,10 +2355,12 @@ class FitSyncDataService {
         // 1. Trainer Profile
         $stmt = $this->db->prepare("
             SELECT u.id, u.full_name, u.email, u.mobile,
+                   avf.storage_key AS avatar_storage_key,
                    tp.certification_name, tp.certifying_body, tp.experience_years, tp.hourly_rate, tp.rating,
                    tp.specializations_summary, tp.qualifications, tp.areas_of_expertise, tp.training_approach,
                    tp.bio, COALESCE(tp.status, 'pending_verification') AS verification_status
             FROM users u
+            LEFT JOIN files avf ON avf.id = u.profile_picture_id
             LEFT JOIN trainer_profiles tp ON tp.user_id = u.id
             WHERE u.id = :tid AND u.role = 'trainer'
             LIMIT 1
@@ -1813,6 +2371,7 @@ class FitSyncDataService {
         if (!$trainer) {
             throw new RuntimeException("Trainer profile not found.");
         }
+        $trainer['avatar_url'] = fitSyncResolveFileUrl($trainer['avatar_storage_key'] ?? null, 'assets/images/trainer_raj.jpg');
 
         // All Gym Affiliations & Invitations for this Trainer
         $affStmt = $this->db->prepare("
@@ -1943,7 +2502,7 @@ class FitSyncDataService {
 
             $effectiveWeight = $a['latest_weight'] ?? $a['baseline_weight'] ?? null;
             $ageVal = !empty($a['date_of_birth']) ? (new DateTime($a['date_of_birth']))->diff(new DateTime())->y : null;
-            $avatarStr = !empty($a['avatar_storage_key']) ? $a['avatar_storage_key'] : 'assets/images/member_aarav.jpg';
+            $avatarStr = fitSyncResolveFileUrl($a['avatar_storage_key'] ?? null, 'assets/images/aarav.jpg');
 
             $athletes[] = [
                 'id'                    => 'mem-' . $aid,
@@ -2823,11 +3382,13 @@ class FitSyncDataService {
             );
             $msg = "Invitation sent to existing FitSync user {$email}. They can accept it from their User Portal.";
         } else {
-            @mail(
-                $email,
-                "You're invited to join {$gymName} on FitSync",
-                "Hello {$fullName},\n\n{$gymName} has invited you to join FitSync.\nComplete registration using your secure invitation link:\n{$inviteLink}\n\nThis link expires in 7 days."
-            );
+            if (!empty($_ENV['MAIL_USER'])) {
+                @mail(
+                    $email,
+                    "You're invited to join {$gymName} on FitSync",
+                    "Hello {$fullName},\n\n{$gymName} has invited you to join FitSync.\nComplete registration using your secure invitation link:\n{$inviteLink}\n\nThis link expires in 7 days."
+                );
+            }
             $msg = "Secure single-use invitation created for {$email}. Share the registration link so they can sign up and verify their email.";
         }
 
@@ -2953,7 +3514,7 @@ class FitSyncDataService {
             $this->db->prepare("
                 INSERT INTO user_profiles (user_id, fitness_experience, preferred_gym_id, updated_at)
                 VALUES (:uid, 'intermediate', :gid, NOW())
-                ON DUPLICATE KEY UPDATE preferred_gym_id = COALESCE(preferred_gym_id, VALUES(preferred_gym_id)), updated_at = NOW()
+                ON DUPLICATE KEY UPDATE preferred_gym_id = COALESCE(user_profiles.preferred_gym_id, VALUES(preferred_gym_id)), updated_at = NOW()
             ")->execute([':uid' => $userId, ':gid' => $gymId]);
 
             $mChk = $this->db->prepare("SELECT id FROM memberships WHERE user_id = :uid AND gym_id = :gid AND status = 'active' LIMIT 1");
@@ -3040,6 +3601,11 @@ class FitSyncDataService {
             ];
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
+            if (!empty($uploadedStorageKeys) && function_exists('fitSyncUnlinkRelativeStorageKey')) {
+                foreach ($uploadedStorageKeys as $sk) {
+                    fitSyncUnlinkRelativeStorageKey($sk);
+                }
+            }
             throw $e;
         }
     }
@@ -3312,6 +3878,11 @@ class FitSyncDataService {
             $this->db->commit();
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
+            if (!empty($uploadedStorageKeys) && function_exists('fitSyncUnlinkRelativeStorageKey')) {
+                foreach ($uploadedStorageKeys as $sk) {
+                    fitSyncUnlinkRelativeStorageKey($sk);
+                }
+            }
             throw $e;
         }
 
@@ -3527,6 +4098,11 @@ class FitSyncDataService {
             $this->db->commit();
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
+            if (!empty($uploadedStorageKeys) && function_exists('fitSyncUnlinkRelativeStorageKey')) {
+                foreach ($uploadedStorageKeys as $sk) {
+                    fitSyncUnlinkRelativeStorageKey($sk);
+                }
+            }
             throw $e;
         }
 
@@ -3542,44 +4118,78 @@ class FitSyncDataService {
 
         $dayNames = [0 => 'Sun', 1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat'];
 
-        $hStmt = $this->db->prepare("
-            SELECT day_of_week, open_time, close_time, is_closed
-            FROM gym_operating_hours
-            WHERE gym_id = :gid
-            ORDER BY day_of_week ASC
-        ");
-        $fStmt = $this->db->prepare("
-            SELECT f.id, f.name FROM gym_facilities gf
-            INNER JOIN facilities f ON f.id = gf.facility_id
-            WHERE gf.gym_id = :gid
-            ORDER BY f.name ASC
-        ");
-        $eStmt = $this->db->prepare("
-            SELECT e.id, e.name, e.category, ge.quantity FROM gym_equipment ge
-            INNER JOIN equipment e ON e.id = ge.equipment_id
-            WHERE ge.gym_id = :gid
-            ORDER BY e.name ASC
-        ");
-        $pStmt = $this->db->prepare("
-            SELECT id, name, description, duration_months, price, access_type, is_active
-            FROM membership_plans
-            WHERE gym_id = :gid AND is_active = 1
-            ORDER BY price ASC, id ASC
-        ");
-        $phStmt = $this->db->prepare("
-            SELECT gp.id, gp.caption, gp.is_primary, f.storage_key
-            FROM gym_photos gp
-            INNER JOIN files f ON f.id = gp.file_id
-            WHERE gp.gym_id = :gid
-            ORDER BY gp.is_primary DESC, gp.display_order ASC, gp.id ASC
-        ");
+        $gymIds = array_values(array_unique(array_filter(array_map(fn($g) => (int)$g['id'], $gymRows))));
+        $hoursByGym = [];
+        $facByGym = [];
+        $eqByGym = [];
+        $plansByGym = [];
+        $photosByGym = [];
+
+        if (!empty($gymIds)) {
+            $placeholders = implode(',', array_fill(0, count($gymIds), '?'));
+
+            $hStmt = $this->db->prepare("
+                SELECT gym_id, day_of_week, open_time, close_time, is_closed
+                FROM gym_operating_hours
+                WHERE gym_id IN ($placeholders)
+                ORDER BY gym_id ASC, day_of_week ASC
+            ");
+            $hStmt->execute($gymIds);
+            foreach ($hStmt->fetchAll(PDO::FETCH_ASSOC) as $hr) {
+                $hoursByGym[(int)$hr['gym_id']][] = $hr;
+            }
+
+            $fStmt = $this->db->prepare("
+                SELECT gf.gym_id, f.id, f.name FROM gym_facilities gf
+                INNER JOIN facilities f ON f.id = gf.facility_id
+                WHERE gf.gym_id IN ($placeholders)
+                ORDER BY gf.gym_id ASC, f.name ASC
+            ");
+            $fStmt->execute($gymIds);
+            foreach ($fStmt->fetchAll(PDO::FETCH_ASSOC) as $fr) {
+                $facByGym[(int)$fr['gym_id']][] = $fr;
+            }
+
+            $eStmt = $this->db->prepare("
+                SELECT ge.gym_id, e.id, e.name, e.category, ge.quantity FROM gym_equipment ge
+                INNER JOIN equipment e ON e.id = ge.equipment_id
+                WHERE ge.gym_id IN ($placeholders)
+                ORDER BY ge.gym_id ASC, e.name ASC
+            ");
+            $eStmt->execute($gymIds);
+            foreach ($eStmt->fetchAll(PDO::FETCH_ASSOC) as $er) {
+                $eqByGym[(int)$er['gym_id']][] = $er;
+            }
+
+            $pStmt = $this->db->prepare("
+                SELECT gym_id, id, name, description, duration_months, price, access_type, is_active
+                FROM membership_plans
+                WHERE gym_id IN ($placeholders) AND is_active = 1
+                ORDER BY gym_id ASC, price ASC, id ASC
+            ");
+            $pStmt->execute($gymIds);
+            foreach ($pStmt->fetchAll(PDO::FETCH_ASSOC) as $pr) {
+                $plansByGym[(int)$pr['gym_id']][] = $pr;
+            }
+
+            $phStmt = $this->db->prepare("
+                SELECT gp.gym_id, gp.id, gp.caption, gp.is_primary, f.storage_key
+                FROM gym_photos gp
+                INNER JOIN files f ON f.id = gp.file_id
+                WHERE gp.gym_id IN ($placeholders)
+                ORDER BY gp.gym_id ASC, gp.is_primary DESC, gp.display_order ASC, gp.id ASC
+            ");
+            $phStmt->execute($gymIds);
+            foreach ($phStmt->fetchAll(PDO::FETCH_ASSOC) as $phr) {
+                $photosByGym[(int)$phr['gym_id']][] = $phr;
+            }
+        }
 
         $out = [];
         foreach ($gymRows as $g) {
             $gid = (int)$g['id'];
 
-            $hStmt->execute([':gid' => $gid]);
-            $rawHours = $hStmt->fetchAll(PDO::FETCH_ASSOC);
+            $rawHours = $hoursByGym[$gid] ?? [];
             $hoursFormatted = [];
             $openDaysCount = 0;
             foreach ($rawHours as $hr) {
@@ -3617,21 +4227,14 @@ class FitSyncDataService {
                 }
             }
 
-            $fStmt->execute([':gid' => $gid]);
-            $facRows = $fStmt->fetchAll(PDO::FETCH_ASSOC);
+            $facRows = $facByGym[$gid] ?? [];
+            $eqRows = $eqByGym[$gid] ?? [];
+            $planRows = $plansByGym[$gid] ?? [];
+            $photoRows = $photosByGym[$gid] ?? [];
+            $photos = array_values(array_filter(array_map(fn($p) => !empty($p['storage_key']) ? fitSyncResolveFileUrl($p['storage_key'], '') : null, $photoRows)));
 
-            $eStmt->execute([':gid' => $gid]);
-            $eqRows = $eStmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $pStmt->execute([':gid' => $gid]);
-            $planRows = $pStmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $phStmt->execute([':gid' => $gid]);
-            $photoRows = $phStmt->fetchAll(PDO::FETCH_ASSOC);
-            $photos = array_values(array_filter(array_map(fn($p) => !empty($p['storage_key']) ? ('uploads/' . ltrim((string)$p['storage_key'], '/')) : null, $photoRows)));
-
-            $logoUrl = !empty($g['logo_storage_key']) ? ('uploads/' . ltrim((string)$g['logo_storage_key'], '/')) : ($photos[0] ?? 'assets/images/gym_fitzone.jpg');
-            $coverUrl = !empty($g['cover_storage_key']) ? ('uploads/' . ltrim((string)$g['cover_storage_key'], '/')) : ($photos[0] ?? 'assets/images/gym_fitzone.jpg');
+            $logoUrl = !empty($g['logo_storage_key']) ? fitSyncResolveFileUrl($g['logo_storage_key'], 'assets/images/gym_fitzone.jpg') : ($photos[0] ?? 'assets/images/gym_fitzone.jpg');
+            $coverUrl = !empty($g['cover_storage_key']) ? fitSyncResolveFileUrl($g['cover_storage_key'], 'assets/images/gym_fitzone.jpg') : ($photos[0] ?? 'assets/images/gym_fitzone.jpg');
 
             $out[] = [
                 'id'                  => $gid,
@@ -3866,11 +4469,16 @@ class FitSyncDataService {
                 $gymId = (int)$this->db->lastInsertId();
             }
 
-            // Optional photo/logo upload
+            // Optional photo/logo upload (with rollback file cleanup)
+            $uploadedStorageKeys = [];
             if (!empty($uploadedFiles['gym_logo']) && ($uploadedFiles['gym_logo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE && function_exists('fitSyncStoreUploadedFile')) {
                 $logoId = fitSyncStoreUploadedFile($this->db, $uploadedFiles['gym_logo'], 'gym_photo', $ownerUserId, false, false);
                 if ($logoId !== null) {
-                    $this->db->prepare("UPDATE gyms SET logo_file_id = :fid, cover_photo_id = COALESCE(cover_photo_id, :fid2) WHERE id = :gid")
+                    $skQ = $this->db->prepare("SELECT storage_key FROM files WHERE id = :fid LIMIT 1");
+                    $skQ->execute([':fid' => $logoId]);
+                    $skVal = (string)$skQ->fetchColumn();
+                    if ($skVal !== '') $uploadedStorageKeys[] = $skVal;
+                    $this->db->prepare("UPDATE gyms SET logo_file_id = :fid, cover_photo_id = :fid2, updated_at = NOW() WHERE id = :gid")
                         ->execute([':fid' => $logoId, ':fid2' => $logoId, ':gid' => $gymId]);
                     $this->db->prepare("INSERT INTO gym_photos (gym_id, file_id, is_primary, display_order) VALUES (:gid, :fid, 1, 0)")
                         ->execute([':gid' => $gymId, ':fid' => $logoId]);
@@ -3983,6 +4591,11 @@ class FitSyncDataService {
             return $hydrated[0];
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
+            if (!empty($uploadedStorageKeys) && function_exists('fitSyncUnlinkRelativeStorageKey')) {
+                foreach ($uploadedStorageKeys as $sk) {
+                    fitSyncUnlinkRelativeStorageKey($sk);
+                }
+            }
             throw $e;
         }
     }

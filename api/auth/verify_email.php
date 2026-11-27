@@ -50,7 +50,9 @@ try {
         $hash = hash('sha256', $code);
         $db->prepare("INSERT INTO auth_tokens (user_id, purpose, token_hash, new_email, expires_at, created_at) VALUES (:uid, 'email_verify', :th, :em, DATE_ADD(NOW(), INTERVAL 24 HOUR), NOW())")
             ->execute([':uid' => $userId, ':th' => $hash, ':em' => $u['email']]);
-        @mail((string)$u['email'], 'FitSync Email Verification Code', "Your FitSync verification code is: {$code}");
+        if (!empty($_ENV['MAIL_USER'])) {
+            @mail((string)$u['email'], 'FitSync Email Verification Code', "Your FitSync verification code is: {$code}");
+        }
         apiResponse(true, 'Verification code generated.', ['verification_code' => $code]);
     }
 

@@ -22,7 +22,7 @@ $pageTitle = 'Platform Admin — FitSync AI';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= e($pageTitle) ?></title>
   <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <script src="<?= asset('js/lucide.min.js') ?>"></script>
   <style>
     body {
       background-color: #0b0f17;
@@ -85,7 +85,7 @@ $pageTitle = 'Platform Admin — FitSync AI';
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
         <div>
           <span class="role-badge">
-            <i class="bi bi-shield-lock-fill"></i> System Administrator
+            <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> System Administrator
           </span>
           <h2 style="font-size: 1.8rem; font-weight: 700; margin-top: 14px; color: #ffffff;">
             Welcome, <?= e($user['full_name']) ?>
@@ -99,7 +99,7 @@ $pageTitle = 'Platform Admin — FitSync AI';
 
       <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 18px; margin-bottom: 24px;">
         <h4 style="color: #a855f7; font-size: 1rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-          <i class="bi bi-shield-check"></i> Authenticated in Platform Administration
+          <i data-lucide="shield" style="width: 16px; height: 16px;"></i> Authenticated in Platform Administration
         </h4>
         <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 0; line-height: 1.5;">
           Review and verify newly registered Gyms and Trainers before granting unrestricted platform access.
@@ -114,7 +114,7 @@ $pageTitle = 'Platform Admin — FitSync AI';
       <div style="display: flex; gap: 12px; align-items: center;">
         <span style="color: #64748b; font-size: 0.85rem;">Session Active (Role: Platform Admin)</span>
         <a href="<?= url('logout.php?portal_ctx=admin') ?>" class="btn-action btn-logout" style="margin-left: auto;">
-          <i class="bi bi-box-arrow-right"></i> Sign Out
+          <i data-lucide="log-out" style="width: 15px; height: 15px;"></i> Sign Out
         </a>
       </div>
     </div>
@@ -175,7 +175,10 @@ $pageTitle = 'Platform Admin — FitSync AI';
       alert(json.message || 'Updated.');
       loadAdminVerifications();
     }
-    window.addEventListener('DOMContentLoaded', loadAdminVerifications);
+    window.addEventListener('DOMContentLoaded', () => {
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      loadAdminVerifications();
+    });
   </script>
 </body>
 </html>

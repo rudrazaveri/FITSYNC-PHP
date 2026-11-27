@@ -24,13 +24,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       : window.__AUTHENTICATED_USER__.role === 'user'
   );
   if (hasMemberAccess) {
+    // Load dashboard first (populates workout, water, membership, trainer), then fetch remaining views concurrently
     await syncUserDashboardFromDb();
-    loadUserProfileData();
-    loadMembershipPortalData();
-    loadWorkoutPlanFromDb();
-    loadAttendanceCalendar();
-    renderMealsTimeline();
-    renderWaterLogs();
+    Promise.allSettled([
+      loadUserProfileData(),
+      loadMembershipPortalData(),
+      loadAttendanceCalendar(),
+      renderMealsTimeline(),
+      renderWaterLogs()
+    ]);
   }
 
   // 2. Setup Routing & Cross-page navigation
@@ -59,23 +61,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     switchView(initialHash, false);
   }
 
-  // Periodic real-time background synchronization (every 5 seconds + on tab focus/visibility)
-  const runLiveMemberSync = () => {
+  // Periodic real-time background synchronization (debounced so alt-tabbing does not burst duplicate API calls)
+  let liveSyncInFlight = false;
+  let lastLiveSyncAt = Date.now();
+  const runLiveMemberSync = async (isPeriodic = false) => {
     const canMemberSync = window.__AUTHENTICATED_USER__ && (
       typeof window.fitSyncHasPortalAccess === 'function'
         ? window.fitSyncHasPortalAccess(window.__AUTHENTICATED_USER__, 'user')
         : window.__AUTHENTICATED_USER__.role === 'user'
     );
-    if (canMemberSync) {
-      syncUserDashboardFromDb();
-      loadMembershipPortalData();
+    if (!canMemberSync || liveSyncInFlight || (isPeriodic && document.hidden)) return;
+    const nowMs = Date.now();
+    if (!isPeriodic && (nowMs - lastLiveSyncAt) < 5000) return;
+    liveSyncInFlight = true;
+    lastLiveSyncAt = nowMs;
+    try {
+      await syncUserDashboardFromDb();
+      if (document.getElementById('view-gyms')?.classList.contains('active')) {
+        await loadMembershipPortalData();
+      }
+      if (document.getElementById('view-workouts')?.classList.contains('active') && typeof loadWorkoutPlanFromDb === 'function') {
+        await loadWorkoutPlanFromDb();
+      }
+    } finally {
+      liveSyncInFlight = false;
     }
   };
-  setInterval(runLiveMemberSync, 5000);
+  setInterval(() => runLiveMemberSync(true), 30000);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') runLiveMemberSync();
+    if (document.visibilityState === 'visible') runLiveMemberSync(false);
   });
-  window.addEventListener('focus', runLiveMemberSync);
+  window.addEventListener('focus', () => runLiveMemberSync(false));
   setInterval(() => updateWelcomeGreeting(window.fitSyncStore?.state?.user?.name), 30000);
 });
 
@@ -205,7 +221,6 @@ async function syncUserDashboardFromDb() {
           state.membership.plan = d.membership.plan_name || 'Standard';
           state.membership.status = d.membership.status || 'inactive';
           state.membership.validTill = d.membership.end_date || '--';
-          state.membership.turnstileCode = d.membership.qr_code_token || '--';
         } else {
           state.membership.gymName = 'No Gym Connected';
           state.membership.location = 'Select a gym branch';
@@ -289,9 +304,11 @@ async function syncUserDashboardFromDb() {
           state.nutrition.meals = Array.isArray(d.nutrition.meals) ? d.nutrition.meals : [];
         }
 
-        // 4. Water (100% Database-Driven)
-        if (d.water) {
-          state.stats.water.current = d.water.liters !== undefined ? d.water.liters : 0.0;
+        // 4. Water (100% Database-Driven, skip overwrite while optimistic water requests are in flight)
+        if (d.water && (!window.__WATER_STATE__ || window.__WATER_STATE__.inFlightCount === 0)) {
+          const totalMl = d.water.total_ml !== undefined ? Number(d.water.total_ml) : Math.round((Number(d.water.liters || 0)) * 1000);
+          if (window.__WATER_STATE__) window.__WATER_STATE__.totalMl = totalMl;
+          state.stats.water.current = d.water.liters !== undefined ? d.water.liters : +(totalMl / 1000).toFixed(2);
           if (state.waterStation) state.waterStation.current = state.stats.water.current;
         }
 
@@ -724,12 +741,6 @@ function setupEventListeners() {
   // View Details Links
   document.getElementById('rightAddWaterLink')?.addEventListener('click', () => openModal('addWaterModal'));
 
-  // Attendance Check-in Button (Direct Database Verification)
-  document.getElementById('simulateCheckInBtn')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    simulateTurnstileCheckIn();
-  });
-
   // Modal Close buttons
   document.querySelectorAll('[data-close-modal]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -772,72 +783,123 @@ function triggerWaterFillAnimation() {
   }, 1200);
 }
 
+function getLocalDateStr(dateObj = new Date()) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+window.__WATER_STATE__ = window.__WATER_STATE__ || {
+  totalMl: null,
+  logs: null,
+  inFlightCount: 0,
+  queue: Promise.resolve()
+};
+
+function logWaterAmount(amountMl, { closeModalAfter = false, onSuccess = null } = {}) {
+  const ml = Math.round(Number(amountMl));
+  if (!ml || isNaN(ml) || ml <= 0) return;
+
+  const state = window.fitSyncStore?.state;
+  const ws = window.__WATER_STATE__;
+  if (ws.totalMl === null) {
+    const curLiters = Number(state?.stats?.water?.current ?? 0);
+    ws.totalMl = Math.round(curLiters * 1000);
+  }
+
+  const prevTotalMl = ws.totalMl;
+  const prevLogs = Array.isArray(ws.logs) ? ws.logs.slice() : null;
+  const optimisticTotalMl = prevTotalMl + ml;
+  const optimisticLiters = +(optimisticTotalMl / 1000).toFixed(2);
+  const nowDate = new Date();
+  const optimisticLog = {
+    id: `pending-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    amount_ml: ml,
+    liters: +(ml / 1000).toFixed(2),
+    logged_at: nowDate.toISOString(),
+    time: nowDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  };
+
+  // Immediate optimistic UI update
+  ws.totalMl = optimisticTotalMl;
+  ws.logs = [optimisticLog, ...(Array.isArray(ws.logs) ? ws.logs : [])];
+  if (state?.stats?.water) state.stats.water.current = optimisticLiters;
+  if (state?.waterStation) state.waterStation.current = optimisticLiters;
+
+  updateDashboardUI();
+  triggerWaterFillAnimation();
+  if (closeModalAfter) closeModal('addWaterModal');
+  if (typeof renderWaterLogs === 'function') renderWaterLogs(ws.logs);
+
+  ws.inFlightCount += 1;
+  const localDate = getLocalDateStr(nowDate);
+
+  ws.queue = ws.queue.then(async () => {
+    try {
+      const res = await fetch('api/water.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount_ml: ml, local_date: localDate })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success || !json.data) {
+        throw new Error(json.message || json.error || 'Failed to record water intake.');
+      }
+
+      ws.inFlightCount = Math.max(0, ws.inFlightCount - 1);
+      if (ws.inFlightCount === 0) {
+        ws.totalMl = Number(json.data.total_ml ?? optimisticTotalMl);
+        ws.logs = Array.isArray(json.data.logs) ? json.data.logs : ws.logs;
+        const confirmedLiters = json.data.liters !== undefined ? json.data.liters : +(ws.totalMl / 1000).toFixed(2);
+        if (state?.stats?.water) state.stats.water.current = confirmedLiters;
+        if (state?.waterStation) state.waterStation.current = confirmedLiters;
+        updateDashboardUI();
+        if (typeof renderWaterLogs === 'function') renderWaterLogs(ws.logs);
+        if (window.renderAllCharts) window.renderAllCharts();
+      }
+      if (typeof onSuccess === 'function') onSuccess(json.data);
+      showToast(`Recorded +${ml} ml (${json.data.liters} L total today)!`, 'success');
+    } catch (err) {
+      ws.inFlightCount = Math.max(0, ws.inFlightCount - 1);
+      ws.totalMl = Math.max(0, ws.totalMl - ml);
+      if (Array.isArray(ws.logs)) {
+        ws.logs = ws.logs.filter(item => item.id !== optimisticLog.id);
+      } else if (prevLogs) {
+        ws.logs = prevLogs;
+      }
+      const revertedLiters = +(ws.totalMl / 1000).toFixed(2);
+      if (state?.stats?.water) state.stats.water.current = revertedLiters;
+      if (state?.waterStation) state.waterStation.current = revertedLiters;
+      updateDashboardUI();
+      if (typeof renderWaterLogs === 'function') renderWaterLogs(ws.logs || []);
+      console.warn('Water API log error:', err);
+      showToast(err?.message || 'Server error recording water intake. Reverted.', 'danger');
+    }
+  });
+}
+
 function setupFormHandlers() {
-  // 1. Water Intake Form & Station Presets (100% Database-Driven)
+  // 1. Water Intake Form & Station Presets (100% Database-Driven with Instant Optimistic Update)
   const waterForm = document.getElementById('waterForm');
   document.querySelectorAll('.water-preset-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       const amount = parseFloat(btn.getAttribute('data-amount'));
       if (!amount || isNaN(amount)) return;
       const amountMl = Math.round(amount * 1000);
-
-      try {
-        const res = await fetch('api/water.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount_ml: amountMl })
-        });
-        const json = await res.json();
-        if (json.success && json.data) {
-          const state = window.fitSyncStore?.state;
-          if (state?.stats?.water) state.stats.water.current = json.data.liters;
-          if (state?.waterStation) state.waterStation.current = json.data.liters;
-          updateDashboardUI();
-          triggerWaterFillAnimation();
-          closeModal('addWaterModal');
-          if (typeof renderWaterLogs === 'function') renderWaterLogs(json.data.logs);
-          if (window.renderAllCharts) window.renderAllCharts();
-          showToast(`Recorded +${amountMl} ml (${json.data.liters} L total today)!`, 'success');
-        } else {
-          showToast(json.message || json.error || 'Failed to record water intake.', 'danger');
-        }
-      } catch (err) {
-        console.warn('Water API log error:', err);
-        showToast('Server error recording water intake.', 'danger');
-      }
+      logWaterAmount(amountMl, { closeModalAfter: true });
     });
   });
 
   if (waterForm) {
-    waterForm.addEventListener('submit', async (e) => {
+    waterForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const customMl = parseFloat(document.getElementById('customWaterInput').value);
       if (customMl > 0) {
-        try {
-          const res = await fetch('api/water.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount_ml: Math.round(customMl) })
-          });
-          const json = await res.json();
-          if (json.success && json.data) {
-            const state = window.fitSyncStore?.state;
-            if (state?.stats?.water) state.stats.water.current = json.data.liters;
-            if (state?.waterStation) state.waterStation.current = json.data.liters;
-            updateDashboardUI();
-            triggerWaterFillAnimation();
-            closeModal('addWaterModal');
-            waterForm.reset();
-            if (typeof renderWaterLogs === 'function') renderWaterLogs(json.data.logs);
-            if (window.renderAllCharts) window.renderAllCharts();
-            showToast(`Added ${customMl} ml (${json.data.liters} L total today)!`, 'success');
-          } else {
-            showToast(json.message || json.error || 'Failed to record water intake.', 'danger');
-          }
-        } catch (err) {
-          console.warn('Water API log error:', err);
-          showToast('Server error recording water intake.', 'danger');
-        }
+        logWaterAmount(Math.round(customMl), {
+          closeModalAfter: true,
+          onSuccess: () => waterForm.reset()
+        });
       }
     });
   }
@@ -1215,12 +1277,48 @@ window.triggerWaterFillAnimation = triggerWaterFillAnimation;
 // 7-DAY WORKOUT SPLIT PLANNER & DAY TRAVELLER CONTROLLER
 // =========================================================================
 
-let currentWorkoutDay = 'tue'; // Default to Tuesday matching reference preview
+function getLocalWorkoutDayInfo(dateObj = new Date()) {
+  const keys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  const labels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const d = dateObj.getDay(); // Local timezone weekday: 0 = Sun .. 6 = Sat
+  return {
+    jsDay: d,
+    isoNum: d === 0 ? 7 : d, // 1 = Mon .. 7 = Sun
+    key: keys[d],
+    label: labels[d]
+  };
+}
+
+function syncWorkoutTodayIndicator(dateObj = new Date()) {
+  const info = getLocalWorkoutDayInfo(dateObj);
+  const dayTextEl = document.getElementById('wkCurrentDayText');
+  if (dayTextEl) dayTextEl.textContent = info.label;
+
+  document.querySelectorAll('#wkDaysStrip .wk-day-btn').forEach(btn => {
+    const existingTag = btn.querySelector('.day-today-tag');
+    if (existingTag) existingTag.remove();
+    if (btn.getAttribute('data-day') === info.key) {
+      btn.classList.add('is-today');
+      const tag = document.createElement('span');
+      tag.className = 'day-today-tag';
+      tag.textContent = 'TODAY';
+      btn.appendChild(tag);
+    } else {
+      btn.classList.remove('is-today');
+    }
+  });
+  return info;
+}
+
+let currentWorkoutDay = getLocalWorkoutDayInfo().key;
 let headerRestSeconds = 90;
 let headerTimerRunning = false;
 let headerTimerInterval = null;
 
 function initWorkoutPlannerModule() {
+  const todayInfo = syncWorkoutTodayIndicator();
+  currentWorkoutDay = todayInfo.key;
+
   const dayButtons = document.querySelectorAll('#wkDaysStrip .wk-day-btn');
   dayButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1231,12 +1329,16 @@ function initWorkoutPlannerModule() {
     });
   });
 
-  // Initial load
+  // Initial load for current local weekday
   selectWorkoutDay(currentWorkoutDay);
 }
 
 function selectWorkoutDay(dayKey) {
   currentWorkoutDay = dayKey;
+  const infoByKey = {
+    mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
+    fri: 'Friday', sat: 'Saturday', sun: 'Sunday'
+  };
 
   // Update 7-day strip active classes
   document.querySelectorAll('#wkDaysStrip .wk-day-btn').forEach(btn => {
@@ -1247,17 +1349,15 @@ function selectWorkoutDay(dayKey) {
     }
   });
 
-  // Get plan data from store or default fallback
+  // Get plan data from single authoritative store (never fall back to demo data when server-synced)
   let plan = null;
   if (window.fitSyncStore && typeof window.fitSyncStore.getWorkoutPlan === 'function') {
     plan = window.fitSyncStore.getWorkoutPlan(dayKey);
   }
-  if (!plan && window.DEFAULT_FITSYNC_DATA && window.DEFAULT_FITSYNC_DATA.workoutPlans) {
+  if (!plan && !window.__HAS_SERVER_WORKOUT_SYNC__ && window.DEFAULT_FITSYNC_DATA && window.DEFAULT_FITSYNC_DATA.workoutPlans) {
     plan = window.DEFAULT_FITSYNC_DATA.workoutPlans[dayKey];
   }
-  if (!plan) return;
 
-  // Update routine titles and badges
   const badgeEl = document.getElementById('wkRoutineBadge');
   const subBadgeEl = document.getElementById('wkRoutineSubBadge');
   const titleEl = document.getElementById('wkRoutineTitle');
@@ -1266,15 +1366,30 @@ function selectWorkoutDay(dayKey) {
   const statTargetEl = document.getElementById('wkStatTarget');
   const statDurationEl = document.getElementById('wkStatDuration');
 
-  if (badgeEl) badgeEl.textContent = plan.badge || `${dayKey.toUpperCase()}'S ROUTINE`;
-  if (subBadgeEl) subBadgeEl.textContent = plan.subBadge || 'Daily Routine Preview';
-  if (titleEl) titleEl.textContent = plan.title || 'Workout Session';
+  if (!plan) {
+    const dayLabel = infoByKey[dayKey] || String(dayKey || 'Today');
+    if (badgeEl) badgeEl.textContent = `${dayLabel.toUpperCase()}'S ROUTINE`;
+    if (subBadgeEl) subBadgeEl.textContent = 'No Active Plan';
+    if (titleEl) titleEl.textContent = 'No Active Trainer Plan Assigned';
+    if (taglineEl) taglineEl.textContent = 'Your trainer has not assigned an active workout plan yet.';
+    if (scheduledBadgeEl) scheduledBadgeEl.textContent = '0 Exercises Scheduled';
+    if (statTargetEl) statTargetEl.textContent = '0 Exercises';
+    if (statDurationEl) statDurationEl.textContent = 'Estimated Duration: --';
+    renderWorkoutExercises(null);
+    updateWorkoutStats({ exercises: [] });
+    initIcons();
+    return;
+  }
+
+  if (badgeEl) badgeEl.textContent = plan.badge || `${(infoByKey[dayKey] || dayKey).toUpperCase()}'S ROUTINE`;
+  if (subBadgeEl) subBadgeEl.textContent = plan.subBadge || (plan.isRest ? 'Scheduled Rest Day' : 'Assigned Routine');
+  if (titleEl) titleEl.textContent = plan.title || plan.dayName || 'Workout Session';
   if (taglineEl) taglineEl.textContent = plan.tagline || '';
-  
+
   const exCount = plan.exercises ? plan.exercises.length : 0;
   if (scheduledBadgeEl) scheduledBadgeEl.textContent = `${exCount} Exercises Scheduled`;
   if (statTargetEl) statTargetEl.textContent = `${exCount} Exercises`;
-  if (statDurationEl) statDurationEl.textContent = `Estimated Duration: ${plan.duration || '45 mins'}`;
+  if (statDurationEl) statDurationEl.textContent = `Estimated Duration: ${plan.duration || (exCount === 0 ? 'Rest Day' : '45 mins')}`;
 
   // Render Exercise Cards
   renderWorkoutExercises(plan);
@@ -1322,18 +1437,36 @@ function renderWorkoutExercises(plan) {
   const container = document.getElementById('wkExercisesContainer');
   if (!container) return;
 
-  if (!plan.exercises || plan.exercises.length === 0) {
+  if (!plan) {
     container.innerHTML = `
-      <div class="fs-card" style="text-align: center; padding: 32px; color: var(--text-secondary);">
-        <i data-lucide="coffee" style="width: 32px; height: 32px; margin-bottom: 8px; color: var(--primary-blue);"></i>
-        <h4 style="font-size: 16px; font-weight: 700; color: var(--text-main);">Rest & Muscle Recovery Day</h4>
-        <p style="font-size: 13px; margin-top: 4px;">No intense lifting scheduled for ${plan.dayName}. Focus on hydration, mobility, and recovery nutrition.</p>
+      <div class="fs-card" style="text-align: center; padding: 32px; color: var(--text-secondary); border: 1px dashed var(--border-color);">
+        <i data-lucide="dumbbell" style="width: 32px; height: 32px; margin-bottom: 8px; color: #94A3B8;"></i>
+        <h4 style="font-size: 16px; font-weight: 700; color: var(--text-main);">No Active Workout Plan Assigned</h4>
+        <p style="font-size: 13px; margin-top: 4px;">Once your trainer assigns an active weekly workout plan, your daily routine will appear here automatically.</p>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = plan.exercises.map((ex, exIdx) => {
+  if (!plan.exercises || plan.exercises.length === 0) {
+    const restTitle = plan.dayType === 'active_recovery' ? 'Active Recovery Day' : 'Rest & Muscle Recovery Day';
+    container.innerHTML = `
+      <div class="fs-card" style="text-align: center; padding: 32px; color: var(--text-secondary);">
+        <i data-lucide="coffee" style="width: 32px; height: 32px; margin-bottom: 8px; color: var(--primary-blue);"></i>
+        <h4 style="font-size: 16px; font-weight: 700; color: var(--text-main);">${restTitle}</h4>
+        <p style="font-size: 13px; margin-top: 4px;">No intense lifting scheduled for ${escapeHtml(plan.dayName || 'this day')}. Focus on hydration, mobility, and recovery nutrition.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const noticeHtml = plan.midSessionUpdateNotice
+    ? `<div class="fs-card" style="padding:12px 14px;margin-bottom:12px;background:#FFFBEB;border:1px solid #FCD34D;color:#92400E;font-size:12px;">
+        <strong>Plan Updated Mid-Session:</strong> Your trainer updated this workout plan after your current session started. Your active session logs are preserved; new changes apply cleanly after finishing this session.
+      </div>`
+    : '';
+
+  container.innerHTML = noticeHtml + plan.exercises.map((ex, exIdx) => {
     let exCompletedSets = 0;
     let exVolume = 0;
     (ex.sets || []).forEach(s => {
@@ -1345,16 +1478,18 @@ function renderWorkoutExercises(plan) {
     });
 
     const rowsHtml = (ex.sets || []).map((set, setIdx) => {
-      const isBw = set.weight === 'Bodyweight' || set.weight === 0 || set.weight === '0' || set.weight === '0.0 kg';
-      const displayWeight = isBw ? 'Bodyweight' : `${parseFloat(set.weight).toFixed(1)} kg`;
+      const unit = set.weight_unit || ex.weight_unit || 'kg';
+      const isBw = set.weight === 'Bodyweight' || set.weight === 0 || set.weight === '0' || set.weight === '0.0 kg' || set.weight === null || set.weight === undefined;
+      const displayWeight = isBw ? 'Bodyweight' : `${parseFloat(set.weight).toFixed(1)} ${escapeHtml(unit)}`;
+      const repsText = set.targetRepsLabel || set.reps;
 
       return `
       <tr class="${set.done ? 'set-completed' : ''}" id="row-${plan.dayKey}-${exIdx}-${setIdx}">
-        <td><span class="wk-set-pill">Set ${set.set}</span></td>
+        <td><span class="wk-set-pill">${set.is_warmup ? 'Warmup' : `Set ${set.set}`}</span></td>
         <td>
           <div class="wk-stepper-box">
             <button type="button" class="wk-stepper-btn" onclick="stepReps(this, -1, '${plan.dayKey}', ${exIdx}, ${setIdx})">-</button>
-            <span class="wk-step-input" id="rep-val-${plan.dayKey}-${exIdx}-${setIdx}">${set.reps}</span>
+            <span class="wk-step-input" id="rep-val-${plan.dayKey}-${exIdx}-${setIdx}">${escapeHtml(String(repsText))}</span>
             <button type="button" class="wk-stepper-btn" onclick="stepReps(this, 1, '${plan.dayKey}', ${exIdx}, ${setIdx})">+</button>
             <span class="wk-unit-label">reps</span>
           </div>
@@ -1384,11 +1519,13 @@ function renderWorkoutExercises(plan) {
       <div class="wk-exercise-card">
         <div class="wk-ex-header">
           <div class="wk-ex-left">
-            <img src="${ex.image || 'assets/images/bench_press.jpg'}" alt="${ex.name}" class="wk-ex-thumb" onerror="this.src='assets/images/bench_press.jpg'">
+            <img src="${escapeHtml(ex.image || 'assets/images/exercise_placeholder.svg')}" alt="${escapeHtml(ex.name)}" class="wk-ex-thumb" onerror="this.src='assets/images/exercise_placeholder.svg'">
             <div>
-              <h4 class="wk-ex-title">${ex.name}</h4>
-              <p class="wk-ex-subtitle">${ex.muscle} • ${ex.equipment}</p>
-              <span class="wk-ex-target-pill">${ex.target || 'Target: 4 sets × 10-12 reps'}</span>
+              <h4 class="wk-ex-title">${exIdx + 1}. ${escapeHtml(ex.name)} ${ex.superset_group ? `<span class="fs-badge fs-badge-blue" style="font-size:10px;margin-left:6px;">Superset ${escapeHtml(ex.superset_group)}</span>` : ''}</h4>
+              <p class="wk-ex-subtitle">${escapeHtml(ex.muscle)} • ${escapeHtml(ex.equipment)}${ex.tempo ? ` • Tempo ${escapeHtml(ex.tempo)}` : ''}</p>
+              <span class="wk-ex-target-pill">${escapeHtml(ex.target || 'Target: 3 sets × 10 reps')}</span>
+              ${ex.form_cues ? `<div style="font-size:11px;color:#475569;margin-top:4px;">${escapeHtml(ex.form_cues)}</div>` : ''}
+              ${ex.exercise_notes ? `<div style="font-size:11px;color:#B45309;background:#FFFBEB;padding:3px 8px;border-radius:6px;margin-top:4px;display:inline-block;">Coach Note: ${escapeHtml(ex.exercise_notes)}</div>` : ''}
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
@@ -1451,25 +1588,27 @@ function toggleSetDone(btn, dayKey, exIdx, setIdx) {
       doneBtn.classList.add('completed');
       doneBtn.innerHTML = '<i data-lucide="check-circle" style="width: 13px; height: 13px;"></i> <span>Completed ✓</span>';
     }
-    // Automatically launch rest timer countdown & persist set to MySQL
-    startHeaderRestTimer(90);
+    // Automatically launch rest timer countdown & persist set to database
     const exObj = plan.exercises[exIdx];
+    const exRest = parseInt(setObj.rest_seconds || exObj.rest_seconds || 90, 10) || 90;
+    startHeaderRestTimer(exRest);
     const weightVal = (setObj.weight === 'Bodyweight' || !setObj.weight) ? 0 : parseFloat(setObj.weight) || 0;
     fetch('api/workouts.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'log_set',
-        plan_day_id: plan.plan_day_id || null,
+        plan_day_id: plan.plan_day_id || plan.planDayId || null,
         exercise_id: exObj.exercise_id || 0,
         exercise: exObj.name,
         set_number: setObj.set || (setIdx + 1),
         weight_kg: weightVal,
+        weight_unit: setObj.weight_unit || exObj.weight_unit || 'kg',
         reps: parseInt(setObj.reps || 10, 10)
       })
     }).then(r => r.json()).then(json => {
       if (json.success) {
-        showToast(`🎉 Set ${setObj.set} saved to MySQL! Rest timer (90s) started.`, 'success');
+        showToast(`Set ${setObj.set} saved! Rest timer (${exRest}s) started.`, 'success');
         loadWorkoutPlanFromDb();
       }
     }).catch(() => {});
@@ -1490,7 +1629,8 @@ function toggleSetDone(btn, dayKey, exIdx, setIdx) {
   plan.exercises[exIdx].sets.forEach(s => {
     if (s.done) {
       exCompletedSets++;
-      exVolume += (s.reps || 0) * (s.weight || 0);
+      const numW = (s.weight === 'Bodyweight' || s.weight === 0 || s.weight === '0' || !s.weight) ? 0 : (parseFloat(s.weight) || 0);
+      exVolume += (parseInt(s.reps, 10) || 0) * numW;
     }
   });
   const summaryEl = document.getElementById(`ex-summary-${dayKey}-${exIdx}`);
@@ -1621,7 +1761,7 @@ function promptAddExercise() {
     name: name.trim(),
     muscle: 'Full Body Compound',
     equipment: 'Free Weights / Machine',
-    image: 'assets/images/bench_press.jpg',
+    image: 'assets/images/exercise_placeholder.svg',
     target: 'Target: 4 sets × 10 reps @ 50.0 kg',
     sets: [
       { set: 1, reps: 10, weight: 40.0, done: false },
@@ -1922,6 +2062,7 @@ async function renderExerciseLibrary(filterMuscle = 'all', searchQuery = '') {
     if (res.ok) {
       const json = await res.json();
       if (json.success && Array.isArray(json.exercises)) {
+        window.__HAS_SERVER_EXERCISES__ = true;
         if (window.fitSyncStore) {
           window.fitSyncStore.state.exerciseLibrary = json.exercises;
         }
@@ -1955,7 +2096,7 @@ async function renderExerciseLibrary(filterMuscle = 'all', searchQuery = '') {
   if (filtered.length === 0) {
     container.innerHTML = `
       <div style="grid-column: 1 / -1; background: #FFFFFF; border: 1px dashed var(--border-color); border-radius: var(--radius-lg); padding: 48px 24px; text-align: center;">
-        <div style="font-size: 36px; margin-bottom: 10px;">🔍</div>
+        <div style="margin-bottom: 10px; color: #94A3B8; display: flex; justify-content: center;"><i data-lucide="search" style="width: 34px; height: 34px;"></i></div>
         <h4 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">No exercises found matching criteria</h4>
         <p style="font-size: 13px; color: var(--text-secondary); max-width: 400px; margin: 0 auto 16px auto;">Try clearing your search query or selecting a different muscle group from the anatomy diagram.</p>
         <button type="button" class="btn-primary-block" style="width: auto; margin: 0 auto; padding: 8px 18px;" onclick="document.getElementById('exerciseSearchInput').value=''; currentExerciseSearch=''; selectMuscle('all');">
@@ -1973,7 +2114,7 @@ async function renderExerciseLibrary(filterMuscle = 'all', searchQuery = '') {
     html += `
       <div class="ex-library-card">
         <div class="ex-library-card-img-wrap" onclick="showExerciseDetailModal('${ex.id}')">
-          <img src="${ex.image || 'assets/images/ex_flat_bench.jpg'}" class="ex-library-card-img" alt="${ex.name}" onerror="this.src='assets/images/ex_flat_bench.jpg'">
+          <img src="${escapeHtml(ex.image || 'assets/images/exercise_placeholder.svg')}" class="ex-library-card-img" alt="${escapeHtml(ex.name)}" onerror="this.src='assets/images/exercise_placeholder.svg'">
           <span class="ex-library-diff-badge ${diffClass}">${ex.difficulty || 'Intermediate'}</span>
         </div>
         <div class="ex-library-muscle-tag" title="${ex.muscle}">
@@ -2020,8 +2161,8 @@ function showExerciseDetailModal(exId) {
 
   if (titleEl) titleEl.textContent = ex.name;
   if (imgEl) {
-    imgEl.src = ex.image || 'assets/images/ex_flat_bench.jpg';
-    imgEl.onerror = () => { imgEl.src = 'assets/images/ex_flat_bench.jpg'; };
+    imgEl.src = ex.image || 'assets/images/exercise_placeholder.svg';
+    imgEl.onerror = () => { imgEl.src = 'assets/images/exercise_placeholder.svg'; };
   }
   if (diffEl) {
     diffEl.textContent = ex.difficulty || 'Intermediate';
@@ -3335,11 +3476,15 @@ async function renderWaterLogs(passedLogs) {
   try {
     let logs = passedLogs;
     if (!logs) {
-      const res = await fetch('api/water.php');
+      const res = await fetch(`api/water.php?local_date=${encodeURIComponent(getLocalDateStr())}`);
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
           logs = json.data.logs || [];
+          if (window.__WATER_STATE__ && window.__WATER_STATE__.inFlightCount === 0) {
+            window.__WATER_STATE__.totalMl = Number(json.data.total_ml ?? 0);
+            window.__WATER_STATE__.logs = logs;
+          }
         }
       }
     }
@@ -3391,11 +3536,15 @@ async function deleteWaterEntry(id) {
     const res = await fetch('api/water.php', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: id })
+      body: JSON.stringify({ id: id, local_date: getLocalDateStr() })
     });
     const json = await res.json();
     if (json.success && json.data) {
       const state = window.fitSyncStore?.state;
+      if (window.__WATER_STATE__) {
+        window.__WATER_STATE__.totalMl = Number(json.data.total_ml ?? 0);
+        window.__WATER_STATE__.logs = json.data.logs || [];
+      }
       if (state?.stats?.water) state.stats.water.current = json.data.liters;
       if (state?.waterStation) state.waterStation.current = json.data.liters;
       updateDashboardUI();
@@ -3410,7 +3559,7 @@ async function deleteWaterEntry(id) {
 }
 
 // ==========================================================================
-// ATTENDANCE & TURNSTILE OVERHAUL LOGIC (Authoritative Database CRUD)
+// ATTENDANCE & CHECK-IN LOGIC (Authoritative Database CRUD)
 // ==========================================================================
 async function renderAttendanceView() {
   const tbody = document.getElementById('attendanceLogsTbody');
@@ -3423,17 +3572,13 @@ async function renderAttendanceView() {
       const payload = (json.data && typeof json.data === 'object' && !Array.isArray(json.data)) ? json.data : {};
       const records = Array.isArray(payload.logs) ? payload.logs : (Array.isArray(json.data) ? json.data : (Array.isArray(json.history) ? json.history : []));
 
-      const user = window.__AUTHENTICATED_USER__ || window.fitSyncStore?.state?.user || {};
-      const passIdEl = document.getElementById('attPassId');
-      if (passIdEl && user.id) passIdEl.textContent = `FS-PASS-${String(user.id).padStart(4, '0')}`;
-
       if (records.length === 0) {
         tbody.innerHTML = `
           <tr>
             <td colspan="5" style="text-align: center; padding: 36px 16px; color: var(--text-secondary);">
-              <i data-lucide="qr-code" style="width: 28px; height: 28px; margin: 0 auto 8px; opacity: 0.4; display: block;"></i>
+              <i data-lucide="calendar-check" style="width: 28px; height: 28px; margin: 0 auto 8px; opacity: 0.4; display: block;"></i>
               <strong style="color: var(--text-main); display: block; margin-bottom: 4px;">No Check-Ins Recorded Yet</strong>
-              <span style="font-size: 12px; color: var(--text-muted);">Scan your QR pass or click "Simulate Check-In" to record turnstile entry.</span>
+              <span style="font-size: 12px; color: var(--text-muted);">Click "Check In Today" to record your gym attendance.</span>
             </td>
           </tr>`;
         if (typeof initIcons === 'function') initIcons();
@@ -3458,10 +3603,10 @@ async function renderAttendanceView() {
             </td>
             <td>
               <div style="font-size: 13px; color: #0F172A;">${escapeHtml(gymName)}</div>
-              <span style="font-size: 11px; color: #64748B;">Turnstile Gate #1</span>
+              <span style="font-size: 11px; color: #64748B;">Front Desk / Check-In</span>
             </td>
             <td>
-              <span class="fs-badge fs-badge-blue">${escapeHtml(r.check_in_method || 'Turnstile QR')}</span>
+              <span class="fs-badge fs-badge-blue">${escapeHtml(r.check_in_method || 'Gym Check-In')}</span>
             </td>
             <td>
               <span class="fs-badge fs-badge-green" style="display: inline-flex; align-items: center; gap: 4px;">
@@ -3474,53 +3619,6 @@ async function renderAttendanceView() {
     }
   } catch (err) {
     console.warn('Attendance load error:', err);
-  }
-}
-
-async function simulateTurnstileCheckIn() {
-  const dash = window._latestDashboardData || window.__CURRENT_DASHBOARD__ || {};
-  const membership = dash.membership || {};
-  const gymId = membership.gym_id ? parseInt(membership.gym_id, 10) : 1;
-
-  try {
-    const res = await fetch('api/attendance.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        gym_id: gymId,
-        action: 'check_in',
-        method: 'turnstile'
-      })
-    });
-    const json = await res.json();
-    const card = document.querySelector('.turnstile-pass-card');
-    if (json.success) {
-      if (card) {
-        card.style.boxShadow = '0 0 30px #22C55E';
-        card.style.borderColor = '#22C55E';
-        setTimeout(() => {
-          card.style.boxShadow = '';
-          card.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-        }, 1500);
-      }
-      showToast(json.message || 'Turnstile Pass Verified • Facility Occupancy Updated!', 'success');
-      renderAttendanceView();
-      loadAttendanceCalendar(currentCalYear, currentCalMonth);
-      syncUserDashboardFromDb();
-    } else {
-      if (card) {
-        card.style.boxShadow = '0 0 24px #EF4444';
-        card.style.borderColor = '#EF4444';
-        setTimeout(() => {
-          card.style.boxShadow = '';
-          card.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-        }, 1500);
-      }
-      showToast(json.message || json.error || 'Check-in rejected.', 'warning');
-    }
-  } catch (err) {
-    console.warn('Attendance sync err:', err);
-    showToast('Server error recording check-in.', 'danger');
   }
 }
 
@@ -3563,7 +3661,6 @@ window.handleSendCoachChat = handleSendCoachChat;
 window.sendQuickPrompt = sendQuickPrompt;
 window.clearCoachChatHistory = clearCoachChatHistory;
 window.renderAttendanceView = renderAttendanceView;
-window.simulateTurnstileCheckIn = simulateTurnstileCheckIn;
 window.exportAttendanceCSV = exportAttendanceCSV;
 
 /* ==========================================================================
@@ -3724,7 +3821,7 @@ async function handleCalendarCheckIn() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="qr-code" style="width: 14px; height: 14px;"></i> Check In to Gym Today';
+      btn.innerHTML = '<i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Check In to Gym Today';
       if (window.initIcons) initIcons();
     }
   }
@@ -3770,7 +3867,13 @@ async function loadUserProfileData() {
     if (nameEl) nameEl.textContent = u.full_name || 'FitSync Athlete';
 
     const avatarEl = document.getElementById('profHeaderAvatar');
-    if (avatarEl && u.avatar) avatarEl.src = u.avatar;
+    const previewEl = document.getElementById('profAvatarPreview');
+    const sideAvatarEl = document.getElementById('sidebarAvatarImg');
+    if (u.avatar) {
+      if (avatarEl) avatarEl.src = u.avatar;
+      if (previewEl) previewEl.src = u.avatar;
+      if (sideAvatarEl) sideAvatarEl.src = u.avatar;
+    }
 
     const ageEl = document.getElementById('profHeaderAge');
     if (ageEl) ageEl.textContent = u.age ? `${u.age} Years` : '--';
@@ -4049,29 +4152,106 @@ async function deleteMilestoneMeasurement(id) {
   }
 }
 
+function fitSyncValidateImageFile(file) {
+  if (!file) return { valid: true };
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowed.includes(file.type)) {
+    return { valid: false, message: 'Unsupported image format. Please select a JPG, PNG, or WEBP image.' };
+  }
+  if (file.size <= 0 || file.size > 5 * 1024 * 1024) {
+    return { valid: false, message: 'Image file size must be between 1 byte and 5 MB.' };
+  }
+  return { valid: true };
+}
+
+function previewUserProfilePhoto(inputEl) {
+  const file = inputEl?.files?.[0];
+  const prev = document.getElementById('profAvatarPreview');
+  if (!file) return;
+  const chk = fitSyncValidateImageFile(file);
+  if (!chk.valid) {
+    if (typeof showToast === 'function') showToast(chk.message, 'danger');
+    else alert(chk.message);
+    inputEl.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (prev && reader.result) prev.src = String(reader.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function removeUserProfileAvatar() {
+  try {
+    const res = await fetch('api/user/profile.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove_avatar' })
+    });
+    const result = await res.json();
+    if (result.success) {
+      const defAv = result.data?.avatar || 'assets/images/aarav.jpg';
+      ['profHeaderAvatar', 'profAvatarPreview', 'sidebarAvatarImg'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.src = defAv;
+      });
+      const fileInp = document.getElementById('profInputAvatarFile');
+      if (fileInp) fileInp.value = '';
+      const urlInp = document.getElementById('profInputAvatar');
+      if (urlInp) urlInp.value = '';
+      if (typeof showToast === 'function') showToast('Profile photo removed.', 'info');
+    } else {
+      if (typeof showToast === 'function') showToast(result.message || 'Unable to remove photo.', 'danger');
+    }
+  } catch (err) {
+    console.error('Remove avatar err:', err);
+  }
+}
+
 async function handleSaveProfileDetails(e) {
   if (e && e.preventDefault) e.preventDefault();
 
   const fullName = document.getElementById('profInputFullName')?.value.trim();
   const mobile   = document.getElementById('profInputMobile')?.value.trim();
   const avatar   = document.getElementById('profInputAvatar')?.value.trim();
+  const fileEl   = document.getElementById('profInputAvatarFile');
+  const avatarFile = fileEl?.files?.[0] || null;
 
   if (!fullName) {
     alert('Full name is required.');
     return;
   }
+  if (avatarFile) {
+    const chk = fitSyncValidateImageFile(avatarFile);
+    if (!chk.valid) {
+      if (typeof showToast === 'function') showToast(chk.message, 'danger');
+      else alert(chk.message);
+      return;
+    }
+  }
 
   try {
-    const res = await fetch('api/user/profile.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'save_profile_details',
-        full_name: fullName,
-        mobile: mobile,
-        avatar_url: avatar
-      })
-    });
+    let res;
+    if (avatarFile) {
+      const fd = new FormData();
+      fd.append('action', 'save_profile_details');
+      fd.append('full_name', fullName);
+      fd.append('mobile', mobile || '');
+      fd.append('profile_photo', avatarFile);
+      res = await fetch('api/user/profile.php', { method: 'POST', body: fd });
+    } else {
+      res = await fetch('api/user/profile.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save_profile_details',
+          full_name: fullName,
+          mobile: mobile,
+          avatar_url: avatar
+        })
+      });
+    }
     const result = await res.json();
     if (result.success) {
       if (typeof showToast === 'function') {
@@ -4080,34 +4260,30 @@ async function handleSaveProfileDetails(e) {
         alert('Profile saved!');
       }
 
-      // Update UI elements across header, sidebar and store
+      const finalAvatar = result.data?.avatar || avatar;
       if (window.fitSyncStore?.state?.user) {
         window.fitSyncStore.state.user.name = fullName;
         window.fitSyncStore.state.user.full_name = fullName;
         if (mobile) window.fitSyncStore.state.user.mobile = mobile;
       }
 
-      const headerName = document.getElementById('profHeaderName');
-      if (headerName) headerName.textContent = fullName;
-
-      const userNameEl = document.getElementById('userName');
-      if (userNameEl) userNameEl.textContent = fullName;
-
-      const sidebarName = document.getElementById('sidebarUserName');
-      if (sidebarName) sidebarName.textContent = fullName;
-
-      const welcomeName = document.getElementById('welcomeName');
-      if (welcomeName) welcomeName.textContent = fullName;
+      ['profHeaderName', 'userName', 'sidebarUserName', 'welcomeName'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = fullName;
+      });
       updateWelcomeGreeting(fullName);
 
-      if (avatar) {
-        const headerAvatar = document.getElementById('profHeaderAvatar');
-        if (headerAvatar) headerAvatar.src = avatar;
+      if (finalAvatar) {
+        ['profHeaderAvatar', 'profAvatarPreview', 'sidebarAvatarImg'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.src = finalAvatar;
+        });
       }
+      if (fileEl) fileEl.value = '';
 
       loadUserProfileData();
     } else {
-      if (typeof showToast === 'function') showToast(result.error || 'Failed to update profile.', 'danger');
+      if (typeof showToast === 'function') showToast(result.message || result.error || 'Failed to update profile.', 'danger');
     }
   } catch (err) {
     console.error('Error saving profile details:', err);
@@ -4329,17 +4505,17 @@ function renderGymsDirectoryFromCache() {
 
     return `
       <div class="gym-card">
-        <img src="${escapeHtml(coverImg)}" class="gym-card-img" alt="${escapeHtml(g.name)}" onerror="this.src='assets/images/bench_press.jpg'">
+        <img src="${escapeHtml(coverImg)}" class="gym-card-img" alt="${escapeHtml(g.name)}" onerror="this.src='assets/images/gym_fitzone.jpg'">
         <div class="gym-card-body">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <h4 style="font-size: 15px; font-weight: 700;">${escapeHtml(g.name)}</h4>
             ${isCurrentGym ? `<span class="badge-active">${escapeHtml(String(current.status).toUpperCase())}</span>` : `<span class="stat-badge-pill badge-healthy">Open for Enrollment</span>`}
           </div>
           <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${escapeHtml(g.address_line1 || '')}${g.city ? ', ' + escapeHtml(g.city) : ''} • ${g.rating || '4.8'} ★</p>
-          <p style="font-size: 11px; color: #64748B; margin-bottom: 4px;">⏰ ${escapeHtml(g.hours_summary || 'Hours configured by gym')} • 📞 ${escapeHtml(g.phone || '--')}</p>
+          <p style="font-size: 11px; color: #64748B; margin-bottom: 4px; display:flex; align-items:center; gap:4px;"><i data-lucide="clock" style="width:12px;height:12px;"></i> ${escapeHtml(g.hours_summary || 'Hours configured by gym')} • <i data-lucide="phone" style="width:12px;height:12px;"></i> ${escapeHtml(g.phone || '--')}</p>
           ${g.description ? `<p style="font-size: 11px; color: #475569; margin-bottom: 6px; line-height: 1.4;">${escapeHtml(g.description)}</p>` : ''}
           ${facTags.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">${facTags.map(f => `<span class="tag-badge">${escapeHtml(f)}</span>`).join('')}</div>` : ''}
-          ${eqSummary ? `<div style="font-size:11px;color:#64748B;margin-bottom:8px;">⚙️ ${escapeHtml(eqSummary)}</div>` : ''}
+          ${eqSummary ? `<div style="font-size:11px;color:#64748B;margin-bottom:8px;display:flex;align-items:center;gap:4px;"><i data-lucide="dumbbell" style="width:12px;height:12px;"></i> ${escapeHtml(eqSummary)}</div>` : ''}
           <div style="margin-top: auto; display: flex; flex-direction: column; gap: 6px;">
             ${planButtonsHtml || '<div style="font-size:12px;color:#64748B;">Contact gym desk for membership pricing.</div>'}
             ${enrollBtnHtml}
@@ -4529,7 +4705,7 @@ async function loadMembershipPortalData(forceRender = false) {
         titleEl.textContent = `${current.gym_name || 'FitSync Partner Gym'} — ${current.plan_name || 'Membership Plan'}`;
       }
       if (metaEl) {
-        metaEl.textContent = `Requested: ${(current.created_at || current.start_date || '--').slice(0, 10)} • Valid Till: ${current.end_date || 'Pending Approval'} • Amount: ₹${Number(current.price || 0).toLocaleString()} • Pass Token: ${current.qr_code_token || 'Pending'}`;
+        metaEl.textContent = `Requested: ${(current.created_at || current.start_date || '--').slice(0, 10)} • Valid Till: ${current.end_date || 'Pending Approval'} • Amount: ₹${Number(current.price || 0).toLocaleString()}`;
       }
       if (extraEl) {
         let ownerResp = 'Awaiting Gym Owner review';
@@ -4546,7 +4722,7 @@ async function loadMembershipPortalData(forceRender = false) {
       if (actionsEl) {
         let btns = '';
         if (st === 'ACTIVE') {
-          btns += `<button type="button" class="btn-primary-block" style="width: auto; padding: 8px 18px;" onclick="switchView('attendance')">Open Turnstile Pass</button>`;
+          btns += `<button type="button" class="btn-primary-block" style="width: auto; padding: 8px 18px;" onclick="switchView('attendance')">View Attendance</button>`;
           btns += `<button type="button" class="btn-secondary" style="padding: 8px 16px;" onclick="openEnrollConfirmationModal(${current.gym_id}, ${current.plan_id}, true)">Renew Plan</button>`;
         }
         if (st === 'ACTIVE' || st === 'PENDING') {
@@ -4773,7 +4949,7 @@ async function requestGymMembership(gymId, planId, isRenewal = false) {
 }
 
 async function cancelMyMembership(membershipId) {
-  if (!confirm('Are you sure you want to cancel this gym membership? Turnstile check-in access will be disabled.')) return;
+  if (!confirm('Are you sure you want to cancel this gym membership? Gym check-in access will be disabled.')) return;
   try {
     const res = await fetch('api/user/membership.php', {
       method: 'POST',
@@ -4799,71 +4975,415 @@ async function cancelMyMembership(membershipId) {
 // ==========================================================================
 // ASSIGNED WORKOUT SYNCHRONIZATION & SESSION LOGGING (DB-Backed)
 // ==========================================================================
+let lastSplitSyncSig = '';
+
+function normalizeDayKey(day, idx = 0) {
+  const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const code = String(day?.day_code || '').trim().toLowerCase().slice(0, 3);
+  if (dayKeys.includes(code)) return code;
+  const num = parseInt(day?.day_number || (idx + 1), 10);
+  if (num >= 1 && num <= 7) return dayKeys[num - 1];
+  return dayKeys[idx % 7];
+}
+
 function applyServerWorkoutData(workoutData) {
   if (!workoutData) return;
   window.__LATEST_WORKOUT_DATA__ = workoutData;
+  window.__HAS_SERVER_WORKOUT_SYNC__ = true;
 
   const activePlan = workoutData.plan || workoutData.active_plan || null;
   const days = Array.isArray(workoutData.days) ? workoutData.days : [];
+  const activeSession = workoutData.active_session || null;
   const sessions = Array.isArray(workoutData.sessions) ? workoutData.sessions : (Array.isArray(workoutData.completed_sessions) ? workoutData.completed_sessions : []);
 
-  // Map server assigned plan days into FitSyncStore's workoutPlans structure if present
-  if (activePlan && days.length > 0 && window.fitSyncStore?.state?.workouts) {
-    const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-    const mappedPlans = {};
-    days.forEach((day, idx) => {
-      const key = dayKeys[(parseInt(day.day_number || idx + 1, 10) - 1) % 7] || `day${idx + 1}`;
-      const exercises = Array.isArray(day.exercises) ? day.exercises : [];
-      mappedPlans[key] = {
-        planDayId: day.id,
-        dayName: day.focus_area || day.day_name || `Day ${day.day_number || idx + 1}`,
-        dayKey: key,
-        isRest: exercises.length === 0,
-        exercises: exercises.map(ex => {
-          const targetSets = parseInt(ex.target_sets || 3, 10);
-          const repsVal = parseInt(String(ex.target_reps || '10').replace(/[^\d].*$/, ''), 10) || 10;
+  const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const fullDayNames = {
+    mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
+    fri: 'Friday', sat: 'Saturday', sun: 'Sunday'
+  };
+
+  const todayInfo = syncWorkoutTodayIndicator();
+  const prevPlanId = window.__ACTIVE_ASSIGNED_PLAN_ID__ || null;
+  const nextPlanId = activePlan ? (activePlan.plan_id || activePlan.id || null) : null;
+  const planChanged = prevPlanId !== nextPlanId;
+  window.__ACTIVE_ASSIGNED_PLAN_ID__ = nextPlanId;
+
+  const splitSig = JSON.stringify({ activePlan, days, activeSession });
+
+  if (window.fitSyncStore?.state) {
+    if (!window.fitSyncStore.state.workouts) window.fitSyncStore.state.workouts = {};
+
+    if (!activePlan) {
+      window.fitSyncStore.state.workoutPlans = {};
+      window.fitSyncStore.state.workouts.plans = {};
+      window.fitSyncStore.state.workouts.assignedPlanTitle = 'No Active Plan';
+      window.fitSyncStore.state.workouts.assignedPlanMeta = '';
+      if (splitSig !== lastSplitSyncSig) {
+        lastSplitSyncSig = splitSig;
+        selectWorkoutDay(currentWorkoutDay || todayInfo.key);
+      }
+    } else if (splitSig !== lastSplitSyncSig) {
+      lastSplitSyncSig = splitSig;
+
+      // Map logged sets from any active in-progress/paused session so mid-session progress is preserved
+      const loggedSetMap = {};
+      if (activeSession && Array.isArray(activeSession.exercises_performed)) {
+        activeSession.exercises_performed.forEach(ep => {
+          const eid = parseInt(ep.exercise_id, 10);
+          const snum = parseInt(ep.set_number, 10);
+          if (!loggedSetMap[eid]) loggedSetMap[eid] = {};
+          loggedSetMap[eid][snum] = ep;
+        });
+      }
+
+      const planUpdatedMs = activePlan.plan_updated_at ? Date.parse(String(activePlan.plan_updated_at).replace(' ', 'T')) : 0;
+      const sessionStartMs = activeSession?.start_time ? Date.parse(String(activeSession.start_time).replace(' ', 'T')) : 0;
+      const hasMidSessionUpdate = Boolean(activeSession && planUpdatedMs && sessionStartMs && planUpdatedMs > sessionStartMs);
+
+      const mappedPlans = {};
+      const byKey = {};
+      days.forEach((d, idx) => {
+        byKey[normalizeDayKey(d, idx)] = d;
+      });
+
+      const coachName = activePlan.coach_name || activePlan.trainer_name || 'Assigned Coach';
+      const splitLabel = activePlan.split_type || 'Custom Split';
+      const diffLabel = activePlan.difficulty ? (activePlan.difficulty.charAt(0).toUpperCase() + activePlan.difficulty.slice(1)) : 'Intermediate';
+
+      dayKeys.forEach((key, idx) => {
+        const day = byKey[key] || null;
+        const fullLabel = fullDayNames[key];
+        const rawExercises = day && Array.isArray(day.exercises) ? day.exercises : [];
+        const dayType = day
+          ? (day.day_type || (parseInt(day.is_rest_day || 0, 10) ? 'rest' : 'training'))
+          : 'rest';
+        const isRest = dayType === 'rest' || rawExercises.length === 0;
+        const planDayId = day ? day.id : null;
+        const isCurrentActiveSessionDay = Boolean(activeSession && planDayId && parseInt(activeSession.plan_day_id, 10) === parseInt(planDayId, 10));
+
+        const mappedExercises = isRest ? [] : rawExercises.map(ex => {
+          const rawSets = Array.isArray(ex.sets) && ex.sets.length > 0 ? ex.sets : [];
+          const targetSets = rawSets.length > 0 ? rawSets.length : Math.max(1, parseInt(ex.target_sets || 3, 10));
+          const defaultRepsLabel = String(ex.target_reps || '10');
+          const defaultRepsNum = parseInt(defaultRepsLabel.replace(/[^\d].*$/, ''), 10) || 10;
+          const defaultWeightRaw = ex.target_weight !== undefined && ex.target_weight !== null && ex.target_weight !== ''
+            ? parseFloat(ex.target_weight)
+            : (ex.target_weight_kg !== undefined && ex.target_weight_kg !== null && ex.target_weight_kg !== '' ? parseFloat(ex.target_weight_kg) : 0);
+          const defaultUnit = ex.weight_unit || 'kg';
+          const defaultRest = parseInt(ex.rest_seconds ?? 90, 10);
+          const durationSec = ex.duration_seconds ? parseInt(ex.duration_seconds, 10) : null;
+
           const setsArr = [];
           for (let s = 1; s <= targetSets; s++) {
+            const setRow = rawSets[s - 1] || null;
+            const logged = isCurrentActiveSessionDay ? (loggedSetMap[parseInt(ex.exercise_id, 10)]?.[s] || null) : null;
+            const sRepsLabel = setRow ? String(setRow.target_reps || defaultRepsLabel) : defaultRepsLabel;
+            const sRepsNum = logged ? parseInt(logged.reps_completed, 10) : (parseInt(sRepsLabel.replace(/[^\d].*$/, ''), 10) || defaultRepsNum);
+            const sWeightRaw = logged
+              ? parseFloat(logged.weight_kg || 0)
+              : (setRow && setRow.target_weight !== undefined && setRow.target_weight !== null && setRow.target_weight !== '' ? parseFloat(setRow.target_weight) : defaultWeightRaw);
+            const sUnit = logged ? (logged.weight_unit || defaultUnit) : ((setRow && setRow.weight_unit) || defaultUnit);
+            const sRest = setRow && setRow.rest_seconds !== undefined ? parseInt(setRow.rest_seconds, 10) : defaultRest;
+
             setsArr.push({
-              set: s,
-              reps: repsVal,
-              weight: ex.target_weight_kg && parseFloat(ex.target_weight_kg) > 0 ? parseFloat(ex.target_weight_kg) : 'Bodyweight',
-              done: false,
+              set: setRow ? parseInt(setRow.set_number || s, 10) : s,
+              reps: sRepsNum,
+              targetRepsLabel: sRepsLabel,
+              weight: sWeightRaw > 0 ? sWeightRaw : 'Bodyweight',
+              weight_unit: sUnit,
+              rest_seconds: sRest,
+              is_warmup: setRow ? Boolean(parseInt(setRow.is_warmup || 0, 10)) : false,
+              done: Boolean(logged && parseInt(logged.is_completed ?? 1, 10) === 1),
               exerciseId: ex.exercise_id,
-              planDayId: day.id
+              planDayId: planDayId
             });
           }
+
+          const weightSummary = defaultWeightRaw > 0 ? ` @ ${defaultWeightRaw} ${defaultUnit}` : ' (Bodyweight)';
+          const durSummary = durationSec ? ` • ${durationSec}s work` : '';
+          const restSummary = defaultRest > 0 ? ` • ${defaultRest}s rest` : '';
+
           return {
             exercise_id: ex.exercise_id,
-            plan_day_id: day.id,
+            plan_day_exercise_id: ex.plan_day_exercise_id || null,
+            plan_day_id: planDayId,
             name: ex.exercise_name || ex.name || 'Exercise',
             muscle: ex.muscle_group_name || ex.muscle_group || 'Full Body',
             equipment: ex.equipment_required || ex.equipment_needed || 'Gym Equipment',
-            target: `Target: ${targetSets} sets × ${ex.target_reps || '10'} reps`,
-            image: ex.image_path || 'assets/images/bench_press.jpg',
+            form_cues: ex.form_cues || '',
+            exercise_notes: ex.exercise_notes || '',
+            rest_seconds: defaultRest,
+            duration_seconds: durationSec,
+            tempo: ex.tempo || '',
+            superset_group: ex.superset_group || '',
+            weight_unit: defaultUnit,
+            target: `Target: ${targetSets} sets × ${defaultRepsLabel} reps${weightSummary}${durSummary}${restSummary}`,
+            image: ex.image_path || 'assets/images/exercise_placeholder.svg',
             sets: setsArr
           };
-        })
-      };
-    });
+        });
 
-    window.fitSyncStore.state.workouts.assignedPlanTitle = activePlan.plan_name || activePlan.name || activePlan.title || 'Assigned Training Plan';
-    window.fitSyncStore.state.workouts.assignedPlanMeta = `${activePlan.goal || activePlan.goal_focus || 'Strength'} • Coach: ${activePlan.trainer_name || 'Assigned Coach'}`;
-    window.fitSyncStore.state.workouts.plans = Object.assign({}, window.fitSyncStore.state.workouts.plans || {}, mappedPlans);
+        const estMins = isRest ? 0 : Math.max(20, Math.round(mappedExercises.reduce((acc, ex) => acc + (ex.sets.length * 2.5), 0)));
 
-    const firstActiveKey = Object.keys(mappedPlans)[0];
-    if (firstActiveKey && document.getElementById('view-workouts')?.classList.contains('active')) {
-      if (typeof renderWorkoutExercises === 'function') {
-        renderWorkoutExercises(mappedPlans[firstActiveKey]);
+        mappedPlans[key] = {
+          planDayId: planDayId,
+          plan_day_id: planDayId,
+          dayKey: key,
+          dayName: fullLabel,
+          dayType: dayType,
+          isRest: isRest,
+          midSessionUpdateNotice: isCurrentActiveSessionDay && hasMidSessionUpdate,
+          badge: `${fullLabel.toUpperCase()}'S ROUTINE`,
+          subBadge: isRest ? (dayType === 'active_recovery' ? 'Active Recovery' : 'Scheduled Rest Day') : (activePlan.plan_name || 'Assigned Routine'),
+          title: day?.focus_area || day?.day_name || (isRest ? 'Rest & Muscle Recovery' : `${fullLabel} Training`),
+          tagline: isRest
+            ? `Coach ${coachName} • Recovery & Mobility`
+            : `${splitLabel} • ${diffLabel} • Coach: ${coachName}`,
+          duration: isRest ? 'Rest Day' : `${estMins} mins`,
+          exercises: mappedExercises
+        };
+      });
+
+      window.fitSyncStore.state.workouts.assignedPlanTitle = activePlan.plan_name || activePlan.name || activePlan.title || 'Assigned Training Plan';
+      window.fitSyncStore.state.workouts.assignedPlanMeta = `${activePlan.goal || activePlan.goal_focus || 'Strength'} • Coach: ${coachName}`;
+      window.fitSyncStore.state.workoutPlans = mappedPlans;
+      window.fitSyncStore.state.workouts.plans = mappedPlans;
+
+      const targetKey = planChanged ? todayInfo.key : (mappedPlans[currentWorkoutDay] ? currentWorkoutDay : todayInfo.key);
+      const rightThumb = document.getElementById('rightWkThumb');
+      const todayPlan = mappedPlans[todayInfo.key] || mappedPlans[targetKey] || null;
+      if (rightThumb && todayPlan) {
+        const firstExImg = todayPlan.exercises?.[0]?.image;
+        rightThumb.src = firstExImg || 'assets/images/exercise_placeholder.svg';
       }
-      if (typeof updateWorkoutHeaderStats === 'function') {
-        updateWorkoutHeaderStats(mappedPlans[firstActiveKey]);
-      }
+      selectWorkoutDay(targetKey);
     }
   }
 
   renderWorkoutModalList(workoutData);
   renderCompletedWorkoutsHistory(sessions);
+  renderMemberAssignedWorkoutPanel(workoutData);
+}
+
+let lastMemberWorkoutPanelSig = '';
+let selectedMemberPlanDayNum = (new Date().getDay() === 0 ? 7 : new Date().getDay());
+
+function renderMemberAssignedWorkoutPanel(workoutData) {
+  const host = document.getElementById('memberAssignedWorkoutPanel');
+  if (!host || !workoutData) return;
+
+  const sig = JSON.stringify({
+    plan: workoutData.plan || null,
+    days: workoutData.days || [],
+    active_session: workoutData.active_session || null,
+    prs: workoutData.personal_records || [],
+    day: selectedMemberPlanDayNum
+  });
+  if (sig === lastMemberWorkoutPanelSig) return;
+  lastMemberWorkoutPanelSig = sig;
+
+  const plan = workoutData.plan || null;
+  const days = Array.isArray(workoutData.days) ? workoutData.days : [];
+  const activeSession = workoutData.active_session || null;
+  const prs = Array.isArray(workoutData.personal_records) ? workoutData.personal_records : [];
+
+  if (!plan) {
+    host.innerHTML = `
+      <div class="fs-card" style="border: 1px dashed #CBD5E1; background: #F8FAFC;">
+        <h3 class="card-title" style="margin-bottom: 4px;">My Assigned Workout Plan</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">No workout plan has been assigned by your Trainer yet. Once your coach assigns a program, your weekly schedule and exercise prescriptions will appear here automatically.</p>
+      </div>`;
+    return;
+  }
+
+  const activeDayObj = days.find(d => parseInt(d.day_number, 10) === selectedMemberPlanDayNum) || days[0] || null;
+  const dayButtonsHtml = days.map(d => {
+    const dNum = parseInt(d.day_number, 10);
+    const isSel = activeDayObj && parseInt(activeDayObj.day_number, 10) === dNum;
+    const dType = d.day_type || (parseInt(d.is_rest_day || 0, 10) ? 'rest' : 'training');
+    const tag = dType === 'rest' ? 'Rest' : (dType === 'active_recovery' ? 'Recovery' : `${(d.exercises || []).length} ex`);
+    return `<button type="button" onclick="selectMemberPlanDay(${dNum})" style="padding:7px 12px;border-radius:8px;border:1px solid ${isSel ? '#2563EB' : '#E2E8F0'};background:${isSel ? '#EFF6FF' : '#fff'};color:${isSel ? '#1D4ED8' : '#334155'};font-size:12px;font-weight:600;cursor:pointer;">
+      ${escapeHtml(String(d.day_name || '').slice(0, 3))} <span style="font-size:10px;opacity:0.8;">(${tag})</span>
+    </button>`;
+  }).join('');
+
+  const loggedMap = {};
+  if (activeSession && Array.isArray(activeSession.exercises_performed)) {
+    activeSession.exercises_performed.forEach(ep => {
+      if (!loggedMap[ep.exercise_id]) loggedMap[ep.exercise_id] = {};
+      loggedMap[ep.exercise_id][ep.set_number] = ep;
+    });
+  }
+
+  let dayDetailHtml = '';
+  if (activeDayObj) {
+    const dType = activeDayObj.day_type || (parseInt(activeDayObj.is_rest_day || 0, 10) ? 'rest' : 'training');
+    if (dType === 'rest') {
+      dayDetailHtml = `<div style="padding:20px;text-align:center;background:#F8FAFC;border-radius:10px;color:#64748B;font-size:13px;"><strong>${escapeHtml(activeDayObj.day_name)} — Rest &amp; Recovery Day</strong><br>Focus on hydration, sleep, and mobility.</div>`;
+    } else {
+      const exs = Array.isArray(activeDayObj.exercises) ? activeDayObj.exercises : [];
+      dayDetailHtml = exs.map((ex, idx) => {
+        const sets = Array.isArray(ex.sets) && ex.sets.length > 0
+          ? ex.sets
+          : Array.from({ length: parseInt(ex.target_sets || 3, 10) }, (_, i) => ({
+              set_number: i + 1,
+              target_reps: ex.target_reps || '8-12',
+              target_weight: ex.target_weight,
+              weight_unit: ex.weight_unit || 'kg',
+              rest_seconds: ex.rest_seconds || 90
+            }));
+
+        const setsHtml = sets.map(s => {
+          const sNum = parseInt(s.set_number, 10);
+          const logged = loggedMap[ex.exercise_id]?.[sNum] || null;
+          const defW = logged ? logged.weight_kg : (s.target_weight !== null && s.target_weight !== undefined ? s.target_weight : 0);
+          const defR = logged ? logged.reps_completed : (parseInt(String(s.target_reps || '10').split('-')[0], 10) || 10);
+          const wUnit = s.weight_unit || ex.weight_unit || 'kg';
+          return `<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:7px 10px;background:${logged ? '#F0FDF4' : '#F8FAFC'};border:1px solid ${logged ? '#86EFAC' : '#E2E8F0'};border-radius:8px;margin-top:6px;font-size:12px;">
+            <div>
+              <strong>Set ${sNum}</strong>: Target <strong>${escapeHtml(s.target_reps)} reps</strong>${s.target_weight ? ` @ <strong>${s.target_weight} ${escapeHtml(wUnit)}</strong>` : ''} • Rest ${s.rest_seconds || ex.rest_seconds || 90}s
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="number" step="0.5" min="0" id="mSetW-${ex.exercise_id}-${sNum}" value="${defW}" style="width:68px;padding:4px 6px;border:1px solid #CBD5E1;border-radius:6px;font-size:12px;" title="Actual Weight">
+              <span style="font-size:11px;color:#64748B;">${escapeHtml(wUnit)}</span>
+              <input type="number" min="1" id="mSetR-${ex.exercise_id}-${sNum}" value="${defR}" style="width:58px;padding:4px 6px;border:1px solid #CBD5E1;border-radius:6px;font-size:12px;" title="Actual Reps">
+              <span style="font-size:11px;color:#64748B;">reps</span>
+              <button type="button" class="btn-primary-block" style="width:auto;padding:5px 10px;font-size:11px;background:${logged ? '#16A34A' : ''};" onclick="logMemberRunnerSet(${activeDayObj.id}, ${ex.exercise_id}, ${sNum}, '${escapeHtml(wUnit)}', ${s.rest_seconds || ex.rest_seconds || 90})">
+                ${logged ? 'Update Set' : 'Log Set'}
+              </button>
+            </div>
+          </div>`;
+        }).join('');
+
+        return `<div style="padding:12px;border:1px solid #E2E8F0;border-radius:10px;background:#fff;margin-top:10px;">
+          <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+            <img src="${escapeHtml(ex.image_path || 'assets/images/exercise_placeholder.svg')}" alt="${escapeHtml(ex.exercise_name)}" onerror="this.src='assets/images/exercise_placeholder.svg'" style="width:68px;height:68px;object-fit:cover;border-radius:8px;flex-shrink:0;">
+            <div style="flex:1;min-width:200px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <strong style="font-size:14px;color:#0F172A;">${idx + 1}. ${escapeHtml(ex.exercise_name)} ${ex.superset_group ? `<span class="badge-active" style="background:#EFF6FF;color:#1D4ED8;">Superset ${escapeHtml(ex.superset_group)}</span>` : ''}</strong>
+                <span style="font-size:11px;color:#64748B;">${escapeHtml(ex.muscle_group_name || '')} • ${escapeHtml(ex.equipment_required || '')}</span>
+              </div>
+              <div style="font-size:12px;color:#475569;margin-top:3px;">${escapeHtml(ex.form_cues || '')}</div>
+              ${ex.exercise_notes ? `<div style="font-size:11px;color:#B45309;background:#FFFBEB;padding:4px 8px;border-radius:6px;margin-top:4px;">Coach Note: ${escapeHtml(ex.exercise_notes)}</div>` : ''}
+            </div>
+          </div>
+          ${setsHtml}
+        </div>`;
+      }).join('');
+    }
+  }
+
+  const prsHtml = prs.length > 0
+    ? `<div style="margin-top:14px;padding-top:12px;border-top:1px solid #E2E8F0;">
+        <div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:8px;">My Personal Records (PRs)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          ${prs.slice(0, 6).map(pr => `<div style="padding:6px 10px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;font-size:12px;">
+            <strong>${escapeHtml(pr.exercise_name)}</strong>: <span style="color:#2563EB;font-weight:700;">${pr.max_weight_kg} kg</span> (${pr.max_reps} max reps)
+          </div>`).join('')}
+        </div>
+      </div>`
+    : '';
+
+  host.innerHTML = `
+    <div class="fs-card" style="border-left: 4px solid #2563EB;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <h3 class="card-title" style="margin:0;">${escapeHtml(plan.plan_name)}</h3>
+            <span class="badge-active">${escapeHtml(String(plan.status || 'active').toUpperCase())}</span>
+          </div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:4px 0 0;">
+            Trainer: <strong>${escapeHtml(plan.coach_name || 'Assigned Coach')}</strong> • ${escapeHtml(plan.split_type || 'Custom Split')} • ${escapeHtml(plan.start_date || '')} to ${escapeHtml(plan.end_date || '')}
+          </p>
+          ${plan.trainer_instructions ? `<p style="font-size:12px;color:#334155;margin:4px 0 0;">Instructions: ${escapeHtml(plan.trainer_instructions)}</p>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          ${!activeSession
+            ? `<button type="button" class="btn-primary-block" style="width:auto;padding:8px 14px;font-size:12px;" onclick="startMemberRunnerSession(${activeDayObj ? activeDayObj.id : 'null'})">Start Workout</button>`
+            : `<span class="badge-active" style="background:#FEF3C7;color:#92400E;">Session ${escapeHtml(activeSession.status.toUpperCase())}</span>
+               ${activeSession.status === 'in_progress'
+                 ? `<button type="button" class="btn-secondary" style="padding:7px 12px;font-size:12px;" onclick="toggleMemberRunnerPause(${activeSession.id}, 'pause_session')">Pause</button>`
+                 : `<button type="button" class="btn-secondary" style="padding:7px 12px;font-size:12px;" onclick="toggleMemberRunnerPause(${activeSession.id}, 'resume_session')">Resume</button>`}
+               <button type="button" class="btn-primary-block" style="width:auto;padding:8px 14px;font-size:12px;background:#16A34A;" onclick="finishMemberRunnerSession(${activeSession.id}, ${activeDayObj ? activeDayObj.id : 'null'})">Finish Workout</button>`}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">${dayButtonsHtml}</div>
+      <div>${dayDetailHtml}</div>
+      ${prsHtml}
+    </div>
+  `;
+}
+
+function selectMemberPlanDay(dayNum) {
+  selectedMemberPlanDayNum = dayNum;
+  if (window.__LAST_WORKOUT_DATA__) renderMemberAssignedWorkoutPanel(window.__LAST_WORKOUT_DATA__);
+}
+
+async function startMemberRunnerSession(planDayId) {
+  const res = await fetch('api/workouts.php', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'start_session', plan_day_id: planDayId })
+  });
+  const j = await res.json();
+  if (j.success) {
+    showToast(j.message || 'Workout started!', 'success');
+    await loadWorkoutPlanFromDb();
+  }
+}
+
+async function toggleMemberRunnerPause(sessionId, action) {
+  const res = await fetch('api/workouts.php', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, session_id: sessionId })
+  });
+  const j = await res.json();
+  if (j.success) {
+    showToast(j.message || 'Updated.', 'info');
+    await loadWorkoutPlanFromDb();
+  }
+}
+
+async function logMemberRunnerSet(planDayId, exerciseId, setNum, weightUnit, restSec) {
+  const w = parseFloat(document.getElementById(`mSetW-${exerciseId}-${setNum}`)?.value || '0');
+  const r = parseInt(document.getElementById(`mSetR-${exerciseId}-${setNum}`)?.value || '10', 10);
+  if (w < 0 || r < 1) { alert('Enter valid non-negative weight and positive reps.'); return; }
+  const activeSid = window.__LAST_WORKOUT_DATA__?.active_session?.id || null;
+  const res = await fetch('api/workouts.php', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'log_set', plan_day_id: planDayId, exercise_id: exerciseId,
+      set_number: setNum, weight_kg: w, weight_unit: weightUnit, reps: r, session_id: activeSid
+    })
+  });
+  const j = await res.json();
+  if (j.success) {
+    showToast(`Set ${setNum} logged (${w}${weightUnit} × ${r})`, 'success');
+    if (typeof setHeaderRestPreset === 'function' && restSec > 0) setHeaderRestPreset(restSec);
+    await loadWorkoutPlanFromDb();
+  } else {
+    alert(j.message || 'Unable to log set.');
+  }
+}
+
+async function finishMemberRunnerSession(sessionId, planDayId) {
+  const rating = prompt('How did the workout feel? (too_easy, just_right, challenging, very_hard)', 'just_right') || 'just_right';
+  const fb = prompt('Any notes or feedback for your coach?', '') || '';
+  const res = await fetch('api/workouts.php', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'complete_session', session_id: sessionId, plan_day_id: planDayId,
+      difficulty_rating: rating.trim(), feedback_text: fb.trim(), duration_minutes: 45
+    })
+  });
+  const j = await res.json();
+  if (j.success) {
+    showToast('Workout completed and synced with your Coach!', 'success');
+    await loadWorkoutPlanFromDb();
+    await syncUserDashboardFromDb();
+  } else {
+    alert(j.message || 'Unable to finish workout.');
+  }
 }
 
 async function loadWorkoutPlanFromDb() {
@@ -4872,6 +5392,7 @@ async function loadWorkoutPlanFromDb() {
     if (!res.ok) return;
     const json = await res.json();
     if (json.success && json.data) {
+      window.__LAST_WORKOUT_DATA__ = json.data;
       applyServerWorkoutData(json.data);
     }
   } catch (err) {
@@ -5036,3 +5557,8 @@ window.resetMealForm = resetMealForm;
 window.deleteMealEntry = deleteMealEntry;
 window.renderWaterLogs = renderWaterLogs;
 window.deleteWaterEntry = deleteWaterEntry;
+window.logWaterAmount = logWaterAmount;
+window.getLocalWorkoutDayInfo = getLocalWorkoutDayInfo;
+window.syncWorkoutTodayIndicator = syncWorkoutTodayIndicator;
+window.previewUserProfilePhoto = previewUserProfilePhoto;
+window.removeUserProfileAvatar = removeUserProfileAvatar;

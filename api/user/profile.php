@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/../../includes/FitSyncDataService.php';
+require_once __DIR__ . '/../../includes/upload_helper.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -171,7 +172,10 @@ if ($method === 'GET') {
             if (isset($prefs['gym_announcements'])) $notifs['gym_announcements'] = (bool)$prefs['gym_announcements'];
         }
 
-        $avatarUrl = !empty($user['avatar_storage_key']) ? $user['avatar_storage_key'] : 'assets/images/member_aarav.jpg';
+        $rawAvatar = !empty($user['avatar_storage_key']) ? (string)$user['avatar_storage_key'] : '';
+        $avatarUrl = function_exists('fitSyncResolveFileUrl')
+            ? fitSyncResolveFileUrl($rawAvatar, 'assets/images/aarav.jpg')
+            : ($rawAvatar !== '' ? $rawAvatar : 'assets/images/aarav.jpg');
 
         apiResponse(true, 'Profile loaded.', [
             'user' => [
@@ -395,6 +399,26 @@ if ($method === 'POST') {
             apiResponse(true, 'Measurement entry deleted.');
         }
 
+        if ($action === 'remove_avatar') {
+            $db->beginTransaction();
+            try {
+                $oldStmt = $db->prepare("SELECT profile_picture_id FROM users WHERE id = :uid LIMIT 1");
+                $oldStmt->execute([':uid' => $userId]);
+                $oldPicId = (int)($oldStmt->fetchColumn() ?: 0);
+
+                $db->prepare("UPDATE users SET profile_picture_id = NULL, updated_at = NOW() WHERE id = :uid")
+                    ->execute([':uid' => $userId]);
+                if ($oldPicId > 0) {
+                    fitSyncDeleteStoredFile($db, $oldPicId);
+                }
+                $db->commit();
+                apiResponse(true, 'Profile photo removed.', ['avatar' => 'assets/images/aarav.jpg']);
+            } catch (Throwable $e) {
+                if ($db->inTransaction()) $db->rollBack();
+                throw $e;
+            }
+        }
+
         if ($action === 'save_profile_details') {
             $fullName = trim((string)($input['full_name'] ?? ''));
             $mobile   = trim((string)($input['mobile'] ?? ''));
@@ -405,42 +429,70 @@ if ($method === 'POST') {
                 apiResponse(false, 'Full name cannot be empty.', null, 400);
             }
 
+            $oldStmt = $db->prepare("SELECT profile_picture_id FROM users WHERE id = :uid LIMIT 1");
+            $oldStmt->execute([':uid' => $userId]);
+            $previousPicId = (int)($oldStmt->fetchColumn() ?: 0);
+
+            $uploadedFileId = null;
+            $uploadedStorageKey = null;
+            $resolvedAvatar = null;
             $db->beginTransaction();
-
-            $profilePicId = null;
-            if (!empty($avatar) && preg_match('#^(assets/|https?://)#i', $avatar)) {
-                $fStmt = $db->prepare("SELECT id FROM files WHERE owner_user_id = :uid AND purpose = 'profile_picture' LIMIT 1");
-                $fStmt->execute([':uid' => $userId]);
-                $existingFileId = $fStmt->fetchColumn();
-                if ($existingFileId) {
-                    $db->prepare("UPDATE files SET storage_key = :sk WHERE id = :fid")->execute([':sk' => $avatar, ':fid' => $existingFileId]);
-                    $profilePicId = (int)$existingFileId;
-                } else {
-                    $db->prepare("
-                        INSERT INTO files (owner_user_id, storage_key, original_name, mime_type, size_bytes, purpose, is_private)
-                        VALUES (:uid, :sk, 'avatar.jpg', 'image/jpeg', 0, 'profile_picture', 0)
-                    ")->execute([':uid' => $userId, ':sk' => $avatar]);
-                    $profilePicId = (int)$db->lastInsertId();
+            try {
+                $profilePicId = null;
+                if (!empty($_FILES['profile_photo']) && (int)($_FILES['profile_photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                    $profilePicId = fitSyncStoreUploadedFile($db, $_FILES['profile_photo'], 'profile_picture', $userId, false, false);
+                    $uploadedFileId = $profilePicId;
+                    if ($profilePicId) {
+                        $skQ = $db->prepare("SELECT storage_key FROM files WHERE id = :fid LIMIT 1");
+                        $skQ->execute([':fid' => $profilePicId]);
+                        $uploadedStorageKey = (string)$skQ->fetchColumn();
+                        $resolvedAvatar = fitSyncResolveFileUrl($uploadedStorageKey, 'assets/images/aarav.jpg');
+                    }
+                } elseif (!empty($avatar) && preg_match('#^(assets/|uploads/|https?://)#i', $avatar)) {
+                    if ($previousPicId > 0) {
+                        $db->prepare("UPDATE files SET storage_key = :sk WHERE id = :fid AND owner_user_id = :uid")
+                            ->execute([':sk' => $avatar, ':fid' => $previousPicId, ':uid' => $userId]);
+                        $profilePicId = $previousPicId;
+                    } else {
+                        $db->prepare("
+                            INSERT INTO files (owner_user_id, storage_key, original_name, mime_type, size_bytes, purpose, is_private, created_at)
+                            VALUES (:uid, :sk, 'avatar.jpg', 'image/jpeg', 0, 'profile_picture', 0, NOW())
+                        ")->execute([':uid' => $userId, ':sk' => $avatar]);
+                        $profilePicId = (int)$db->lastInsertId();
+                    }
+                    $resolvedAvatar = $avatar;
                 }
-            }
 
-            if ($profilePicId !== null) {
-                $stmt = $db->prepare("UPDATE users SET full_name = :fn, mobile = :mob, profile_picture_id = :ppid, updated_at = NOW() WHERE id = :uid");
-                $stmt->execute([':fn' => $fullName, ':mob' => $mobile ?: null, ':ppid' => $profilePicId, ':uid' => $userId]);
-            } else {
-                $stmt = $db->prepare("UPDATE users SET full_name = :fn, mobile = :mob, updated_at = NOW() WHERE id = :uid");
-                $stmt->execute([':fn' => $fullName, ':mob' => $mobile ?: null, ':uid' => $userId]);
-            }
+                if ($profilePicId !== null) {
+                    $stmt = $db->prepare("UPDATE users SET full_name = :fn, mobile = :mob, profile_picture_id = :ppid, updated_at = NOW() WHERE id = :uid");
+                    $stmt->execute([':fn' => $fullName, ':mob' => $mobile ?: null, ':ppid' => $profilePicId, ':uid' => $userId]);
+                    if ($uploadedFileId !== null && $previousPicId > 0 && $previousPicId !== $uploadedFileId) {
+                        fitSyncDeleteStoredFile($db, $previousPicId);
+                    }
+                } else {
+                    $stmt = $db->prepare("UPDATE users SET full_name = :fn, mobile = :mob, updated_at = NOW() WHERE id = :uid");
+                    $stmt->execute([':fn' => $fullName, ':mob' => $mobile ?: null, ':uid' => $userId]);
+                }
 
-            if ($bio !== null) {
-                $db->prepare("
-                    INSERT INTO user_profiles (user_id, bio, updated_at)
-                    VALUES (:uid, :bio, NOW())
-                    ON DUPLICATE KEY UPDATE bio = VALUES(bio), updated_at = NOW()
-                ")->execute([':bio' => $bio, ':uid' => $userId]);
-            }
+                if ($bio !== null) {
+                    $db->prepare("
+                        INSERT INTO user_profiles (user_id, bio, updated_at)
+                        VALUES (:uid, :bio, NOW())
+                        ON DUPLICATE KEY UPDATE bio = VALUES(bio), updated_at = NOW()
+                    ")->execute([':bio' => $bio, ':uid' => $userId]);
+                }
 
-            $db->commit();
+                $db->commit();
+            } catch (Throwable $e) {
+                if ($db->inTransaction()) $db->rollBack();
+                if ($uploadedStorageKey) {
+                    fitSyncUnlinkRelativeStorageKey($uploadedStorageKey);
+                }
+                if ($e instanceof InvalidArgumentException) {
+                    apiResponse(false, $e->getMessage(), null, 400);
+                }
+                throw $e;
+            }
 
             $_SESSION['full_name'] = $fullName;
             if (isset($_SESSION['user']) && is_array($_SESSION['user'])) {
@@ -449,7 +501,11 @@ if ($method === 'POST') {
                 $_SESSION['user']['mobile'] = $mobile;
             }
 
-            apiResponse(true, 'Profile details successfully updated.');
+            apiResponse(true, 'Profile details successfully updated.', [
+                'full_name' => $fullName,
+                'mobile'    => $mobile,
+                'avatar'    => $resolvedAvatar
+            ]);
         }
 
         if ($action === 'save_data_permissions') {

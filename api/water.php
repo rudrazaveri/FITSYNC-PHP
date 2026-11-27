@@ -21,8 +21,16 @@ try {
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-function getTodayWaterSummary(PDO $db, int $userId): array {
-    $today = date('Y-m-d');
+function resolveWaterDate(?string $candidate): string {
+    $c = trim((string)$candidate);
+    if ($c !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $c)) {
+        return $c;
+    }
+    return date('Y-m-d');
+}
+
+function getTodayWaterSummary(PDO $db, int $userId, ?string $dateStr = null): array {
+    $today = resolveWaterDate($dateStr);
     $stmt = $db->prepare("
         SELECT COALESCE(SUM(amount_ml), 0) AS total_ml, COUNT(*) AS log_count
         FROM water_logs
@@ -36,7 +44,7 @@ function getTodayWaterSummary(PDO $db, int $userId): array {
         SELECT id, amount_ml, logged_at
         FROM water_logs
         WHERE user_id = :uid AND log_date = :today
-        ORDER BY logged_at DESC
+        ORDER BY logged_at DESC, id DESC
     ");
     $stmt->execute([':uid' => $userId, ':today' => $today]);
     $rawLogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -53,8 +61,9 @@ function getTodayWaterSummary(PDO $db, int $userId): array {
     }, $rawLogs);
 
     return [
+        'date'          => $today,
         'total_ml'      => $totalMl,
-        'liters'        => round($totalMl / 1000.0, 1),
+        'liters'        => round($totalMl / 1000.0, 2),
         'target_ml'     => 3000,
         'target_liters' => 3.0,
         'log_count'     => (int)($summary['log_count'] ?? 0),
@@ -64,7 +73,7 @@ function getTodayWaterSummary(PDO $db, int $userId): array {
 
 if ($method === 'GET') {
     try {
-        $data = getTodayWaterSummary($db, $userId);
+        $data = getTodayWaterSummary($db, $userId, $_GET['local_date'] ?? null);
         apiResponse(true, 'Water intake retrieved.', $data);
     } catch (Throwable $e) {
         error_log('[FitSync water.php GET] ' . $e->getMessage());
@@ -89,7 +98,7 @@ if ($method === 'POST') {
         apiResponse(false, 'Invalid water amount. Must be between 1 and 10000 ml.', null, 400);
     }
 
-    $today = date('Y-m-d');
+    $today = resolveWaterDate($input['local_date'] ?? null);
     $now = date('Y-m-d H:i:s');
 
     try {
@@ -104,7 +113,8 @@ if ($method === 'POST') {
             ':logged_at' => $now
         ]);
 
-        $data = getTodayWaterSummary($db, $userId);
+        $data = getTodayWaterSummary($db, $userId, $today);
+        $data['added_ml'] = $amountMl;
         apiResponse(true, "Logged {$amountMl} ml of water successfully.", $data);
     } catch (Throwable $e) {
         error_log('[FitSync water.php POST] ' . $e->getMessage());
@@ -120,7 +130,7 @@ if ($method === 'DELETE') {
 
     $id = isset($input['id']) ? (int)$input['id'] : 0;
     $action = $input['action'] ?? '';
-    $today = date('Y-m-d');
+    $today = resolveWaterDate($input['local_date'] ?? null);
 
     try {
         if ($id > 0) {
@@ -131,7 +141,7 @@ if ($method === 'DELETE') {
             $stmt->execute([':uid' => $userId, ':today' => $today]);
         }
 
-        $data = getTodayWaterSummary($db, $userId);
+        $data = getTodayWaterSummary($db, $userId, $today);
         apiResponse(true, 'Water intake updated.', $data);
     } catch (Throwable $e) {
         error_log('[FitSync water.php DELETE] ' . $e->getMessage());

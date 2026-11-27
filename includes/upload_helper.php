@@ -111,3 +111,45 @@ function fitSyncStoreUploadedFile(
 
     return (int)$db->lastInsertId();
 }
+
+function fitSyncResolveFileUrl(?string $storageKey, string $fallback = ''): string {
+    $sk = trim((string)$storageKey);
+    if ($sk === '') {
+        return $fallback;
+    }
+    $skClean = ltrim(str_replace('\\', '/', $sk), '/');
+    if (preg_match('#^(https?://|assets/|uploads/)#i', $skClean)) {
+        return $skClean;
+    }
+    return 'uploads/' . $skClean;
+}
+
+function fitSyncUnlinkRelativeStorageKey(?string $storageKey): void {
+    $sk = trim((string)$storageKey);
+    if ($sk === '' || !str_starts_with(str_replace('\\', '/', $sk), 'uploads/')) {
+        return;
+    }
+    $baseDir = realpath(dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads');
+    $target = realpath(dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, ltrim($sk, '/')));
+    if ($baseDir && $target && str_starts_with($target, $baseDir . DIRECTORY_SEPARATOR) && is_file($target)) {
+        @unlink($target);
+    }
+}
+
+function fitSyncDeleteStoredFile(PDO $db, ?int $fileId): void {
+    if (!$fileId || $fileId <= 0) {
+        return;
+    }
+    $st = $db->prepare("SELECT storage_key FROM files WHERE id = :fid LIMIT 1");
+    $st->execute([':fid' => $fileId]);
+    $sk = $st->fetchColumn();
+    if ($sk) {
+        fitSyncUnlinkRelativeStorageKey((string)$sk);
+    }
+    try {
+        $db->prepare("DELETE FROM files WHERE id = :fid")->execute([':fid' => $fileId]);
+    } catch (Throwable $e) {
+        // Fallback if still referenced by another FK: soft-delete
+        $db->prepare("UPDATE files SET deleted_at = NOW() WHERE id = :fid")->execute([':fid' => $fileId]);
+    }
+}

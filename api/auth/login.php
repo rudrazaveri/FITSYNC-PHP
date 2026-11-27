@@ -20,10 +20,8 @@ if (!empty($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'applic
     $input = $_POST;
 }
 
-// Validate CSRF if token is provided
-if (isset($input['csrf_token']) || isset($_SERVER['HTTP_X_CSRF_TOKEN'])) {
-    requireCsrfToken();
-}
+// Enforce strict CSRF validation on all login API POST requests
+requireCsrfToken($input);
 
 $email    = (string)($input['email'] ?? '');
 $password = (string)($input['password'] ?? '');

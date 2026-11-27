@@ -43,15 +43,19 @@ if ($method === 'GET') {
         $gymName = $gymInfo ? $gymInfo['gym_name'] : 'No Active Gym Membership';
         $gymId   = $gymInfo ? (int)$gymInfo['gym_id'] : 0;
 
+        $monthStart = sprintf('%04d-%02d-01 00:00:00', $year, $month);
+        $nextMonthTs = mktime(0, 0, 0, $month + 1, 1, $year);
+        $monthEnd = date('Y-m-d 00:00:00', $nextMonthTs);
+
         $stmt = $db->prepare("
             SELECT id, check_in_time, check_out_time, check_in_method, status
             FROM attendance
-            WHERE user_id = :uid 
-              AND YEAR(check_in_time) = :yr 
-              AND MONTH(check_in_time) = :mo
+            WHERE user_id = :uid
+              AND check_in_time >= :mstart
+              AND check_in_time < :mend
             ORDER BY check_in_time ASC
         ");
-        $stmt->execute([':uid' => $userId, ':yr' => $year, ':mo' => $month]);
+        $stmt->execute([':uid' => $userId, ':mstart' => $monthStart, ':mend' => $monthEnd]);
         $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $attendedDays = [];

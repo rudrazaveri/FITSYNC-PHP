@@ -1210,7 +1210,9 @@ function registerUser(array $data, array $uploadedFiles = []): array {
             INSERT INTO auth_tokens (user_id, purpose, token_hash, new_email, expires_at, created_at)
             VALUES (:uid, 'email_verify', :th, :em, DATE_ADD(NOW(), INTERVAL 24 HOUR), NOW())
         ")->execute([':uid' => $newUserId, ':th' => $verifyHash, ':em' => $email]);
-        @mail($email, 'Verify your FitSync email', "Your FitSync verification code is: {$verifyCode}");
+        if (!empty($_ENV['MAIL_USER'])) {
+            @mail($email, 'Verify your FitSync email', "Your FitSync verification code is: {$verifyCode}");
+        }
         $extraResponse['email_verification_required'] = true;
         $extraResponse['verification_code'] = $verifyCode;
 

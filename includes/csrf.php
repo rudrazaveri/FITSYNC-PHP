@@ -75,19 +75,23 @@ function validateCsrfToken(?string $token): bool {
  *
  * @return void
  */
-function requireCsrfToken(): void {
+function requireCsrfToken(?array $parsedBody = null): void {
     $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+
+    if (empty($token) && is_array($parsedBody) && !empty($parsedBody['csrf_token'])) {
+        $token = (string)$parsedBody['csrf_token'];
+    }
 
     // Also check JSON body if content-type is application/json
     if (empty($token) && !empty($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
         $raw = file_get_contents('php://input');
         $json = json_decode($raw, true);
         if (is_array($json) && !empty($json['csrf_token'])) {
-            $token = $json['csrf_token'];
+            $token = (string)$json['csrf_token'];
         }
     }
 
-    if (!validateCsrfToken($token)) {
+    if (!validateCsrfToken(is_string($token) ? $token : null)) {
         if (isAjaxRequest() || strpos($_SERVER['SCRIPT_NAME'] ?? '', '/api/') !== false) {
             jsonResponse([
                 'success' => false,

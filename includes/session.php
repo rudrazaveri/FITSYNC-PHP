@@ -94,6 +94,8 @@ function initSecureSession(): void {
 
     // If this tab targets a specific portal and has a companion tab session cookie, resume that portal's session
     $portalCtx = resolvePortalContextFromRequest();
+    $tabCookie = '';
+    $tabSid = '';
     if ($portalCtx !== '') {
         $tabCookie = getPortalTabCookieName($portalCtx);
         $tabSid = (string)($_COOKIE[$tabCookie] ?? '');
@@ -103,6 +105,19 @@ function initSecureSession(): void {
     }
 
     session_start();
+
+    // If strict_mode rejected an expired/unknown tab cookie, sync the cookie to the newly issued session_id()
+    // so GET -> POST on the same tab always uses the exact same PHP session and CSRF token.
+    if ($portalCtx !== '' && $tabCookie !== '' && $tabSid !== '' && session_id() !== $tabSid && !headers_sent()) {
+        setcookie($tabCookie, session_id(), [
+            'expires'  => time() + $lifetime,
+            'path'     => '/',
+            'domain'   => '',
+            'secure'   => $isHttps,
+            'httponly' => true,
+            'samesite' => $sameSite
+        ]);
+    }
 
     // Inactivity timeout handling (clears expired auth cleanly and keeps a fresh session)
     if (isset($_SESSION['last_activity'])) {

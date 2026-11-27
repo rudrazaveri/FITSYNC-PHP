@@ -18,9 +18,8 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/responsive.css">
 
-  <!-- Lucide Icons Local & CDN with Fallback -->
+  <!-- Lucide Icons Local with CDN Fallback -->
   <script src="js/lucide.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
   <script>
     if (!window.lucide) {
       document.write('<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"><\/script>');
@@ -1089,7 +1088,7 @@
               </div>
               <div id="memBannerActions" style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button class="btn-primary-block" style="width: auto; padding: 8px 18px;"
-                  onclick="switchView('attendance')">Open Turnstile Pass</button>
+                  onclick="switchView('attendance')">View Attendance</button>
               </div>
             </div>
           </div>
@@ -1361,6 +1360,9 @@
             </button>
           </div>
 
+          <!-- Authoritative MySQL Assigned Workout Plan, Weekly Schedule, Runner & PRs -->
+          <div id="memberAssignedWorkoutPanel" style="margin-bottom: 18px;"></div>
+
           <!-- Subnav Tabs Bar -->
           <div class="wk-subnav">
             <div class="wk-subnav-links">
@@ -1414,7 +1416,7 @@
                 </svg> Daily Workout Split (7 Days)
               </div>
               <div class="wk-today-indicator">
-                Today: <strong id="wkCurrentDayText">Saturday</strong>
+                Today: <strong id="wkCurrentDayText">--</strong>
               </div>
             </div>
 
@@ -1422,7 +1424,7 @@
             <div class="wk-days-strip" id="wkDaysStrip">
               <button type="button" class="wk-day-btn" data-day="mon" onclick="selectWorkoutDay('mon')"><span
                   class="day-lbl">Mon</span></button>
-              <button type="button" class="wk-day-btn active" data-day="tue" onclick="selectWorkoutDay('tue')"><span
+              <button type="button" class="wk-day-btn" data-day="tue" onclick="selectWorkoutDay('tue')"><span
                   class="day-lbl">Tue</span></button>
               <button type="button" class="wk-day-btn" data-day="wed" onclick="selectWorkoutDay('wed')"><span
                   class="day-lbl">Wed</span></button>
@@ -1430,10 +1432,8 @@
                   class="day-lbl">Thu</span></button>
               <button type="button" class="wk-day-btn" data-day="fri" onclick="selectWorkoutDay('fri')"><span
                   class="day-lbl">Fri</span></button>
-              <button type="button" class="wk-day-btn is-today" data-day="sat" onclick="selectWorkoutDay('sat')">
-                <span class="day-lbl">Sat</span>
-                <span class="day-today-tag">TODAY</span>
-              </button>
+              <button type="button" class="wk-day-btn" data-day="sat" onclick="selectWorkoutDay('sat')"><span
+                  class="day-lbl">Sat</span></button>
               <button type="button" class="wk-day-btn" data-day="sun" onclick="selectWorkoutDay('sun')"><span
                   class="day-lbl">Sun</span></button>
             </div>
@@ -2526,9 +2526,8 @@
           <div class="module-header-bar">
             <div class="module-header-title">
               <div>
-                <h2>Gym Attendance & Digital Turnstile Pass</h2>
-                <p>Live QR access keycard, interactive turnstile scanner, floor occupancy meter, and consistency streaks
-                </p>
+                <h2>Gym Attendance &amp; Check-In History</h2>
+                <p>Track daily gym check-ins, attendance calendar, floor occupancy meter, and consistency streaks</p>
               </div>
             </div>
             <button class="btn-back-dashboard" data-switch-view="dashboard">
@@ -2542,7 +2541,7 @@
           </div>
 
           <!-- Top Attendance Telemetry -->
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px;">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px;">
             <div class="fs-card" style="margin-bottom: 0; padding: 16px; border-left: 4px solid #2563EB;">
               <span
                 style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Monthly
@@ -2572,84 +2571,13 @@
                 Window
               </span>
             </div>
-            <div class="fs-card" style="margin-bottom: 0; padding: 16px; border-left: 4px solid #7C3AED;">
-              <span
-                style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Access
-                Keycard</span>
-              <div style="font-size: 20px; font-weight: 800; color: #7C3AED; margin: 4px 0;" id="attPassId">FS-PUN-9821
-              </div>
-              <span style="font-size: 12px; color: #64748B;">VIP All-Access Active</span>
-            </div>
           </div>
 
           <!-- Main Attendance Dual-Column Layout -->
           <div style="display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start;">
 
-            <!-- Left Column: Digital Pass + Floor Occupancy Radar -->
+            <!-- Left Column: Floor Occupancy Radar -->
             <div style="display: flex; flex-direction: column; gap: 20px;">
-
-              <!-- Digital Keycard Card -->
-              <div class="turnstile-pass-card">
-                <div
-                  style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-                  <div>
-                    <div
-                      style="font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #94A3B8; text-transform: uppercase;">
-                      FitSync Pass</div>
-                    <h3 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin: 2px 0;">All-Access Keycard
-                    </h3>
-                  </div>
-                  <span
-                    style="background: rgba(34, 197, 94, 0.2); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.4); padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;">ACTIVE</span>
-                </div>
-
-                <!-- Animated Laser Scanner Frame -->
-                <div style="text-align: center; margin: 10px 0 16px;">
-                  <div class="qr-scanner-frame">
-                    <div class="qr-scanner-line"></div>
-                    <svg width="140" height="140" viewBox="0 0 100 100" fill="#0F172A">
-                      <rect x="0" y="0" width="30" height="30" rx="3" />
-                      <rect x="5" y="5" width="20" height="20" fill="#fff" rx="2" />
-                      <rect x="9" y="9" width="12" height="12" />
-                      <rect x="70" y="0" width="30" height="30" rx="3" />
-                      <rect x="75" y="5" width="20" height="20" fill="#fff" rx="2" />
-                      <rect x="79" y="9" width="12" height="12" />
-                      <rect x="0" y="70" width="30" height="30" rx="3" />
-                      <rect x="5" y="75" width="20" height="20" fill="#fff" rx="2" />
-                      <rect x="9" y="79" width="12" height="12" />
-                      <rect x="36" y="8" width="8" height="8" />
-                      <rect x="52" y="14" width="8" height="8" />
-                      <rect x="36" y="38" width="14" height="14" />
-                      <rect x="60" y="38" width="8" height="8" />
-                      <rect x="42" y="60" width="8" height="8" />
-                      <rect x="74" y="60" width="14" height="14" />
-                    </svg>
-                  </div>
-                  <div
-                    style="margin-top: 10px; font-family: monospace; font-size: 13px; font-weight: 700; color: #38BDF8;">
-                    KEY: FS-PUN-9821</div>
-                  <div style="font-size: 11px; color: #94A3B8; margin-top: 2px;">Dynamic token refreshes every 60s</div>
-                </div>
-
-                <div
-                  style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; font-size: 12px; color: #CBD5E1; display: flex; justify-content: space-between;">
-                  <span>Branch: FitZone Elite (All Branches)</span>
-                  <span>Turnstiles 1-4</span>
-                </div>
-
-                <button class="btn-primary-block" id="simulateCheckInBtn" onclick="simulateTurnstileCheckIn()"
-                  style="margin-top: 16px; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); border: none; font-weight: 700; padding: 12px; border-radius: 8px;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="width: 16px; height: 16px; margin-right: 6px;">
-                    <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
-                    <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-                    <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
-                    <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-                    <path d="M7 12h10"></path>
-                  </svg> Tap Turnstile / Check-In Now
-                </button>
-              </div>
 
               <!-- Live Floor Occupancy & Hourly Peak Chart -->
               <div class="fs-card" style="margin-bottom: 0;">
@@ -2659,7 +2587,7 @@
                   <span class="fs-badge fs-badge-green" style="font-size: 10px;">Live Sensor</span>
                 </h4>
                 <p style="font-size: 12px; color: #64748B; margin-bottom: 14px;">Average hourly crowd levels based on
-                  turnstile sensors.</p>
+                  gym check-in records.</p>
 
                 <!-- Hourly Bars -->
                 <div
@@ -2794,12 +2722,14 @@
                 <div
                   style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
                   <div>
-                    <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Turnstile Check-In
-                      Timeline</h3>
-                    <p style="font-size: 12px; color: #64748B; margin-top: 2px;">Optical laser and biometric turnstile
-                      logs.</p>
+                    <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Gym Check-In Timeline</h3>
+                    <p style="font-size: 12px; color: #64748B; margin-top: 2px;">Verified gym check-in and session logs.</p>
                   </div>
                   <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn-primary-block" style="width: auto; padding: 6px 12px; font-size: 12px; background: #10B981; border: none;"
+                      onclick="handleCalendarCheckIn()">
+                      Check In Today
+                    </button>
                     <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;"
                       onclick="exportAttendanceCSV()">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -2960,9 +2890,9 @@
               style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
               <div style="display: flex; align-items: center; gap: 18px; min-width: 260px;">
                 <div style="position: relative;">
-                  <img id="profHeaderAvatar" src="assets/images/isha_avatar.jpg" class="user-avatar-circle"
+                  <img id="profHeaderAvatar" src="assets/images/aarav.jpg" class="user-avatar-circle"
                     style="width: 76px; height: 76px; border: 3px solid #10B981; object-fit: cover;" alt="Avatar"
-                    onerror="this.src='assets/images/isha_avatar.jpg'">
+                    onerror="this.src='assets/images/avatar_placeholder.svg'">
                   <span
                     style="position: absolute; bottom: 2px; right: 2px; width: 15px; height: 15px; border-radius: 50%; background: #10B981; border: 2px solid #0F172A;"
                     title="Active Athlete"></span>
@@ -3242,8 +3172,8 @@
                         <path d="M3 9h18"></path>
                       </svg> Gym Attendance & Check-in Calendar
                     </h3>
-                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Verified turnstile
-                      check-ins synchronized with facility gate telemetry</p>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Verified gym
+                      check-ins synchronized with your attendance log</p>
                   </div>
                   <button type="button" class="btn-primary-block" id="btnProfileCheckin"
                     style="width: auto; padding: 8px 16px; background: #10B981; border: none; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;"
@@ -3463,10 +3393,24 @@
                     <label class="form-label" style="font-size: 12px;">Mobile Contact *</label>
                     <input type="tel" id="profInputMobile" class="form-input" placeholder="+91 98765 43210" required>
                   </div>
+                  <div class="form-group" style="margin-bottom: 14px;">
+                    <label class="form-label" style="font-size: 12px;">Upload Profile Photo (JPG, PNG, WEBP — Max 5 MB)</label>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                      <img id="profAvatarPreview" src="assets/images/aarav.jpg" alt="Profile photo preview"
+                        style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);"
+                        onerror="this.src='assets/images/avatar_placeholder.svg'">
+                      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                        <input type="file" id="profInputAvatarFile" class="form-input" accept="image/jpeg,image/png,image/webp"
+                          style="padding: 6px 8px; font-size: 12px;" onchange="previewUserProfilePhoto(this)">
+                        <button type="button" class="btn-secondary" style="width: fit-content; padding: 4px 10px; font-size: 11px; color: #DC2626;"
+                          onclick="removeUserProfileAvatar()">Remove Photo</button>
+                      </div>
+                    </div>
+                  </div>
                   <div class="form-group" style="margin-bottom: 18px;">
-                    <label class="form-label" style="font-size: 12px;">Profile Photo Asset URL (Optional)</label>
+                    <label class="form-label" style="font-size: 12px;">Or Profile Photo Asset URL (Optional)</label>
                     <input type="text" id="profInputAvatar" class="form-input"
-                      placeholder="assets/images/isha_avatar.jpg">
+                      placeholder="assets/images/aarav.jpg">
                   </div>
                   <button type="submit" class="btn-primary-block" style="width: 100%; padding: 10px; font-size: 13px;">
                     Save Profile Changes
@@ -3764,10 +3708,10 @@
           </div>
 
           <div class="workout-preview-box">
-            <img src="assets/images/ex_bench.jpg" alt="Workout" class="workout-thumb"
-              onerror="this.src='assets/images/bench_press.jpg'">
+            <img id="rightWkThumb" src="assets/images/exercise_placeholder.svg" alt="Workout" class="workout-thumb"
+              onerror="this.src='assets/images/exercise_placeholder.svg'">
             <div class="workout-meta-box">
-              <div style="font-size: 11px; color: var(--primary-blue); font-weight: 700;" id="rightWkFocus">💪 TRAINING PLAN</div>
+              <div style="font-size: 11px; color: var(--primary-blue); font-weight: 700;" id="rightWkFocus">TRAINING PLAN</div>
               <h4 class="workout-name" id="rightWkTitle">No Active Plan Assigned</h4>
 
               <div class="workout-meta-tags" id="rightWkMeta">
@@ -4232,8 +4176,9 @@
       <div class="modal-body">
         <div
           style="position: relative; border-radius: var(--radius-md); overflow: hidden; height: 180px; margin-bottom: 16px; border: 1px solid var(--border-color);">
-          <img id="exModalImage" src="assets/images/ex_bench.jpg" alt="Exercise preview"
-            style="width: 100%; height: 100%; object-fit: cover;">
+          <img id="exModalImage" src="assets/images/exercise_placeholder.svg" alt="Exercise preview"
+            style="width: 100%; height: 100%; object-fit: cover;"
+            onerror="this.src='assets/images/exercise_placeholder.svg'">
           <span id="exModalDifficultyTag" class="tag-badge"
             style="position: absolute; top: 12px; right: 12px; background: rgba(15, 23, 42, 0.85); color: #FFF; font-weight: 700; border: none;">
             Intermediate

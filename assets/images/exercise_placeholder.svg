@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-label="Verified exercise image pending">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F1F5F9"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" rx="16" fill="url(#bg)"/>
+  <g transform="translate(400 265)" stroke="#64748B" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <line x1="-110" y1="0" x2="110" y2="0"/>
+    <rect x="-145" y="-44" width="32" height="88" rx="8" fill="#CBD5E1"/>
+    <rect x="-175" y="-28" width="24" height="56" rx="6" fill="#CBD5E1"/>
+    <rect x="113" y="-44" width="32" height="88" rx="8" fill="#CBD5E1"/>
+    <rect x="151" y="-28" width="24" height="56" rx="6" fill="#CBD5E1"/>
+  </g>
+  <text x="400" y="385" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#334155">Exercise Demonstration Pending</text>
+  <text x="400" y="420" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#64748B">Neutral Placeholder — Upload Verified Exercise Media</text>
+</svg>

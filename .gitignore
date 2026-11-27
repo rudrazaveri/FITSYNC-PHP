@@ -23,3 +23,7 @@ __pycache__/
 *.log
 /build/
 /coverage/
+
+# User uploaded registration & runtime media
+uploads/registration/*/
+tmp/

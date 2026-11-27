@@ -1062,15 +1062,40 @@ $prefillPhone = $inviteContext ? (string)($inviteContext['invited_phone'] ?? '')
       labelEl.innerText = 'Creating Account...';
 
       try {
-        const formData = new FormData(this);
-        const res = await fetch('api/auth/register.php', {
-          method: 'POST',
-          headers: {
-            'X-CSRF-Token': document.getElementById('csrfTokenInput').value
-          },
-          body: formData
-        });
-        const json = await res.json().catch(() => null);
+        const portalCtx = new URLSearchParams(window.location.search).get('portal_ctx') || '';
+        const reqHeaders = {};
+        if (portalCtx) reqHeaders['X-FitSync-Portal'] = portalCtx;
+
+        const csrfInputEl = document.getElementById('csrfTokenInput');
+        if (!csrfInputEl.value) {
+          const cRes = await fetch('api/auth/csrf.php', { credentials: 'same-origin', headers: reqHeaders });
+          const cJson = await cRes.json().catch(() => null);
+          if (cJson && cJson.csrf_token) csrfInputEl.value = cJson.csrf_token;
+        }
+
+        const doRegisterFetch = async () => {
+          const formData = new FormData(this);
+          formData.set('csrf_token', csrfInputEl.value);
+          return fetch('api/auth/register.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: Object.assign({ 'X-CSRF-Token': csrfInputEl.value }, reqHeaders),
+            body: formData
+          });
+        };
+
+        let res = await doRegisterFetch();
+        let json = await res.json().catch(() => null);
+
+        if (res.status === 403 && json && typeof json.message === 'string' && json.message.toLowerCase().includes('csrf')) {
+          const cRes = await fetch('api/auth/csrf.php', { credentials: 'same-origin', cache: 'no-store', headers: reqHeaders });
+          const cJson = await cRes.json().catch(() => null);
+          if (cJson && cJson.csrf_token) {
+            csrfInputEl.value = cJson.csrf_token;
+            res = await doRegisterFetch();
+            json = await res.json().catch(() => null);
+          }
+        }
         if (res.ok && json && json.success) {
           if (json.pending_invitation_id && json.verification_code) {
             showRegAlert(`Account created! Verification code: ${json.verification_code}. Verifying email & redirecting to your portal...`, true);

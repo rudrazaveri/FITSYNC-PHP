@@ -19,7 +19,6 @@
 
   <!-- Lucide Icons & Chart.js -->
   <script src="js/lucide.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
   <script>
     if (!window.lucide) {
       document.write('<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"><\/script>');
@@ -803,8 +802,14 @@
           <div class="auth-form-group"><label class="auth-label">Months</label><input type="number" id="fgPlanMonths" class="auth-input" value="1" min="1" max="36"></div>
         </div>
         <div class="auth-form-group" style="margin-bottom: 16px;">
-          <label class="auth-label">Gym Photo / Logo (Optional: JPG, PNG, WEBP)</label>
-          <input type="file" id="fgGymLogo" class="auth-input" accept="image/jpeg,image/png,image/webp" style="padding: 6px 10px;">
+          <label class="auth-label">Gym Photo / Logo (Optional: JPG, PNG, WEBP — Max 5 MB)</label>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img id="fgGymLogoPreview" src="assets/images/gym_fitzone.jpg" alt="Gym preview"
+              style="width: 64px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color);"
+              onerror="this.src='assets/images/gym_fitzone.jpg'">
+            <input type="file" id="fgGymLogo" class="auth-input" accept="image/jpeg,image/png,image/webp"
+              style="flex: 1; padding: 6px 10px;" onchange="previewGymLogoFile(this)">
+          </div>
         </div>
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
           <button type="button" class="btn-secondary" onclick="closeRegisterGymModal()">Cancel</button>
@@ -1763,6 +1768,15 @@
       grid.innerHTML = gyms.map(g => {
         const isCurrent = parseInt(g.id, 10) === parseInt(activeGymId, 10);
         const stCls = g.status === 'active' ? 'fs-badge-green' : (g.status === 'pending_approval' ? 'fs-badge-orange' : 'fs-badge-red');
+        const verStatus = String(g.verification_status || 'pending').toLowerCase();
+        const isPub = g.is_published === undefined || g.is_published === null ? true : Boolean(Number(g.is_published));
+        const verCls = verStatus === 'verified' ? 'fs-badge-green' : (verStatus === 'rejected' ? 'fs-badge-red' : 'fs-badge-orange');
+        const verLabel = verStatus === 'verified' ? 'Verified' : (verStatus === 'rejected' ? 'Verification Rejected' : 'Pending Verification');
+        const pubNote = (g.status !== 'active' || !isPub)
+          ? 'Hidden from public User & Trainer discovery until status is Active and Published.'
+          : (verStatus === 'pending'
+            ? 'Active & published in directory (verification status: Pending).'
+            : 'Publicly discoverable in User & Trainer portals.');
         const nextSt = g.status === 'active' ? 'inactive' : 'active';
         const toggleBtn = g.status === 'suspended'
           ? ''
@@ -1778,8 +1792,12 @@
                 <h4 style="font-size:16px;font-weight:700;color:var(--text-main);margin-bottom:2px;">${escapeHtml(g.name)}</h4>
                 <div style="font-size:12px;color:var(--text-secondary);">${escapeHtml(g.city)}, ${escapeHtml(g.state)}</div>
               </div>
-              <span class="fs-badge ${stCls}">${escapeHtml(String(g.status).replace('_', ' ').toUpperCase())}</span>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                <span class="fs-badge ${stCls}">${escapeHtml(String(g.status).replace('_', ' ').toUpperCase())}</span>
+                <span class="fs-badge ${verCls}" style="font-size:10px;">${escapeHtml(verLabel)}</span>
+              </div>
             </div>
+            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;">${escapeHtml(pubNote)}</p>
             <p style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">📍 ${escapeHtml(g.address_line1)} • ${escapeHtml(g.postal_code)}</p>
             <p style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">📞 ${escapeHtml(g.phone)} • ${escapeHtml(g.email)}</p>
             <p style="font-size:12px;color:var(--text-main);margin-bottom:6px;">⏰ ${escapeHtml(g.hours_summary || 'Hours configured')}</p>
@@ -1846,7 +1864,33 @@
         document.getElementById('fgGymClose').value = '22:00';
         document.getElementById('fgGymSunOpen').checked = true;
       }
+      const logoPrev = document.getElementById('fgGymLogoPreview');
+      const logoInp = document.getElementById('fgGymLogo');
+      if (logoInp) logoInp.value = '';
+      if (logoPrev) logoPrev.src = (g && (g.cover_url || g.logo_url)) ? (g.cover_url || g.logo_url) : 'assets/images/gym_fitzone.jpg';
       document.getElementById('modalRegisterGym').style.display = 'flex';
+    }
+
+    function previewGymLogoFile(inputEl) {
+      const f = inputEl?.files?.[0];
+      if (!f) return;
+      const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowed.includes(f.type)) {
+        alert('Unsupported image format. Allowed: JPG, PNG, WEBP.');
+        inputEl.value = '';
+        return;
+      }
+      if (f.size <= 0 || f.size > 5 * 1024 * 1024) {
+        alert('Gym image must be under 5 MB.');
+        inputEl.value = '';
+        return;
+      }
+      const r = new FileReader();
+      r.onload = () => {
+        const prev = document.getElementById('fgGymLogoPreview');
+        if (prev && r.result) prev.src = String(r.result);
+      };
+      r.readAsDataURL(f);
     }
 
     function closeRegisterGymModal() {
@@ -2181,11 +2225,25 @@
         if (!sess || !sess.isLoggedIn || !sess.authorized) return;
       }
       await loadOwnerData();
-      setInterval(loadOwnerData, 5000);
+      let ownerSyncInFlight = false;
+      let lastOwnerSyncAt = Date.now();
+      const runOwnerSync = async (isPeriodic = false) => {
+        if (ownerSyncInFlight || (isPeriodic && document.hidden)) return;
+        const nowMs = Date.now();
+        if (!isPeriodic && (nowMs - lastOwnerSyncAt) < 5000) return;
+        ownerSyncInFlight = true;
+        lastOwnerSyncAt = nowMs;
+        try {
+          await loadOwnerData();
+        } finally {
+          ownerSyncInFlight = false;
+        }
+      };
+      setInterval(() => runOwnerSync(true), 30000);
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') loadOwnerData();
+        if (document.visibilityState === 'visible') runOwnerSync(false);
       });
-      window.addEventListener('focus', loadOwnerData);
+      window.addEventListener('focus', () => runOwnerSync(false));
       initOwnerIcons();
     });
 

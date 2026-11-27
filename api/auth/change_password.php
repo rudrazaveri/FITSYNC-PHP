@@ -21,9 +21,7 @@ if (!empty($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'applic
     $input = $_POST;
 }
 
-if (isset($input['csrf_token']) || isset($_SERVER['HTTP_X_CSRF_TOKEN'])) {
-    requireCsrfToken();
-}
+requireCsrfToken();
 
 $currentPassword = (string)($input['current_password'] ?? '');
 $newPassword     = (string)($input['new_password'] ?? '');
